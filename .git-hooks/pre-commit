@@ -1,0 +1,102 @@
+#!/bin/bash
+
+# Color codes for terminal output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}Running pre-commit checks...${NC}"
+
+# Check for API keys in staged files
+echo -e "${BLUE}Checking for API keys in staged files...${NC}"
+
+# Set up our patterns to search for
+PATTERNS=(
+    # OpenAI API key patterns
+    "sk-[a-zA-Z0-9]{32,}"
+    "sk-proj-[a-zA-Z0-9]{30,}"
+    
+    # Mistral AI API key patterns
+    "[a-zA-Z0-9]{32,}"
+    
+    # Organization ID patterns
+    "org-[a-zA-Z0-9]{20,}"
+    
+    # Generic API key-like patterns
+    "api[_-]?key[^a-zA-Z0-9]"
+    "api[_-]?secret[^a-zA-Z0-9]"
+    "access[_-]?token[^a-zA-Z0-9]"
+    "auth[_-]?token[^a-zA-Z0-9]"
+    "client[_-]?secret[^a-zA-Z0-9]"
+    
+    # .env file should never be committed
+    "^.env$"
+)
+
+# Files to exclude from checking (relative to repo root)
+EXCLUDE_FILES=(
+    ".git-hooks/pre-commit"
+    "tools/encrypt-keys.js"
+    "tools/setup-env.js"
+    ".gitignore"
+    "README.md"
+)
+
+# Get staged files that are being added or modified
+STAGED_FILES=$(git diff --cached --name-only)
+
+# Flag to track if we found any issues
+FOUND_SENSITIVE_DATA=false
+
+# Check each staged file
+for FILE in $STAGED_FILES; do
+    # Skip if file is in exclude list
+    SKIP=false
+    for EXCLUDED in "${EXCLUDE_FILES[@]}"; do
+        if [[ "$FILE" == "$EXCLUDED" ]]; then
+            SKIP=true
+            break
+        fi
+    done
+    
+    if $SKIP; then
+        continue
+    fi
+    
+    # Check .env files specially
+    if [[ "$FILE" == ".env" || "$FILE" == "*.env" || "$FILE" == "*.env.*" ]]; then
+        echo -e "${RED}ERROR: Attempting to commit a .env file: $FILE${NC}"
+        echo -e "${YELLOW}Environment files should never be committed to the repository.${NC}"
+        FOUND_SENSITIVE_DATA=true
+        continue
+    fi
+    
+    # Check each pattern in the file
+    for PATTERN in "${PATTERNS[@]}"; do
+        # Use git grep to check files
+        MATCHES=$(git diff --cached -U0 "$FILE" | grep -E "$PATTERN")
+        
+        if [[ -n "$MATCHES" ]]; then
+            echo -e "${RED}POTENTIAL API KEY FOUND in $FILE:${NC}"
+            echo -e "${YELLOW}Pattern: $PATTERN${NC}"
+            echo -e "${YELLOW}Please remove this sensitive data before committing.${NC}"
+            FOUND_SENSITIVE_DATA=true
+        fi
+    done
+done
+
+if [ "$FOUND_SENSITIVE_DATA" = true ]; then
+    echo -e "${RED}=======================================================${NC}"
+    echo -e "${RED}  COMMIT BLOCKED: Sensitive data detected!${NC}"
+    echo -e "${RED}=======================================================${NC}"
+    echo -e "${YELLOW}Please remove API keys and sensitive data before committing.${NC}"
+    echo -e "${YELLOW}If you're ABSOLUTELY SURE this is a false positive,${NC}"
+    echo -e "${YELLOW}you can bypass this check with:${NC} git commit --no-verify"
+    exit 1
+else
+    echo -e "${GREEN}No API keys or sensitive data found. Proceeding with commit.${NC}"
+fi
+
+exit 0

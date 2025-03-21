@@ -1,0 +1,47 @@
+{
+  "name": "prompt-enhancer",
+  "version": "1.0.0",
+  "description": "API that takes basic prompts and enhances them for better AI responses",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "server": "nodemon server.js",
+    "client": "cd frontend && npm start",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "test": "node test-api.js",
+    "lint": "eslint src/**/*.js",
+    "setup": "node tools/setup-env.js setup",
+    "encrypt-keys": "node tools/encrypt-keys.js",
+    "install-hooks": "node tools/install-git-hooks.js",
+    "security-check": "node tools/security-check.js",
+    "postinstall": "npm run install-hooks"
+  },
+  "keywords": [
+    "api",
+    "ai",
+    "prompt",
+    "enhancer",
+    "llm"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.2.0",
+    "helmet": "^8.0.0",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^2.7.0",
+    "openai": "^4.88.0",
+    "rate-limiter-flexible": "^3.0.6",
+    "redis": "^4.6.7",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "eslint": "^8.36.0",
+    "nodemon": "^3.0.1"
+  }
+}
