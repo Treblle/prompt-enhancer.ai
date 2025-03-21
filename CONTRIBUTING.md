@@ -2,18 +2,18 @@
 
 ## Welcome Contributors! 🌍
 
-It's people like you that make the open-source community such an amazing place to learn, inspire, and create.
+People like you make the open-source community such an amazing place to learn, inspire, and create.
 
 ## Code of Conduct 🤝
 
-This project and everyone participating in it are governed by our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+This project and everyone participating in it is governed by our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 
 ## How Can I Contribute? 🚀
 
 ### Reporting Bugs 🐛
 
-1. **Ensure the bug is not already reported** by searching existing [Issues](https://github.com/Rahulkhinchi03/prompt-enhancer.ai/issues)
-2. If you can't find an existing issue, [open a new one](https://github.com/Rahulkhinchi03/prompt-enhancer.ai/issues/new)
+1. **Ensure the bug is not already reported** by searching existing [Issues](https://github.com/Treblle/prompt-enhancer.ai/issues)
+2. If you can't find an existing issue, [open a new one](https://github.com/Treblle/prompt-enhancer.ai/issues/new)
 3. Include:
    - A clear title
    - Detailed description
@@ -141,13 +141,5 @@ This project and everyone participating in it are governed by our [Code of Condu
 2. Feedback and suggestions will be provided
 3. Changes may be requested
 4. Once approved, PR will be merged
-
-## Financial Contributions 💖
-
-If you want to support the project:
-
-- Star the repository
-- Share with your network
-- Consider sponsoring via GitHub Sponsors
 
 **Thank you for contributing! Together, we can make AI Prompt Enhancer even more awesome! 🌟**
