@@ -72,7 +72,7 @@ The `npm run setup` command helps you securely configure your environment:
 - Guides you through adding your API keys
 - Installs security measures to prevent key exposure
 
-### Encrypting Your Keys
+### Encrypting Your Keys (OPTIONAL)
 
 For additional security, you can encrypt your API keys:
 
