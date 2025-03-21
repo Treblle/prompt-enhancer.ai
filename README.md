@@ -129,22 +129,4 @@ Treblle](https://treblle.com) is an API Intelligence platform that empowers comp
   <img src="https://github.com/user-attachments/assets/54f0c084-65bb-4431-b80d-cceab6c63dc3"/>
 </div>
 
-**Treblle's Contribution:**
-
-- Provided infrastructure and development support
-- Enabled advanced API monitoring and management
-- Supported open-source innovation
-
-## 🙏 Acknowledgments
-
-- Inspired by the need for better AI prompt engineering.
-- Thanks to the open-source community.
-- Powered by [Treblle](https://treblle.com)
-
-## 📞 Support
-
-Encounter an issue? [Open an issue](https://github.com/Rahulkhinchi03/prompt-enhancer/issues) on GitHub.
-
----
-
 **Happy Prompting! 🎉**
