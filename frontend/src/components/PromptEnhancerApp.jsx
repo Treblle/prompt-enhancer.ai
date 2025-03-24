@@ -237,24 +237,24 @@ const PromptEnhancerApp = () => {
     };
 
     return (
-        <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-950 p-4">
-            <div className="w-full max-w-3xl bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden h-[700px] flex flex-col">
+        <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-950 p-2 sm:p-4">
+            <div className="w-full max-w-3xl bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden h-[700px] flex flex-col prompt-enhancer-card">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-800 px-8 py-6 relative">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-800 px-4 sm:px-8 py-4 sm:py-6 relative prompt-header">
                     <div className="flex items-center justify-between">
-                        <h1 className="text-3xl font-bold text-white">AI Prompt Enhancer</h1>
-                        <Sparkles className="text-yellow-300 h-7 w-7" />
+                        <h1 className="text-2xl sm:text-3xl font-bold text-white">AI Prompt Enhancer</h1>
+                        <Sparkles className="text-yellow-300 h-6 w-6 sm:h-7 sm:w-7" />
                     </div>
-                    <p className="text-blue-100 mt-2">
+                    <p className="text-blue-100 text-sm sm:text-base mt-1 sm:mt-2">
                         Transform basic prompts into optimized instructions for better AI responses
                     </p>
                 </div>
 
                 {/* Main Content */}
-                <div className="p-6 flex-1 flex flex-col overflow-hidden">
+                <div className="p-3 sm:p-6 flex-1 flex flex-col overflow-hidden prompt-content">
                     {/* Original Prompt */}
-                    <div className="mb-4">
-                        <div className="flex items-center justify-between mb-2">
+                    <div className="mb-3 sm:mb-4">
+                        <div className="flex items-center justify-between mb-1 sm:mb-2">
                             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Original Prompt
                             </label>
@@ -262,21 +262,21 @@ const PromptEnhancerApp = () => {
                         <textarea
                             value={originalPrompt}
                             onChange={(e) => setOriginalPrompt(e.target.value)}
-                            className="w-full h-[100px] p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                            placeholder="Write a blog post about AI's impact on digital marketing, focusing on how small businesses can leverage AI tools to improve their marketing strategies."
+                            className="w-full h-[100px] p-3 sm:p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 prompt-textarea"
+                            placeholder="Write a blog post about AI → Detailed, structured guidance for creating an engaging article"
                         />
                     </div>
 
                     {/* Enhance Button */}
-                    <div className="flex justify-center mb-4">
+                    <div className="flex justify-center mb-3 sm:mb-4">
                         <button
                             onClick={enhancePrompt}
                             disabled={isLoading}
-                            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-800 text-white font-medium rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-800 text-white font-medium rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150 flex items-center disabled:opacity-50 disabled:cursor-not-allowed enhance-button"
                         >
                             {isLoading ? (
                                 <>
-                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 sm:h-5 sm:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
@@ -284,7 +284,7 @@ const PromptEnhancerApp = () => {
                                 </>
                             ) : (
                                 <>
-                                    <Sparkles className="mr-2 h-5 w-5" />
+                                    <Sparkles className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                                     Enhance Prompt
                                 </>
                             )}
@@ -292,54 +292,55 @@ const PromptEnhancerApp = () => {
                     </div>
 
                     {error && (
-                        <div className="mt-2 mb-4 flex justify-center">
-                            <div className="px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg flex items-center">
-                                <span className="text-sm">{error}</span>
+                        <div className="mt-1 mb-3 flex justify-center">
+                            <div className="px-3 sm:px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg flex items-center text-sm">
+                                <span>{error}</span>
                             </div>
                         </div>
                     )}
 
-                    {/* Enhanced Prompt Result - Always visible */}
+                    {/* Enhanced Prompt Result */}
                     <div className="flex-1 flex flex-col overflow-hidden">
-                        <div className="flex justify-between items-center mb-2">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-1 sm:mb-2 gap-2 sm:gap-0">
                             <div className="flex items-center">
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Enhanced Prompt
                                 </label>
                             </div>
                             {enhancedPrompt && (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                                     <button
                                         onClick={copyToClipboard}
-                                        className={`text-sm flex items-center px-3 py-1 rounded transition-colors mr-2 ${copied
+                                        className={`text-xs sm:text-sm flex items-center px-2 sm:px-3 py-1 rounded transition-colors ${copied
                                             ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                                             : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                                             }`}
                                     >
                                         {copied ? (
                                             <>
-                                                <Check className="h-4 w-4 mr-1" />
+                                                <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                                                 Copied
                                             </>
                                         ) : (
                                             <>
-                                                <Copy className="h-4 w-4 mr-1" />
+                                                <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                                                 Copy
                                             </>
                                         )}
                                     </button>
                                     <button
                                         onClick={tryWithClaude}
-                                        className={`text-sm flex items-center px-3 py-1 rounded transition-colors bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 ${tryCopied ? 'opacity-70' : ''}`}
+                                        className={`text-xs sm:text-sm flex items-center px-2 sm:px-3 py-1 rounded transition-colors bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 ${tryCopied ? 'opacity-70' : ''}`}
                                     >
                                         {tryCopied ? (
                                             <>
-                                                <Check className="h-4 w-4 mr-1" />
-                                                Copied & Opened
+                                                <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                                <span className="hidden sm:inline">Copied & Opened</span>
+                                                <span className="inline sm:hidden">Copied</span>
                                             </>
                                         ) : (
                                             <>
-                                                <ExternalLink className="h-4 w-4 mr-1" />
+                                                <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                                                 Try with Claude
                                             </>
                                         )}
@@ -347,14 +348,14 @@ const PromptEnhancerApp = () => {
                                 </div>
                             )}
                         </div>
-                        <div className="flex-1 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg whitespace-pre-wrap overflow-y-auto text-gray-800 dark:text-gray-200">
+                        <div className="flex-1 p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg whitespace-pre-wrap overflow-y-auto text-gray-800 dark:text-gray-200 result-area">
                             {renderEnhancedPrompt()}
                         </div>
                     </div>
                 </div>
 
                 {/* Footer with Typewriter Effect */}
-                <div className="bg-gray-50 dark:bg-gray-800 px-6 py-3 border-t border-gray-200 dark:border-gray-700">
+                <div className="bg-gray-50 dark:bg-gray-800 px-4 sm:px-6 py-2 sm:py-3 border-t border-gray-200 dark:border-gray-700">
                     <TypewriterText />
                 </div>
             </div>

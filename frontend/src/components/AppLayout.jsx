@@ -23,9 +23,9 @@ const ThemeToggle = () => {
     // Effect to handle initial dark mode state and persist preference
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme');
-        const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-        const initialMode = savedTheme === 'dark' || (!savedTheme && prefersDarkMode);
+        // Set default to light mode instead of checking system preference
+        const initialMode = savedTheme === 'dark';
         setIsDarkMode(initialMode);
 
         if (initialMode) {
