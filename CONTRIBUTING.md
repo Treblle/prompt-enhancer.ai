@@ -12,8 +12,8 @@ This project and everyone participating in it are governed by our [Code of Condu
 
 ### Reporting Bugs 🐛
 
-1. **Ensure the bug is not already reported** by searching existing [Issues](https://github.com/Rahulkhinchi03/prompt-enhancer.ai/issues)
-2. If you can't find an existing issue, [open a new one](https://github.com/Rahulkhinchi03/prompt-enhancer.ai/issues/new)
+1. **Ensure the bug is not already reported** by searching existing [Issues](https://github.com/Treblle/prompt-enhancer.ai/issues)
+2. If you can't find an existing issue, [open a new one](https://github.com/Treblle/prompt-enhancer.ai/issues/new)
 3. Include:
    - A clear title
    - Detailed description
