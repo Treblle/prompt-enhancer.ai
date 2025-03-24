@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 
 // Check if .env file exists
 const envPath = path.join(__dirname, '.env');
-if (!fs.existsSync(envPath)) {
+if (process.env.NODE_ENV !== 'production' && !fs.existsSync(envPath)) {
     console.error('\n❌ ERROR: .env file not found!');
     console.error('Please create a .env file based on .env.example with your API keys.\n');
     console.error('$ cp .env.example .env\n');
