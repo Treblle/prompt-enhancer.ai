@@ -212,7 +212,7 @@ const PromptEnhancerApp = () => {
                             value={originalPrompt}
                             onChange={(e) => setOriginalPrompt(e.target.value)}
                             className="w-full h-[100px] p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                            placeholder="Write your basic prompt here..."
+                            placeholder="Write a blog post about AI → Detailed, structured guidance for creating an engaging article"
                         />
                     </div>
 
