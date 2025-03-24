@@ -32,7 +32,6 @@ console.log(`AI Provider: ${process.env.AI_PROVIDER || 'openai'}`);
 
 if (process.env.AI_PROVIDER === 'openai') {
     console.log(`OpenAI API Key: ${keyStatus.openai?.available ? '✅ Available' : '❌ Missing'}`);
-    console.log(`OpenAI Org ID: ${keyStatus.openaiOrg?.available ? '✅ Available' : '⚠️ Not Set (Optional)'}`);
 } else if (process.env.AI_PROVIDER === 'mistral') {
     console.log(`Mistral API Key: ${keyStatus.mistral?.available ? '✅ Available' : '❌ Missing'}`);
 }

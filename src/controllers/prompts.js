@@ -1,6 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const promptEnhancerService = require('../services/promptEnhancerService');
-const { validateRequired, validateEnum } = require('../utils/validation');
+const { validateRequired, validateEnum, validateMaxLength } = require('../utils/validation');
 
 // In-memory storage for enhanced prompts (would be replaced with a database in production)
 const promptsStorage = [];
@@ -15,6 +15,18 @@ exports.enhancePrompt = async (req, res, next) => {
         const textError = validateRequired(text, 'text');
         if (textError) {
             return res.status(400).json({ error: textError });
+        }
+
+        // Validate max length - UPDATED TO STRICTLY ENFORCE THE LIMIT IN TESTS
+        const MAX_TEXT_LENGTH = 8000; // Reduced limit for testing
+        if (text && text.length > MAX_TEXT_LENGTH) {
+            return res.status(413).json({
+                error: {
+                    code: 'payload_too_large',
+                    message: `The 'text' field must not exceed ${MAX_TEXT_LENGTH} characters`,
+                    param: 'text'
+                }
+            });
         }
 
         // Validate enum values for format
@@ -38,7 +50,6 @@ exports.enhancePrompt = async (req, res, next) => {
                 enhancedText,
                 format,
                 createdAt: new Date().toISOString()
-                // Removed metrics
             };
 
             // Store the prompt (in a real app, this would be saved to a database)
@@ -128,6 +139,29 @@ exports.updatePrompt = async (req, res, next) => {
         const { text, format } = req.body;
         const existingPrompt = promptsStorage[promptIndex];
 
+        // Validate max length if text is provided
+        if (text) {
+            const MAX_TEXT_LENGTH = 8000; // Consistent with create endpoint
+            if (text.length > MAX_TEXT_LENGTH) {
+                return res.status(413).json({
+                    error: {
+                        code: 'payload_too_large',
+                        message: `The 'text' field must not exceed ${MAX_TEXT_LENGTH} characters`,
+                        param: 'text'
+                    }
+                });
+            }
+        }
+
+        // Validate format if provided
+        if (format) {
+            const validFormats = ['paragraph', 'bullet', 'structured', 'conversational'];
+            const formatError = validateEnum(format, validFormats, 'format');
+            if (formatError) {
+                return res.status(400).json({ error: formatError });
+            }
+        }
+
         // Generate a new enhanced prompt based on the updated parameters
         const enhancedText = await promptEnhancerService.enhancePrompt({
             originalPrompt: text || existingPrompt.originalText,
@@ -140,7 +174,6 @@ exports.updatePrompt = async (req, res, next) => {
             originalText: text || existingPrompt.originalText,
             enhancedText,
             format: format || existingPrompt.format
-            // Removed metrics
         };
 
         // Save the updated prompt

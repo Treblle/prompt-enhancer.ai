@@ -184,17 +184,12 @@ async function saveKeys() {
         rl.question('OpenAI API Key: ', resolve);
     });
 
-    const openaiOrgId = await new Promise((resolve) => {
-        rl.question('OpenAI Organization ID: ', resolve);
-    });
-
     const mistralKey = await new Promise((resolve) => {
         rl.question('Mistral API Key: ', resolve);
     });
 
     const apiKeys = {
         openai: openaiKey.trim(),
-        openaiOrg: openaiOrgId.trim(),
         mistral: mistralKey.trim(),
         timestamp: new Date().toISOString()
     };
@@ -234,7 +229,6 @@ async function viewKeys() {
         console.log('\n🔑 Your API Keys:');
         console.log('-------------------------');
         console.log(`OpenAI API Key: ${maskKey(decryptedKeys.openai)}`);
-        console.log(`OpenAI Org ID: ${maskKey(decryptedKeys.openaiOrg)}`);
         console.log(`Mistral API Key: ${maskKey(decryptedKeys.mistral)}`);
         console.log('-------------------------');
         console.log(`Encrypted on: ${decryptedKeys.timestamp}`);
@@ -250,7 +244,6 @@ async function viewKeys() {
             console.log('\n⚠️  FULL API KEYS (Be careful who sees your screen):');
             console.log('-------------------------');
             console.log(`OpenAI API Key: ${decryptedKeys.openai || 'Not set'}`);
-            console.log(`OpenAI Org ID: ${decryptedKeys.openaiOrg || 'Not set'}`);
             console.log(`Mistral API Key: ${decryptedKeys.mistral || 'Not set'}`);
             console.log('-------------------------\n');
         }

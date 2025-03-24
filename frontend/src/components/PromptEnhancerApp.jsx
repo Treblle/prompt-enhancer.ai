@@ -3,6 +3,15 @@ import { Sparkles, Copy, Check } from 'lucide-react';
 
 import apiService from '../services/apiService';
 
+// Helper function to decode HTML entities on the frontend
+function decodeHtmlEntities(text) {
+    if (!text) return text;
+
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+}
+
 const TypewriterText = () => {
     const [textIndex, setTextIndex] = useState(0);
     const [charIndex, setCharIndex] = useState(0);
@@ -134,7 +143,19 @@ const PromptEnhancerApp = () => {
 
             // Safely extract data from the response
             if (response && typeof response.enhancedText === 'string') {
-                setEnhancedPrompt(response.enhancedText);
+                // Decode any HTML entities before setting the state
+                let decodedText = response.enhancedText;
+
+                // Manual replacement of common HTML entities
+                decodedText = decodedText
+                    .replace(/&quot;/g, '"')
+                    .replace(/&#039;/g, "'")
+                    .replace(/&apos;/g, "'")
+                    .replace(/&lt;/g, '<')
+                    .replace(/&gt;/g, '>')
+                    .replace(/&amp;/g, '&');
+
+                setEnhancedPrompt(decodedText);
             } else {
                 // Handle unexpected response format
                 console.error('Unexpected API response format:', response);
@@ -148,6 +169,20 @@ const PromptEnhancerApp = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    // Render the enhanced prompt result
+    const renderEnhancedPrompt = () => {
+        if (!enhancedPrompt) {
+            return (
+                <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-600">
+                    Enhanced prompt will appear here after clicking the "Enhance Prompt" button
+                </div>
+            );
+        }
+
+        // Return the enhanced prompt with manually decoded HTML entities
+        return enhancedPrompt;
     };
 
     return (
@@ -246,11 +281,7 @@ const PromptEnhancerApp = () => {
                             )}
                         </div>
                         <div className="flex-1 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg whitespace-pre-wrap overflow-y-auto text-gray-800 dark:text-gray-200">
-                            {enhancedPrompt ? enhancedPrompt : (
-                                <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-600">
-                                    Enhanced prompt will appear here after clicking the "Enhance Prompt" button
-                                </div>
-                            )}
+                            {renderEnhancedPrompt()}
                         </div>
                     </div>
                 </div>

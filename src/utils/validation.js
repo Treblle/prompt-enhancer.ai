@@ -27,7 +27,7 @@ exports.validateEnum = (value, allowedValues, fieldName) => {
  * @returns {Object|null} Error object or null if validation passes
  */
 exports.validateRequired = (value, fieldName) => {
-    if (!value) {
+    if (value === undefined || value === null || value === '') {
         return {
             code: 'missing_required_field',
             message: `The "${fieldName}" field is required`,

@@ -8,7 +8,12 @@
     "server": "nodemon server.js",
     "client": "cd frontend && npm start",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "test": "node test-api.js",
+    "test": "jest",
+    "test:unit": "jest test/unit",
+    "test:integration": "jest test/integration",
+    "test:e2e": "jest test/e2e",
+    "test:security": "jest test/security",
+    "test:coverage": "jest --coverage",
     "lint": "eslint src/**/*.js",
     "setup": "node tools/setup-env.js setup",
     "encrypt-keys": "node tools/encrypt-keys.js",
@@ -42,6 +47,9 @@
   "devDependencies": {
     "concurrently": "^9.1.2",
     "eslint": "^8.36.0",
-    "nodemon": "^3.0.1"
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.1",
+    "sinon": "^19.0.4",
+    "supertest": "^7.1.0"
   }
 }

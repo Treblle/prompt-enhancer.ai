@@ -184,17 +184,11 @@ async function setupEnv() {
             rl.question('OpenAI API Key: ', resolve);
         });
 
-        const openaiOrgId = await new Promise((resolve) => {
-            rl.question('OpenAI Organization ID (optional): ', resolve);
-        });
 
         if (openaiKey) {
             envContent = envContent.replace(/OPENAI_API_KEY=.*/, `OPENAI_API_KEY=${openaiKey}`);
         }
 
-        if (openaiOrgId) {
-            envContent = envContent.replace(/# OPENAI_ORG_ID=.*/, `OPENAI_ORG_ID=${openaiOrgId}`);
-        }
     } else if (aiProvider === 'mistral') {
         const mistralKey = await new Promise((resolve) => {
             rl.question('Mistral API Key: ', resolve);
@@ -266,13 +260,6 @@ function printInfo() {
         console.log(`OpenAI API Key: ${key.substring(0, 4)}${'*'.repeat(10)}${key.substring(key.length - 4)}`);
     } else {
         console.log('OpenAI API Key: Not set');
-    }
-
-    if (envVars.OPENAI_ORG_ID) {
-        const orgId = envVars.OPENAI_ORG_ID;
-        console.log(`OpenAI Org ID: ${orgId.substring(0, 4)}${'*'.repeat(6)}${orgId.substring(orgId.length - 4)}`);
-    } else {
-        console.log('OpenAI Org ID: Not set');
     }
 
     if (envVars.MISTRAL_API_KEY) {

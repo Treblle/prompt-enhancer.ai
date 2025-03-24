@@ -21,9 +21,6 @@ PATTERNS=(
     # Mistral AI API key patterns
     "[a-zA-Z0-9]{32,}"
     
-    # Organization ID patterns
-    "org-[a-zA-Z0-9]{20,}"
-    
     # Generic API key-like patterns
     "api[_-]?key[^a-zA-Z0-9]"
     "api[_-]?secret[^a-zA-Z0-9]"

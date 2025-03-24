@@ -72,7 +72,7 @@ The `npm run setup` command helps you securely configure your environment:
 - Guides you through adding your API keys
 - Installs security measures to prevent key exposure
 
-### Encrypting Your Keys (OPTIONAL)
+### Encrypting Your Keys
 
 For additional security, you can encrypt your API keys:
 
@@ -120,13 +120,18 @@ The project uses `.env` files for configuration. For required variables, refer t
 
 We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-
 # Powered By Treblle
 
-Treblle](https://treblle.com) is an API Intelligence platform that empowers companies looking to connect the dots between APIs and their business development.
+[Treblle](https://treblle.com) is an API Intelligence platform that empowers companies looking to connect the dots between APIs and their business development.
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/54f0c084-65bb-4431-b80d-cceab6c63dc3"/>
 </div>
+
+## 📞 Support
+
+Encounter an issue? [Open an issue](https://github.com/Rahulkhinchi03/prompt-enhancer/issues) on GitHub.
+
+---
 
 **Happy Prompting! 🎉**

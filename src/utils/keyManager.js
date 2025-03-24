@@ -31,12 +31,6 @@ class KeyManager {
                 prefix: 'sk-'
             });
 
-            // Initialize OpenAI Org ID if configured
-            this._initializeKey('openaiOrg', process.env.OPENAI_ORG_ID, {
-                required: false,
-                prefix: 'org-'
-            });
-
             // Initialize Mistral API key if configured
             this._initializeKey('mistral', process.env.MISTRAL_API_KEY, {
                 required: process.env.AI_PROVIDER === 'mistral'

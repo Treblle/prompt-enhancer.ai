@@ -77,7 +77,6 @@ if (!fs.existsSync(envExamplePath)) {
     // Check for real API keys in .env.example
     const apiKeyPatterns = [
         { pattern: /sk-[a-zA-Z0-9]{32,}/, description: 'OpenAI API Key' },
-        { pattern: /org-[a-zA-Z0-9]{20,}/, description: 'OpenAI Org ID' },
         { pattern: /[a-zA-Z0-9]{32,}/, description: 'Potential API Key' }
     ];
 
@@ -167,7 +166,6 @@ try {
 
     const apiKeyPatterns = [
         { pattern: /sk-[a-zA-Z0-9]{32,}/, description: 'OpenAI API Key' },
-        { pattern: /org-[a-zA-Z0-9]{20,}/, description: 'OpenAI Org ID' },
         { pattern: /[a-zA-Z0-9]{32,}(?!\.[\w-]+)/, description: 'Potential API Key (32+ chars)' },
         { pattern: /api[_-]?key\s*[=:]\s*['"][^'"]+['"]/, description: 'API key assignment' },
         { pattern: /secret\s*[=:]\s*['"][^'"]+['"]/, description: 'Secret assignment' }

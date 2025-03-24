@@ -62,7 +62,6 @@ const config = {
         provider: process.env.AI_PROVIDER || 'openai',
         openai: {
             apiKey: process.env.OPENAI_API_KEY,
-            organizationId: process.env.OPENAI_ORG_ID,
             defaultModel: 'gpt-3.5-turbo'
         },
         mistral: {
