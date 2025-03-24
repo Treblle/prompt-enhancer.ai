@@ -4,6 +4,7 @@
   "description": "API that takes basic prompts and enhances them for better AI responses",
   "main": "server.js",
   "scripts": {
+    "build": "cd frontend && npm install && npm run build",
     "start": "node server.js",
     "server": "nodemon server.js",
     "client": "cd frontend && npm start",
