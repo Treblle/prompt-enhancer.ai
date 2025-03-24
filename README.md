@@ -120,7 +120,6 @@ The project uses `.env` files for configuration. For required variables, refer t
 
 We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-
 # Powered By Treblle
 
 [Treblle](https://treblle.com) is an API Intelligence platform that empowers companies looking to connect the dots between APIs and their business development.
