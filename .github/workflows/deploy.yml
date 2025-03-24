@@ -16,8 +16,14 @@ jobs:
         with:
           node-version: '18'
           
-      - name: Install dependencies
-        run: npm ci
+      - name: Install backend dependencies
+        run: npm install
+        
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+          cd ..
         
       - name: Create .env file
         run: |
@@ -31,6 +37,8 @@ jobs:
       - name: Create frontend environment file
         run: |
           echo "REACT_APP_API_URL=/v1" > frontend/.env.production
-          echo "REACT_APP_API_KEY=${{ secrets.API_KEY  }}" >> frontend/.env.production
-          echo "REACT_APP_API_KEY=${{ secrets.REACT_APP_API_KEY }}" >> frontend/.env
-          echo "REACT_APP_API_KEY=${{ secrets.REACT_APP_API_KEY }}" >> frontend/.env.local
+          echo "REACT_APP_API_KEY=${{ secrets.API_KEY }}" >> frontend/.env.production
+          echo "REACT_APP_API_URL=/v1" > frontend/.env
+          echo "REACT_APP_API_KEY=${{ secrets.API_KEY }}" >> frontend/.env
+          echo "REACT_APP_API_URL=/v1" > frontend/.env.local 
+          echo "REACT_APP_API_KEY=${{ secrets.API_KEY }}" >> frontend/.env.local
