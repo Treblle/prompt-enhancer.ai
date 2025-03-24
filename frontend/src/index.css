@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Theme Toggle Styles */
+.hidden-checkbox {
+    display: none;
+}
+
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toggle-button {
+    background: #d1d5db;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s, transform 0.5s ease-in-out;
+}
+
+.toggle-button:hover {
+    background: #9ca3af;
+}
+
+body.dark .toggle-button {
+    background: #1f2937;
+}
+
+body.dark .toggle-button:hover {
+    background: #374151;
+}
+
+.icon-wrapper {
+    position: relative;
+    width: 24px;
+    height: 24px;
+}
+
+.icon {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    stroke: currentColor;
+    transition: opacity 0.3s ease-in-out, transform 0.5s ease-in-out;
+}
+
+.moon {
+    opacity: 0;
+    transform: rotate(-180deg);
+}
+
+.hidden-checkbox:checked+.toggle-button .sun {
+    opacity: 0;
+    transform: rotate(180deg);
+}
+
+.hidden-checkbox:checked+.toggle-button .moon {
+    opacity: 1;
+    transform: rotate(0deg);
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background 0.4s, color 0.4s;
+}
+
+body.light {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+body.dark {
+    background: #111827;
+    color: #f3f4f6;
+}
+
+code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+        monospace;
+}

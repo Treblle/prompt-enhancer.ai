@@ -1,0 +1,238 @@
+openapi: 3.0.3
+info:
+  title: AI Prompt Enhancer API
+  description: An API that transforms basic prompts into optimized, context-rich instructions for AI language models
+  version: 1.0.0
+  contact:
+    name: Rahul Khinchi
+    email: support@prompt-enhancer.ai
+    url: https://prompt-enhancer.ai
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://prompt-enhancer.ai/v1
+    description: Production server
+  - url: http://localhost:5000/v1
+    description: Local development server
+
+tags:
+  - name: Prompts
+    description: Prompt enhancement and management operations
+  - name: Authentication
+    description: API key authentication and access management
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /prompts:
+    post:
+      summary: Enhance a prompt
+      description: Takes a basic prompt and returns an optimized, context-rich version
+      operationId: enhancePrompt
+      tags:
+        - Prompts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromptRequest"
+            examples:
+              basicPrompt:
+                value:
+                  text: "Write about quantum computing"
+                  format: "structured"
+      responses:
+        "200":
+          description: Successfully enhanced prompt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptResponse"
+        "400":
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Too many requests - Rate limit exceeded
+        "500":
+          description: Internal server error
+
+    get:
+      summary: List enhanced prompts
+      description: Returns a paginated list of previously enhanced prompts
+      operationId: listPrompts
+      tags:
+        - Prompts
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        "200":
+          description: List of prompts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  prompts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PromptResponse"
+                  total:
+                    type: integer
+
+  /prompts/{id}:
+    get:
+      summary: Get a specific prompt
+      description: Retrieves details of a single enhanced prompt
+      operationId: getPrompt
+      tags:
+        - Prompts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Prompt details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptResponse"
+        "404":
+          description: Prompt not found
+
+    put:
+      summary: Update a prompt
+      description: Updates and re-enhances a previously created prompt
+      operationId: updatePrompt
+      tags:
+        - Prompts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromptRequest"
+      responses:
+        "200":
+          description: Prompt successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptResponse"
+        "404":
+          description: Prompt not found
+
+    delete:
+      summary: Delete a prompt
+      description: Removes a prompt from history
+      operationId: deletePrompt
+      tags:
+        - Prompts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Prompt successfully deleted
+        "404":
+          description: Prompt not found
+
+components:
+  schemas:
+    PromptRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: The original prompt text
+          minLength: 1
+          maxLength: 1000
+          example: "Write about quantum computing"
+        format:
+          type: string
+          description: Desired output format
+          enum:
+            - paragraph
+            - bullet
+            - structured
+            - conversational
+          default: structured
+
+    PromptResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the enhanced prompt
+          example: "prompt_abc123"
+        originalText:
+          type: string
+          description: The original prompt text
+        enhancedText:
+          type: string
+          description: The enhanced, more detailed prompt text
+          example: "As a professional expert in quantum computing, provide a comprehensive overview..."
+        format:
+          type: string
+          description: The format of the enhanced prompt
+          enum:
+            - paragraph
+            - bullet
+            - structured
+            - conversational
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp of prompt creation
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          description: Additional error details (when available)
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication and access control
