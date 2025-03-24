@@ -180,15 +180,6 @@ components:
           minLength: 1
           maxLength: 1000
           example: "Write about quantum computing"
-        format:
-          type: string
-          description: Desired output format
-          enum:
-            - paragraph
-            - bullet
-            - structured
-            - conversational
-          default: structured
 
     PromptResponse:
       type: object
@@ -204,14 +195,6 @@ components:
           type: string
           description: The enhanced, more detailed prompt text
           example: "As a professional expert in quantum computing, provide a comprehensive overview..."
-        format:
-          type: string
-          description: The format of the enhanced prompt
-          enum:
-            - paragraph
-            - bullet
-            - structured
-            - conversational
         createdAt:
           type: string
           format: date-time
