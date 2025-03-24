@@ -2,11 +2,62 @@
 
 ## Welcome Contributors! 🌍
 
-It's people like you that make the open-source community such an amazing place to learn, inspire, and create.
+Thank you for your interest in contributing to the AI Prompt Enhancer project! It's people like you that make the open-source community such an amazing place to learn, inspire, and create.
 
 ## Code of Conduct 🤝
 
 This project and everyone participating in it are governed by our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+
+## Environment Setup for Development 🔧
+
+### Setting Up Your Development Environment
+
+1. **Fork and clone the repository**
+
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/prompt-enhancer.ai.git
+   cd prompt-enhancer.ai
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   npm install
+   cd frontend
+   npm install
+   cd ..
+   ```
+
+3. **Set up environment variables**
+
+   ```bash
+   # Run our interactive setup script
+   npm run setup
+   ```
+
+   The setup script will guide you through creating your local `.env` file and configuring API keys.
+
+### API Keys Security 🔒
+
+**IMPORTANT:** API keys and secrets should never be committed to the repository.
+
+- For local development, your `.env` file is automatically added to `.gitignore` to prevent accidental commits
+- For deployment and CI/CD, we use GitHub Secrets (described below)
+- When submitting PRs, never include actual API keys in your code or comments
+
+### Setting Up GitHub Secrets for CI/CD (For Maintainers)
+
+If you're a maintainer or setting up your own fork with CI/CD:
+
+1. Go to your GitHub repository
+2. Click on "Settings" → "Secrets and variables" → "Actions"
+3. Add the following secrets:
+   - `API_KEY` - Authentication key for the API
+   - `REACT_APP_API_KEY` - SAME AS API_KEY
+   - `OPENAI_API_KEY` - Your OpenAI API key
+   - `MISTRAL_API_KEY` - Your Mistral AI API key (if using Mistral)
+
+Our GitHub Actions workflows will use these secrets to build and deploy without exposing sensitive data.
 
 ## How Can I Contribute? 🚀
 
@@ -30,7 +81,7 @@ This project and everyone participating in it are governed by our [Code of Condu
    - Potential benefits
    - Implementation considerations (if you have thoughts)
 
-### Pull Requests 🔧
+### Pull Requests Process 🔧
 
 1. Fork the repository
 2. Create a feature branch
@@ -39,59 +90,72 @@ This project and everyone participating in it are governed by our [Code of Condu
    git checkout -b feature/amazing-feature
    ```
 
-3. Commit your changes
+3. Make your changes
+
+4. Test your changes thoroughly
 
    ```bash
-   git commit -m 'Add some amazing feature'
+   npm test
    ```
 
-4. Push to the branch
+5. Make sure your code follows our coding guidelines
+
+6. Commit your changes using meaningful commit messages
+
+   ```bash
+   git commit -m 'Add: Implement amazing feature'
+   ```
+
+7. Push to the branch
 
    ```bash
    git push origin feature/amazing-feature
    ```
 
-5. Open a Pull Request
+8. Open a Pull Request
 
-## Development Setup 💻
+9. Wait for review and address any feedback
 
-### Prerequisites
+## Using Act for Testing GitHub Actions Locally 🧪
 
-- Node.js (v16+)
-- npm or yarn
-- Git
+You can test GitHub Actions workflows locally using [Act](https://github.com/nektos/act).
 
-### Local Development
+### Installing Act on Windows
 
-1. Clone the repository
+#### Option 1: Using Chocolatey
 
-   ```bash
-   git clone https://github.com/Rahulkhinchi03/prompt-enhancer.ai.git
-   cd prompt-enhancer.ai
-   ```
+```bash
+choco install act-cli
+```
 
-2. Setup Frontend
+#### Option 2: Using Git Bash with Docker
 
-   ```bash
-   cd frontend
-   npm install
-   ```
+1. Make sure Docker Desktop is installed and running
+2. In Git Bash, run:
 
-2. Setup Backend
+```bash
+# Download the latest binary
+curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | bash
+```
 
-   ```bash
-    cd ..
-   npm install
-   npm run setup
-   ```
+#### Option 3: Manual Installation
 
-4. Run the Application
+1. Download the latest release from [GitHub Releases](https://github.com/nektos/act/releases)
+2. Extract the executable and place it in a directory in your PATH
 
-   ```bash
-   npm run dev  # Starts both frontend and backend
-   ```
+### Using Act with GitHub Secrets
 
-## Coding Guidelines 📝
+To run GitHub Actions workflows locally with secrets:
+
+```bash
+# Run the default workflow with secrets
+act -s API_KEY=test_key -s OPENAI_API_KEY=test_openai_key
+
+# Run a specific workflow
+act push -W .github/workflows/deploy.yml -s API_KEY=test_key
+```
+
+## Development Guidelines 📝
 
 ### Backend (Node.js)
 
@@ -100,6 +164,7 @@ This project and everyone participating in it are governed by our [Code of Condu
 - Add comments for complex logic
 - Write modular, reusable code
 - Handle errors gracefully
+- Never log sensitive information like API keys
 
 ### Frontend (React)
 
@@ -112,10 +177,14 @@ This project and everyone participating in it are governed by our [Code of Condu
 ### Git Commit Messages
 
 - Use clear, descriptive commit messages
-- Use present tense
-- Use the imperative mood
-- Limit the first line to 72 characters
-- Reference issue numbers when applicable
+- Use the format: `Type: Subject` where Type is one of:
+  - `Add:` (new feature)
+  - `Fix:` (bug fix)
+  - `Docs:` (documentation changes)
+  - `Style:` (formatting, no code change)
+  - `Refactor:` (refactoring code)
+  - `Test:` (adding tests, refactoring tests)
+  - `Chore:` (updating build tasks, package manager configs)
 
 ## Testing 🧪
 
@@ -126,7 +195,7 @@ This project and everyone participating in it are governed by our [Code of Condu
   ```
 
 - Add tests for new features
-- Ensure 100% test coverage for new code
+- Ensure all tests pass before submitting a PR
 
 ## Performance and Security 🔒
 
@@ -134,6 +203,11 @@ This project and everyone participating in it are governed by our [Code of Condu
 - Implement proper error handling
 - Never commit sensitive information
 - Use environment variables for configuration
+- Run security checks before submitting PRs
+
+  ```bash
+  npm run security-check
+  ```
 
 ## Code Review Process 🕵️
 
