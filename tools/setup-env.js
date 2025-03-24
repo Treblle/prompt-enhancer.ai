@@ -6,6 +6,8 @@
  * This tool helps set up the .env file securely for development.
  * It can generate API keys and configure environment variables
  * without putting sensitive information in source code.
+ * 
+ * Now with support for CI/CD environments and GitHub Actions.
  */
 
 const fs = require('fs');
@@ -20,6 +22,7 @@ const GITIGNORE_PATH = path.join(__dirname, '../.gitignore');
 const FRONTEND_ENV_PATH = path.join(__dirname, '../frontend/.env');
 const FRONTEND_ENV_DEV_PATH = path.join(__dirname, '../frontend/.env.development');
 const FRONTEND_ENV_LOCAL_PATH = path.join(__dirname, '../frontend/.env.local');
+const FRONTEND_ENV_PROD_PATH = path.join(__dirname, '../frontend/.env.production');
 
 // Set up readline interface
 const rl = readline.createInterface({
@@ -28,11 +31,80 @@ const rl = readline.createInterface({
 });
 
 /**
+ * Check if running in CI environment
+ * @returns {boolean} - Whether running in CI environment
+ */
+function isRunningInCI() {
+    return process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+}
+
+/**
+ * Set up environment from CI variables
+ * @returns {boolean} - Whether setup was successful
+ */
+function setupEnvFromCI() {
+    // If running in CI environment, use environment variables directly
+    if (isRunningInCI()) {
+        console.log('Setting up environment from CI variables');
+
+        // Ensure minimum required variables exist
+        const requiredVars = ['API_KEY', 'AI_PROVIDER'];
+        const missingVars = requiredVars.filter(varName => !process.env[varName]);
+
+        if (missingVars.length > 0) {
+            console.error(`Missing required environment variables: ${missingVars.join(', ')}`);
+            return false;
+        }
+
+        // Check provider-specific variables
+        if (process.env.AI_PROVIDER === 'openai' && !process.env.OPENAI_API_KEY) {
+            console.error('Missing OPENAI_API_KEY for OpenAI provider');
+            return false;
+        }
+
+        if (process.env.AI_PROVIDER === 'mistral' && !process.env.MISTRAL_API_KEY) {
+            console.error('Missing MISTRAL_API_KEY for Mistral provider');
+            return false;
+        }
+
+        // Create .env file from environment variables
+        try {
+            let envContent = `# Environment generated from CI/CD process\n`;
+            envContent += `NODE_ENV=${process.env.NODE_ENV || 'production'}\n`;
+            envContent += `PORT=${process.env.PORT || '5000'}\n`;
+            envContent += `API_KEY=${process.env.API_KEY}\n`;
+            envContent += `AI_PROVIDER=${process.env.AI_PROVIDER}\n`;
+
+            if (process.env.AI_PROVIDER === 'openai') {
+                envContent += `OPENAI_API_KEY=${process.env.OPENAI_API_KEY}\n`;
+            } else if (process.env.AI_PROVIDER === 'mistral') {
+                envContent += `MISTRAL_API_KEY=${process.env.MISTRAL_API_KEY}\n`;
+            }
+
+            envContent += `CORS_ALLOWED_ORIGINS=${process.env.CORS_ALLOWED_ORIGINS || 'https://prompt-enhancer.ai'}\n`;
+
+            fs.writeFileSync(ENV_PATH, envContent);
+            console.log('✅ .env file created from CI variables');
+
+            // Also create frontend .env file if needed
+            syncFrontendApiKey(process.env.API_KEY);
+
+            return true;
+        } catch (error) {
+            console.error('Error setting up environment from CI variables:', error.message);
+            return false;
+        }
+    }
+
+    return false;
+}
+
+/**
  * Generate a random API key
  * @returns {string} - Random API key
  */
 function generateApiKey() {
-    return crypto.randomBytes(24).toString('base64').replace(/[+/=]/g, '');
+    return crypto.randomBytes(24).toString('hex');
 }
 
 /**
@@ -75,7 +147,8 @@ async function syncFrontendApiKey(apiKey) {
         const frontendEnvPaths = [
             FRONTEND_ENV_PATH,
             FRONTEND_ENV_DEV_PATH,
-            FRONTEND_ENV_LOCAL_PATH
+            FRONTEND_ENV_LOCAL_PATH,
+            FRONTEND_ENV_PROD_PATH
         ];
 
         for (const envPath of frontendEnvPaths) {
@@ -100,7 +173,15 @@ async function syncFrontendApiKey(apiKey) {
                 }
             } else {
                 // Create new file with API key
-                envContent = `REACT_APP_API_URL=http://localhost:5000/v1\nREACT_APP_API_KEY=${apiKey}\n`;
+                let baseUrl = 'http://localhost:5000/v1';
+
+                // Use appropriate URL for different environments
+                if (envPath.includes('.production')) {
+                    baseUrl = '/v1'; // For production, use relative path
+                    console.log('💡 Setting production API URL to relative path: ' + baseUrl);
+                }
+
+                envContent = `REACT_APP_API_URL=${baseUrl}\nREACT_APP_API_KEY=${apiKey}\n`;
 
                 // Add development options to .env.development
                 if (envPath === FRONTEND_ENV_DEV_PATH) {
@@ -121,6 +202,13 @@ async function syncFrontendApiKey(apiKey) {
  * Setup the .env file
  */
 async function setupEnv() {
+    // Check for CI environment first
+    if (setupEnvFromCI()) {
+        console.log('✅ Environment setup from CI/CD variables successful!');
+        rl.close();
+        return;
+    }
+
     console.log('\n🔧 Environment Setup Tool');
     console.log('-------------------------');
 
@@ -323,6 +411,8 @@ async function syncKeys() {
         return;
     }
 
+    console.log('🔄 Syncing API keys from backend to frontend...');
+
     try {
         const envContent = fs.readFileSync(ENV_PATH, 'utf8');
         const match = envContent.match(/API_KEY=([^\s\n]+)/);
@@ -346,16 +436,80 @@ async function syncKeys() {
 }
 
 /**
+ * Check frontend production environment file
+ */
+function checkProductionEnv() {
+    console.log('\n🔍 Checking frontend production environment file...');
+
+    if (!fs.existsSync(ENV_PATH)) {
+        console.error('❌ Backend .env file not found. Run "node setup-env.js setup" first.');
+        rl.close();
+        return;
+    }
+
+    if (!fs.existsSync(FRONTEND_ENV_PROD_PATH)) {
+        console.log('❌ Frontend production environment file (.env.production) not found.');
+        console.log('   Running sync to create it...');
+        return syncKeys();
+    }
+
+    // Read the API key from backend
+    const backendEnv = fs.readFileSync(ENV_PATH, 'utf8');
+    const backendKeyMatch = backendEnv.match(/API_KEY=([^\s\n]+)/);
+
+    if (!backendKeyMatch || !backendKeyMatch[1]) {
+        console.error('❌ API key not found in backend .env file.');
+        rl.close();
+        return;
+    }
+
+    const backendKey = backendKeyMatch[1];
+
+    // Read frontend production env
+    const frontendEnv = fs.readFileSync(FRONTEND_ENV_PROD_PATH, 'utf8');
+    const frontendKeyMatch = frontendEnv.match(/REACT_APP_API_KEY=([^\s\n]+)/);
+    const frontendUrlMatch = frontendEnv.match(/REACT_APP_API_URL=([^\s\n]+)/);
+
+    // Check API key
+    if (!frontendKeyMatch || !frontendKeyMatch[1]) {
+        console.log('❌ REACT_APP_API_KEY not found in frontend .env.production file.');
+        console.log('   Running sync to fix it...');
+        return syncKeys();
+    }
+
+    const frontendKey = frontendKeyMatch[1];
+
+    if (frontendKey !== backendKey) {
+        console.log('❌ API key mismatch between backend and frontend production.');
+        console.log('   Running sync to fix it...');
+        return syncKeys();
+    }
+
+    // Check API URL
+    if (!frontendUrlMatch || frontendUrlMatch[1] !== '/v1') {
+        console.log('❌ REACT_APP_API_URL not set to "/v1" in frontend .env.production file.');
+        console.log('   Running sync to fix it...');
+        return syncKeys();
+    }
+
+    console.log('✅ Frontend production environment looks good!');
+    console.log(`   API Key: ${frontendKey.substring(0, 4)}${'*'.repeat(8)}${frontendKey.substring(frontendKey.length - 4)}`);
+    console.log('   API URL: /v1');
+    rl.close();
+}
+
+/**
  * Print help information
  */
 function printHelp() {
     console.log('\n🔧 Environment Setup Tool');
     console.log('------------------------');
     console.log('Usage:');
-    console.log('  node setup-env.js setup  - Set up the .env file');
-    console.log('  node setup-env.js info   - Show current environment configuration');
-    console.log('  node setup-env.js sync   - Sync API keys between backend and frontend');
-    console.log('  node setup-env.js help   - Show this help message\n');
+    console.log('  node setup-env.js setup      - Set up the .env file');
+    console.log('  node setup-env.js info       - Show current environment configuration');
+    console.log('  node setup-env.js sync       - Sync API keys between backend and frontend');
+    console.log('  node setup-env.js production - Check frontend production environment');
+    console.log('  node setup-env.js help       - Show this help message\n');
     rl.close();
 }
 
@@ -373,6 +527,10 @@ function main() {
             break;
         case 'sync':
             syncKeys();
+            break;
+        case 'production':
+        case 'prod':
+            checkProductionEnv();
             break;
         case 'help':
         default:
