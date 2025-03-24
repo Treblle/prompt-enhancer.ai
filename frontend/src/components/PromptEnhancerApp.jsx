@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Sparkles, Copy, Check, ExternalLink } from 'lucide-react';
+import { Sparkles, ExternalLink } from 'lucide-react';
 
 import apiService from '../services/apiService';
 
@@ -7,8 +7,6 @@ const PromptEnhancerApp = () => {
     const [originalPrompt, setOriginalPrompt] = useState('');
     const [enhancedPrompt, setEnhancedPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [copied, setCopied] = useState(false);
-    const [tryCopied, setTryCopied] = useState(false);
     const [error, setError] = useState('');
 
     // TypewriterText Component
@@ -106,69 +104,14 @@ const PromptEnhancerApp = () => {
         );
     };
 
-    // Copy enhanced prompt to clipboard
-    const copyToClipboard = () => {
-        navigator.clipboard.writeText(enhancedPrompt);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
-
-    // Try with Claude - Show instruction modal
+    // Try with Claude - Just open a new Claude window
     const tryWithClaude = () => {
-        // Create a temporary div to show instructions
-        const instructionDiv = document.createElement('div');
-        instructionDiv.innerHTML = `
-            <div id="claude-instruction-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex items-center justify-center">
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6 mx-4 relative dark:border dark:border-gray-700">
-                    <button id="close-instruction" class="absolute top-4 right-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                    <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">Prompt Copied!</h2>
-                    <p class="text-gray-600 dark:text-gray-300 mb-4">
-                        Your enhanced prompt is now on your clipboard. To use it:
-                    </p>
-                    <ul class="list-disc pl-5 mb-6 text-gray-700 dark:text-gray-200 space-y-2">
-                        <li>Open <a href="https://claude.ai" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">Claude.ai</a></li>
-                        <li>Start a new chat</li>
-                        <li>Paste the prompt (Ctrl+V or ⌘+V)</li>
-                    </ul>
-                    <div class="flex justify-center">
-                        <button id="close-instruction-btn" class="bg-blue-600 dark:bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors">
-                            Got it
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(instructionDiv);
-
-        // Add event listeners
-        const overlay = instructionDiv.querySelector('#claude-instruction-overlay');
-        const closeButton = instructionDiv.querySelector('#close-instruction');
-        const closeButtonText = instructionDiv.querySelector('#close-instruction-btn');
-
-        const removeInstructionDiv = () => {
-            document.body.removeChild(instructionDiv);
-        };
-
-        // Close on clicking close button, got it button, or outside the modal
-        closeButton.addEventListener('click', removeInstructionDiv);
-        closeButtonText.addEventListener('click', removeInstructionDiv);
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                removeInstructionDiv();
-            }
-        });
-
-        // Copy to clipboard
-        navigator.clipboard.writeText(enhancedPrompt);
-
-        // Set copied state
-        setTryCopied(true);
-        setTimeout(() => setTryCopied(false), 2000);
+        try {
+            // Open Claude in a new tab
+            window.open('https://claude.ai', '_blank');
+        } catch (err) {
+            console.error('Error opening Claude:', err);
+        }
     };
 
     // Enhance the prompt using the API
@@ -308,42 +251,13 @@ const PromptEnhancerApp = () => {
                                 </label>
                             </div>
                             {enhancedPrompt && (
-                                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                                    <button
-                                        onClick={copyToClipboard}
-                                        className={`text-xs sm:text-sm flex items-center px-2 sm:px-3 py-1 rounded transition-colors ${copied
-                                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                                            }`}
-                                    >
-                                        {copied ? (
-                                            <>
-                                                <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                                Copied
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                                Copy
-                                            </>
-                                        )}
-                                    </button>
+                                <div className="flex items-center">
                                     <button
                                         onClick={tryWithClaude}
-                                        className={`text-xs sm:text-sm flex items-center px-2 sm:px-3 py-1 rounded transition-colors bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 ${tryCopied ? 'opacity-70' : ''}`}
+                                        className="text-xs sm:text-sm flex items-center px-2 sm:px-3 py-1 rounded transition-colors bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700"
                                     >
-                                        {tryCopied ? (
-                                            <>
-                                                <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                                <span className="hidden sm:inline">Copied & Opened</span>
-                                                <span className="inline sm:hidden">Copied</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                                Try with Claude
-                                            </>
-                                        )}
+                                        <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                        Try with Claude
                                     </button>
                                 </div>
                             )}
