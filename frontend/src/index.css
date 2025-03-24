@@ -89,3 +89,12 @@ code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
         monospace;
 }
+
+/* Logo Zoom Hover Effect */
+.logo-zoom {
+    transition: transform 0.3s ease-in-out;
+}
+
+.logo-zoom:hover {
+    transform: scale(1.1);
+}

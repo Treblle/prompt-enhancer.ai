@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Github } from 'lucide-react';
 
 const GithubStarButton = () => {
-    const REPO_URL = 'https://github.com/Rahulkhinchi03/prompt-enhancer';
+    const REPO_URL = 'https://github.com/Treblle/prompt-enhancer.ai';
     return (
         <a
             href={REPO_URL}
@@ -106,7 +106,12 @@ const AppLayout = ({ children }) => {
                         <img
                             src="https://cdn.prod.website-files.com/6446b3c46dac08ff137e3b2b/67614962f09f4a49c0496c8c_logo-color.png"
                             alt="Treblle"
-                            className="h-5"
+                            className="h-5 light:block dark:hidden transition-transform duration-300 hover:scale-110"
+                        />
+                        <img
+                            src="https://treblle.com/treblle-white.svg"
+                            alt="Treblle"
+                            className="h-5 hidden dark:block transition-transform duration-300 hover:scale-110"
                         />
                     </a>
                 </p>
