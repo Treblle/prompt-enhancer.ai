@@ -130,7 +130,7 @@ We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING
 
 ## 📞 Support
 
-Encounter an issue? [Open an issue](https://github.com/Rahulkhinchi03/prompt-enhancer/issues) on GitHub.
+Encounter an issue? [Open an issue](https://github.com/Treblle/prompt-enhancer/issues) on GitHub.
 
 ---
 
