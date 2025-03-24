@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Sparkles, Copy, Check, ExternalLink } from 'lucide-react';
 
 import apiService from '../services/apiService';
@@ -13,7 +13,12 @@ const PromptEnhancerApp = () => {
 
     // TypewriterText Component
     const TypewriterText = () => {
-        const texts = [
+        const [textIndex, setTextIndex] = useState(0);
+        const [charIndex, setCharIndex] = useState(0);
+        const [isDeleting, setIsDeleting] = useState(false);
+        const [displayText, setDisplayText] = useState('');
+
+        const texts = useMemo(() => [
             // Humorous AI Facts
             "AI doesn't dream of electric sheep, it dreams of better prompts.",
             "Fun fact: AI models have read more books than all librarians combined.",
@@ -46,12 +51,7 @@ const PromptEnhancerApp = () => {
             "Are you a neural network? Because I'm falling for your every layer.",
             "Are you a recursive function? Because the more time I spend with you, the deeper our connection gets.",
             "Do you believe in love at first input? Or should I rephrase my prompt?"
-        ];
-
-        const [textIndex, setTextIndex] = useState(0);
-        const [charIndex, setCharIndex] = useState(0);
-        const [isDeleting, setIsDeleting] = useState(false);
-        const [displayText, setDisplayText] = useState('');
+        ], []);
 
         // Memoize getRandomText to prevent unnecessary recreation
         const getRandomText = useCallback(() => {
@@ -97,7 +97,7 @@ const PromptEnhancerApp = () => {
             }, typingSpeed);
 
             return () => clearTimeout(timer);
-        }, [charIndex, isDeleting, textIndex, getRandomText]);
+        }, [charIndex, isDeleting, textIndex, getRandomText, texts]);
 
         return (
             <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2 h-5 italic">
