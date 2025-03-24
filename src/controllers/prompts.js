@@ -29,13 +29,6 @@ exports.enhancePrompt = async (req, res, next) => {
             });
         }
 
-        // Validate enum values for format
-        const validFormats = ['paragraph', 'bullet', 'structured', 'conversational'];
-        const formatError = validateEnum(format, validFormats, 'format');
-        if (formatError) {
-            return res.status(400).json({ error: formatError });
-        }
-
         try {
             // Get enhanced prompt from service
             const enhancedText = await promptEnhancerService.enhancePrompt({
@@ -150,15 +143,6 @@ exports.updatePrompt = async (req, res, next) => {
                         param: 'text'
                     }
                 });
-            }
-        }
-
-        // Validate format if provided
-        if (format) {
-            const validFormats = ['paragraph', 'bullet', 'structured', 'conversational'];
-            const formatError = validateEnum(format, validFormats, 'format');
-            if (formatError) {
-                return res.status(400).json({ error: formatError });
             }
         }
 
