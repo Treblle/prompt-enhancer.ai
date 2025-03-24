@@ -98,3 +98,50 @@ code {
 .logo-zoom:hover {
     transform: scale(1.1);
 }
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 640px) {
+
+    /* Adjust card size for mobile */
+    .prompt-enhancer-card {
+        height: auto !important;
+        min-height: 85vh;
+        max-height: 95vh;
+        width: 95% !important;
+        margin: 10px auto;
+    }
+
+    /* Make header more compact on mobile */
+    .prompt-header {
+        padding: 12px 16px !important;
+    }
+
+    .prompt-header h1 {
+        font-size: 1.5rem !important;
+    }
+
+    .prompt-header p {
+        font-size: 0.875rem !important;
+    }
+
+    /* Adjust content padding for mobile */
+    .prompt-content {
+        padding: 12px !important;
+    }
+
+    /* Input and output areas */
+    .prompt-textarea {
+        height: 80px !important;
+    }
+
+    /* Enhance button */
+    .enhance-button {
+        width: 100% !important;
+        justify-content: center;
+    }
+
+    /* Enhanced result area */
+    .result-area {
+        max-height: 35vh !important;
+    }
+}
