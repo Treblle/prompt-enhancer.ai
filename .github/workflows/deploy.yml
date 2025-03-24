@@ -31,6 +31,6 @@ jobs:
       - name: Create frontend environment file
         run: |
           echo "REACT_APP_API_URL=/v1" > frontend/.env.production
-          echo "REACT_APP_API_KEY=${{ secrets.REACT_APP_API_KEY }}" >> frontend/.env.production
+          echo "REACT_APP_API_KEY=${{ secrets.API_KEY  }}" >> frontend/.env.production
           echo "REACT_APP_API_KEY=${{ secrets.REACT_APP_API_KEY }}" >> frontend/.env
           echo "REACT_APP_API_KEY=${{ secrets.REACT_APP_API_KEY }}" >> frontend/.env.local
