@@ -1,6 +1,5 @@
 const { OpenAI } = require('openai');
 const path = require('path');
-const promptDictionary = require('../../frontend/prompt-dictionary');
 
 // Try to load the mistralService if it's configured
 let mistralService = null;
@@ -102,264 +101,125 @@ function decodeHtmlEntities(text) {
 }
 
 /**
- * Detects the likely content type based on the prompt
+ * Detects context and intent from the original prompt
  * @param {string} promptText - The original prompt text
- * @returns {string} - Detected content type
+ * @returns {Object} - Context information about the prompt
  */
-function detectContentType(promptText) {
+function analyzePromptContext(promptText) {
     const lowerPrompt = promptText.toLowerCase();
 
-    // Detect specific companies or products mentioned
-    if (lowerPrompt.includes('treblle')) {
-        return 'treblle'; // Special case for Treblle
+    // Detect medium/platform
+    const platforms = {
+        linkedin: lowerPrompt.includes('linkedin') ||
+            (lowerPrompt.includes('post') && !lowerPrompt.includes('blog post')) ||
+            lowerPrompt.includes('professional network'),
+        blog: lowerPrompt.includes('blog') || lowerPrompt.includes('article') || lowerPrompt.includes('post about'),
+        email: lowerPrompt.includes('email') || lowerPrompt.includes('message') || lowerPrompt.includes('newsletter'),
+        technical: lowerPrompt.includes('technical') || lowerPrompt.includes('documentation') || lowerPrompt.includes('code'),
+        creative: lowerPrompt.includes('story') || lowerPrompt.includes('fiction') || lowerPrompt.includes('creative'),
+        academic: lowerPrompt.includes('essay') || lowerPrompt.includes('paper') || lowerPrompt.includes('research'),
+        business: lowerPrompt.includes('business') || lowerPrompt.includes('proposal') || lowerPrompt.includes('report'),
+        social: lowerPrompt.includes('tweet') || lowerPrompt.includes('facebook') || lowerPrompt.includes('instagram')
+    };
+
+    // Detect primary subject matter
+    const subjects = {
+        ai: lowerPrompt.includes('ai') || lowerPrompt.includes('artificial intelligence') || lowerPrompt.includes('machine learning'),
+        technology: lowerPrompt.includes('tech') || lowerPrompt.includes('software') || lowerPrompt.includes('digital'),
+        business: lowerPrompt.includes('business') || lowerPrompt.includes('company') || lowerPrompt.includes('startup'),
+        science: lowerPrompt.includes('science') || lowerPrompt.includes('research') || lowerPrompt.includes('study'),
+        health: lowerPrompt.includes('health') || lowerPrompt.includes('medical') || lowerPrompt.includes('wellness'),
+        finance: lowerPrompt.includes('finance') || lowerPrompt.includes('money') || lowerPrompt.includes('investment'),
+        education: lowerPrompt.includes('education') || lowerPrompt.includes('learning') || lowerPrompt.includes('teaching'),
+        marketing: lowerPrompt.includes('marketing') || lowerPrompt.includes('brand') || lowerPrompt.includes('advertising'),
+        leadership: lowerPrompt.includes('leadership') || lowerPrompt.includes('management') || lowerPrompt.includes('executive')
+    };
+
+    // Detect intent/purpose
+    const intents = {
+        inform: lowerPrompt.includes('explain') || lowerPrompt.includes('describe') || lowerPrompt.includes('information'),
+        persuade: lowerPrompt.includes('convince') || lowerPrompt.includes('persuade') || lowerPrompt.includes('sell'),
+        entertain: lowerPrompt.includes('entertain') || lowerPrompt.includes('amuse') || lowerPrompt.includes('funny'),
+        instruct: lowerPrompt.includes('guide') || lowerPrompt.includes('how to') || lowerPrompt.includes('steps'),
+        analyze: lowerPrompt.includes('analyze') || lowerPrompt.includes('examine') || lowerPrompt.includes('review'),
+        inspire: lowerPrompt.includes('inspire') || lowerPrompt.includes('motivate') || lowerPrompt.includes('encourage')
+    };
+
+    // Identify keywords to extract topics
+    const promptWords = lowerPrompt.split(/\s+/)
+        .filter(word => word.length > 3) // Filter out short words
+        .filter(word => !['write', 'about', 'create', 'make', 'generate', 'with', 'that', 'this'].includes(word)); // Filter common instruction words
+
+    // Determine if this should use preferred style
+    const shouldUsePreferredStyle = (
+        // LinkedIn posts are great candidates for the preferred format
+        platforms.linkedin ||
+        // Professional/business content with reasonable length
+        (subjects.business && !platforms.technical) ||
+        // Leadership and thought leadership content
+        subjects.leadership ||
+        // Marketing content that needs to be concise and impactful
+        subjects.marketing ||
+        // AI content (since your example is about AI)
+        (subjects.ai && (platforms.linkedin || platforms.blog))
+    );
+
+    // Extract topic from the prompt
+    let topic = promptText
+        .replace(/^(write|create|draft|make|generate|prepare|produce|compose|develop|craft)/i, '')
+        .replace(/^(a|an|the)\s+/i, '')
+        .replace(/^(about|on|regarding|concerning)\s+/i, '')
+        .trim();
+
+    // If no clear topic, use the original prompt
+    if (!topic || topic.length < 5) {
+        topic = promptText;
     }
 
-    // Simple keyword matching for content types
-    if (lowerPrompt.includes('linkedin') || lowerPrompt.includes('social media') || lowerPrompt.includes('post')) {
-        return 'social_media';
-    }
-
-    if (lowerPrompt.includes('blog') || lowerPrompt.includes('article')) {
-        return 'blog_post';
-    }
-
-    if (lowerPrompt.includes('explain') || lowerPrompt.includes('how to') || lowerPrompt.includes('guide')) {
-        return 'educational';
-    }
-
-    if (lowerPrompt.includes('api') || lowerPrompt.includes('code') || lowerPrompt.includes('documentation')) {
-        return 'technical';
-    }
-
-    if (lowerPrompt.includes('product') || lowerPrompt.includes('marketing') || lowerPrompt.includes('ad')) {
-        return 'marketing';
-    }
-
-    if (lowerPrompt.includes('proposal') || lowerPrompt.includes('business') || lowerPrompt.includes('executive')) {
-        return 'business';
-    }
-
-    if (lowerPrompt.includes('email') || lowerPrompt.includes('message')) {
-        return 'email';
-    }
-
-    if (lowerPrompt.includes('case study') || lowerPrompt.includes('success story')) {
-        return 'case_study';
-    }
-
-    if (lowerPrompt.includes('summary') || lowerPrompt.includes('brief') || lowerPrompt.includes('overview')) {
-        return 'executive';
-    }
-
-    // Default to a general content type if no specific match
-    return 'general';
-}
-
-/**
- * Gets specific patterns for a content type from the dictionary
- * @param {string} contentType - The detected content type
- * @returns {Object} - Patterns for the content type
- */
-function getContentTypePatterns(contentType) {
-    // Get patterns from dictionary
-    const typePatterns = promptDictionary.content_type_patterns || {};
-
-    // Map the detected content type to dictionary entries
-    let patterns;
-
-    if (contentType === 'social_media' && typePatterns.linkedin_post) {
-        patterns = typePatterns.linkedin_post;
-    } else if (contentType === 'technical' && typePatterns.technical_writing) {
-        patterns = typePatterns.technical_writing;
-    } else if (contentType === 'blog_post' && typePatterns.blog_post) {
-        patterns = typePatterns.blog_post;
-    } else if (contentType === 'marketing' && typePatterns.marketing_content) {
-        patterns = typePatterns.marketing_content;
-    } else if (contentType === 'educational' && typePatterns.educational_content) {
-        patterns = typePatterns.educational_content;
-    } else if (contentType === 'email' && typePatterns.email_communication) {
-        patterns = typePatterns.email_communication;
-    } else if (contentType === 'case_study' && typePatterns.case_study) {
-        patterns = typePatterns.case_study;
-    } else if (contentType === 'executive' && typePatterns.executive_summary) {
-        patterns = typePatterns.executive_summary;
-    } else {
-        // Default empty patterns if no specific match
-        patterns = { bad_patterns: [], good_guidance: [] };
-    }
-
-    return patterns;
-}
-
-/**
- * Gets structural recommendations for a content type
- * @param {string} contentType - The detected content type
- * @returns {Object} - Structural recommendations
- */
-function getStructuralRecommendations(contentType) {
-    const structuralRecs = promptDictionary.structural_recommendations || {};
-
-    // Map content type to structural recommendations
-    if (contentType === 'social_media' && structuralRecs.linkedin_post) {
-        return structuralRecs.linkedin_post;
-    } else if (contentType === 'blog_post' && structuralRecs.blog_post) {
-        return structuralRecs.blog_post;
-    } else if (contentType === 'technical' && structuralRecs.technical_documentation) {
-        return structuralRecs.technical_documentation;
-    }
-
-    // Default recommendations if no specific match
     return {
-        formatting: [
-            "Use clear, descriptive headings",
-            "Keep paragraphs concise",
-            "Use bold for emphasis on key points",
-            "Use bullet points sparingly and only for related items"
-        ],
-        structure: [
-            "Begin with a specific insight or observation",
-            "Focus on a single main idea",
-            "Support with specific examples or evidence",
-            "Conclude with a meaningful implication"
-        ]
+        platform: Object.keys(platforms).find(key => platforms[key]) || 'general',
+        subject: Object.keys(subjects).find(key => subjects[key]) || 'general',
+        intent: Object.keys(intents).find(key => intents[key]) || 'inform',
+        keywords: promptWords.slice(0, 5), // Top 5 keywords
+        usePreferredStyle: shouldUsePreferredStyle,
+        topic: topic,
+        original: promptText
     };
 }
 
 /**
- * Generates a list of AI-sounding patterns to avoid in the final output
- * @returns {string} - List of patterns to avoid
+ * Generates a prompt using the preferred style (similar to the example)
+ * @param {Object} context - Analyzed context information
+ * @returns {string} - Prompt in preferred style
  */
-function getResultPatternsToAvoid() {
-    return `THE FINAL CONTENT MUST AVOID THESE AI-TYPICAL PATTERNS:
-
-1. Titles ending with question marks (e.g., "Is AI the Future?")
-2. Rhetorical questions as transitions (e.g., "So what does this mean for us?")
-3. Generic calls to action (e.g., "Let me know your thoughts in the comments")
-4. Bullet point lists of obvious statements
-5. Forced enthusiasm or excessive use of adjectives
-6. Simplified complex topics into neat "takeaways"
-7. Overly structured sections with predictable progression
-8. Starting sentences with transition phrases like "Moreover," "Furthermore," "In addition"
-9. Beginning with questions like "Have you ever wondered...?"
-10. Ending paragraphs with rhetorical questions
-11. Using unnecessary emphasis on *single words* that don't need emphasis
-12. Writing in a "hook → explanation → conclusion" template format
-13. Ending with engagement questions (e.g., "What do you think about AI?")
-14. Using phrases like "let's dive in," "in today's world," "more than ever before"
-15. Creating simplistic binary perspectives on complex topics`;
-}
-
-/**
- * Generates an LLM-ready enhanced prompt
- * Produces a prompt that can be directly used with any LLM
- * @param {string} originalPrompt - The original user prompt
- * @param {string} contentType - The detected content type
- * @returns {string} - The LLM-ready enhanced prompt
- */
-function generateLLMReadyPrompt(originalPrompt, contentType) {
-    // Get content patterns for this type
-    const contentPatterns = getContentTypePatterns(contentType);
-
-    // Get structural recommendations
-    const structuralRecs = getStructuralRecommendations(contentType);
-
-    // Get content framework
-    const contentFramework = promptDictionary.content_frameworks?.[contentType] ||
-        "Focus on specific insights rather than general observations. Use natural language that demonstrates genuine expertise.";
-
-    // Extract overused words from dictionary
-    const overusedWords = promptDictionary.overused_words.join(', ');
-
-    // Extract clichéd phrases (limit to 5 examples for brevity)
-    const overusedPhrases = promptDictionary.overused_phrases.slice(0, 5).map(phrase => `"${phrase}"`).join(', ');
-
-    // Get bad patterns specific to this content type (limit to 5)
-    const badPatterns = contentPatterns.bad_patterns ?
-        contentPatterns.bad_patterns.slice(0, 5).map(pattern => `"${pattern}"`).join(', ') :
-        "generic templates, forced enthusiasm, obvious statements";
-
-    // Get good guidance for this content type
-    const goodGuidance = contentPatterns.good_guidance ?
-        contentPatterns.good_guidance.join('; ') :
-        "Focus on specific insights; provide concrete examples; demonstrate genuine expertise";
-
-    // Get formatting guidance
-    const formattingGuidance = structuralRecs.formatting ?
-        structuralRecs.formatting.join('; ') :
-        "Use clear headings; keep paragraphs concise; use bold for emphasis; use bullet points sparingly";
-
-    // Get structure guidance
-    const structureGuidance = structuralRecs.structure ?
-        structuralRecs.structure.join('; ') :
-        "Begin with a specific insight; focus on a main idea; support with examples; conclude meaningfully";
-
-    // Extract topic from prompt
-    const topic = originalPrompt.replace(/^(write|create|draft|make|generate|prepare)/i, '').trim();
-
-    // Determine word count suggestion based on content type
-    let suggestedWordCount = "800-1200";
-    if (contentType === 'social_media') {
-        suggestedWordCount = "250-350";
-    } else if (contentType === 'executive') {
-        suggestedWordCount = "500-800";
-    } else if (contentType === 'technical') {
-        suggestedWordCount = "1000-1500";
-    } else if (contentType === 'case_study') {
-        suggestedWordCount = "1200-2000";
+function generatePreferredStylePrompt(context) {
+    // Determine appropriate word count based on platform
+    let wordCount = "800-1200";
+    if (context.platform === 'linkedin' || context.platform === 'social') {
+        wordCount = "250-350";
+    } else if (context.platform === 'email') {
+        wordCount = "400-600";
+    } else if (context.platform === 'technical') {
+        wordCount = "1000-1500";
     }
 
-    // Special handling for Treblle
-    if (contentType === 'treblle') {
-        return `You are an expert-level content strategist and professional writer with deep knowledge of API management platforms, API observability, and developer tools.
-
-I need you to create a comprehensive, engaging content piece on Treblle, an API Intelligence platform that empowers companies looking to connect the dots between APIs and their business development.
-
-Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples of how Treblle improves API workflows, monitoring capabilities, or development processes. Your content should demonstrate genuine expertise on Treblle and offer unique perspectives not commonly found in basic articles on API tools.
-
-Structure your content with:
-• A compelling introduction that highlights a specific insight or challenge in the API space that Treblle addresses
-• Clear, descriptive headings for each section of the content
-• Logical progression of ideas with smooth transitions between Treblle's key features and benefits
-• Specific examples and evidence to support key points about Treblle's value proposition
-• A conclusion that offers implications or next steps for developers or companies considering Treblle
-
-Writing style guidance:
-• Use a professional but conversational tone appropriate for a technical audience
-• Employ concrete, specific language rather than vague generalizations about Treblle
-• Use active voice and strong verbs throughout the content
-• Include occasional rhetorical questions or direct address to engage developers
-• Use analogies or metaphors to explain complex concepts about API observability
-• Vary sentence structure and length for engaging rhythm
-
-IMPORTANT - Avoid these AI-typical patterns:
-• Do NOT use rhetorical questions as transitions or headings
-• Avoid generic calls to action or engagement questions
-• Do not use bullet points for obvious statements about Treblle or APIs
-• Avoid phrases like "let's dive in," "in today's world," or "more than ever before"
-• Don't create simplistic binary perspectives on complex API topics
-• Avoid overused terms like "revolutionary," "innovative," "cutting-edge," or "game-changing"
-
-Formatting guidance:
-• Use bold for key concepts or important takeaways about Treblle
-• Create subheadings that promise and deliver specific value
-• Use bullet points only for related items or steps in Treblle workflows
-• Incorporate whitespace for readability
-• Keep paragraphs relatively short (3-5 sentences)
-
-Please write a comprehensive post of approximately ${suggestedWordCount} words that would be valuable for developers, API product managers, or technical decision-makers.
-
-Be original, specific, and demonstrate genuine expertise on Treblle and API management. I'm looking for content that stands distinctly apart from typical AI-generated material.`;
+    // Determine professional field based on subject
+    let field = context.subject;
+    if (context.subject === 'general') {
+        field = "this field";
     }
 
-    // Create the LLM-ready prompt
-    return `You are an expert-level content strategist and professional writer with deep knowledge and professional experience in ${contentType.replace('_', ' ')}.
+    return `You are an expert-level content strategist and professional writer with deep knowledge and professional experience in ${field}.
 
-I need you to create a comprehensive, engaging content piece on this topic: "${topic}"
+I need you to create a comprehensive, engaging content piece on this topic: "${context.topic}"
 
 Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points. Your content should demonstrate genuine expertise and offer unique perspectives not commonly found in basic articles on this topic.
 
 Structure your content with:
-• ${structureGuidance.split(';').join('\n• ')}
+• Begin with an attention-grabbing hook that challenges assumptions
+• Focus on a single core insight rather than multiple points
+• Include a brief supporting example or data point
+• Conclude with an implication or forward-looking thought
 
 Writing style guidance:
 • Use a professional but conversational tone
@@ -375,67 +235,73 @@ IMPORTANT - Avoid these AI-typical patterns:
 • Do not use bullet points for obvious statements
 • Avoid phrases like "let's dive in," "in today's world," or "more than ever before"
 • Don't create simplistic binary perspectives on complex topics
-• Avoid overused terms like ${overusedWords.split(',').slice(0, 5).join(', ')}
+• Avoid overused terms like cutting-edge, seamless, revolutionary, transformative, game-changing
 
 Formatting guidance:
-• ${formattingGuidance.split(';').join('\n• ')}
+• Use bold text to emphasize 2-3 key concepts or phrases
+• Create clear paragraph breaks between different thoughts
+• Keep paragraphs short (2-4 sentences) for mobile reading
+• Use occasional italics for subtle emphasis or contrasting ideas
 
-Please write a comprehensive piece of approximately ${suggestedWordCount} words.
+Please write a comprehensive piece of approximately ${wordCount} words.
 
 Content-specific guidance:
-• ${goodGuidance.split(';').join('\n• ')}
+• Share a specific observation from your professional experience that challenges conventional wisdom
+• Focus on a single insight rather than multiple trends or bullet points
+• Connect your perspective to broader industry implications
+• End with a thoughtful implication rather than asking for engagement
+• Use natural professional language without forced enthusiasm
+• Include a specific data point or research finding that adds credibility
+• Reference a particular project or case that illustrates your point
+• Acknowledge nuance or limitations in your perspective
+• Structure your post with an attention-grabbing hook that challenges assumptions
+• Use bold text sparingly to emphasize 1-2 key concepts
 
 Be original, specific, and demonstrate genuine expertise on this topic. I'm looking for content that stands distinctly apart from typical AI-generated material.`;
 }
 
 /**
- * Generates an enhanced system prompt for the AI model
- * Incorporates patterns from the prompt dictionary
- * @param {string} originalPrompt - The user's original prompt
- * @returns {string} - The enhanced system prompt
+ * Generates a standard tailored system prompt
+ * @param {Object} context - Analyzed context from the original prompt
+ * @returns {string} - System prompt for the AI
  */
-function generateSystemPrompt(originalPrompt) {
-    // Detect content type
-    const contentType = detectContentType(originalPrompt);
+function generateTailoredSystemPrompt(context) {
+    return `You are an expert-level content strategist and prompt engineer with deep knowledge in ${context.subject} content.
 
-    // Generate LLM-ready prompt based on content type
-    return `You are a specialized writing consultant who transforms basic content requests into sophisticated, expert-level guidance.
+Your task is to transform the user's basic prompt into a comprehensive, sophisticated, and highly detailed instruction for an AI system. The enhanced prompt should be directly usable with any AI system.
 
-Your task is to transform the user's basic prompt into a comprehensive, LLM-ready prompt that can be directly copied and pasted into any AI system without further modifications.
+The user's original prompt is: "${context.original}"
 
-For the prompt "${originalPrompt}", I've identified it as a request for content in the "${contentType}" category.
+I've identified this as primarily related to ${context.subject} content, likely intended for ${context.platform} platform, with the main purpose being to ${context.intent}.
 
-Please create a prompt that follows this exact structure:
+Create a prompt that is:
+1. Highly specific to this exact request (never use generic templates)
+2. Tailored to the unique characteristics of the subject matter (${context.subject})
+3. Optimized for the specific medium or platform (${context.platform})
+4. Structured to elicit the most sophisticated and valuable response
 
-1. Begin with a role assignment: "You are an expert-level content strategist and professional writer with deep knowledge and professional experience in [relevant field]."
+Your enhanced prompt should:
+- Begin with a clear role assignment for the AI
+- Define a precise content goal that expands intelligently on the user's request
+- Include specific instructions about tone, style, structure, and formatting that would be optimal for this content
+- Add relevant context and nuance that the original prompt lacks
+- Include guidance on what to avoid (common AI patterns, overused phrases, etc.)
+- Suggest an appropriate length/depth for the response
 
-2. Clearly state the task: "I need you to create a comprehensive, engaging content piece on this topic: [refined topic]"
+IMPORTANT:
+- Each enhanced prompt must be uniquely crafted for this specific request
+- Never use generic templates - the entire response should be customized to this exact prompt
+- Focus on making the prompt substantially more detailed and nuanced than the original
+- Consider the specific nuances of the subject matter and content type
+- Include advanced writing guidance specific to this content type
+- If appropriate for this type of content, use a similar structure to:
 
-3. Provide depth guidance: "Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points."
+${generatePreferredStylePrompt(context)}
 
-4. Include detailed structure guidance with bullet points
-
-5. Include writing style guidance with bullet points
-
-6. List specific AI-typical patterns to avoid with bullet points
-
-7. Provide formatting guidance with bullet points
-
-8. Suggest an appropriate word count based on the content type
-
-9. Include content-specific guidance relevant to the topic
-
-10. End with "Be original, specific, and demonstrate genuine expertise on this topic."
-
-The prompt should be comprehensive, direct, and immediately usable with any LLM without requiring further editing. It should read like a complete set of instructions that someone could copy and paste directly.
-
-Do not include explanations to me about what you're doing or why - just create the prompt directly as the complete response. Make the prompt conversational but professional in tone.
-
-For reference, here is the LLM-ready prompt I would create for this request:
-
-${generateLLMReadyPrompt(originalPrompt, contentType)}`;
+But remember to modify it substantially to fit this specific request. Don't copy it verbatim.
+Never make the enhanced prompt feel templated - it should feel custom-created for this exact request.
+I want the enhanced prompt to be something the user could copy and paste directly into an AI system to get a vastly improved result compared to their original simple prompt.`;
 }
-
 
 /**
  * Enhance a prompt using OpenAI
@@ -447,12 +313,24 @@ async function _enhanceWithOpenAI(params) {
     const { originalPrompt } = params;
 
     // In test mode, just return a predictable enhancement
+    // In test mode, just return a predictable enhancement
     if (process.env.NODE_ENV === 'test') {
-        return generateLLMReadyPrompt(originalPrompt, detectContentType(originalPrompt));
+        return `You are an expert-level content strategist and professional writer with deep knowledge in this field.
+
+I need you to create a comprehensive, engaging content piece on: "${originalPrompt}"
+
+Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points. Your content should demonstrate genuine expertise and offer unique perspectives not commonly found in basic articles on this topic.
+
+Structure your content with clear sections, each delivering specific value. Use professional but conversational tone, employ concrete specific language, and use active voice throughout.
+
+Please write a comprehensive piece that would be valuable for the target audience. Be original, specific, and demonstrate genuine expertise on this topic.`;
     }
 
-    // Generate the system prompt using patterns from the dictionary
-    const systemPrompt = generateSystemPrompt(originalPrompt);
+    // Analyze the prompt context
+    const context = analyzePromptContext(originalPrompt);
+
+    // Generate the tailored system prompt
+    const systemPrompt = generateTailoredSystemPrompt(context);
 
     const response = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
@@ -463,7 +341,7 @@ async function _enhanceWithOpenAI(params) {
             },
             {
                 role: "user",
-                content: `Transform this basic content request into a comprehensive, LLM-ready prompt that anyone could copy and paste directly into any AI system: "${originalPrompt}"`
+                content: `Please enhance this basic prompt into a comprehensive, sophisticated instruction: "${originalPrompt}"`
             }
         ],
         temperature: 0.7,
@@ -474,24 +352,35 @@ async function _enhanceWithOpenAI(params) {
 }
 
 /**
- * Enhance a prompt using Mistral AI
- * @param {Object} params - Parameters for enhancement 
- * @returns {Promise<string>} - Enhanced prompt
- * @private
- */
+* Enhance a prompt using Mistral AI
+* @param {Object} params - Parameters for enhancement 
+* @returns {Promise<string>} - Enhanced prompt
+* @private
+*/
 async function _enhanceWithMistral(params) {
     const { originalPrompt } = params;
 
     // In test mode, just return a predictable enhancement
     if (process.env.NODE_ENV === 'test') {
-        return generateLLMReadyPrompt(originalPrompt, detectContentType(originalPrompt));
+        return `You are an expert-level content strategist and professional writer with deep knowledge in this field.
+
+I need you to create a comprehensive, engaging content piece on: "${originalPrompt}"
+
+Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points. Your content should demonstrate genuine expertise and offer unique perspectives not commonly found in basic articles on this topic.
+
+Structure your content with clear sections, each delivering specific value. Use professional but conversational tone, employ concrete specific language, and use active voice throughout.
+
+Please write a comprehensive piece that would be valuable for the target audience. Be original, specific, and demonstrate genuine expertise on this topic.`;
     }
 
-    // Generate the system prompt using patterns from the dictionary
-    const systemPrompt = generateSystemPrompt(originalPrompt);
+    // Analyze the prompt context
+    const context = analyzePromptContext(originalPrompt);
+
+    // Generate the tailored system prompt
+    const systemPrompt = generateTailoredSystemPrompt(context);
 
     const response = await mistralService.createChatCompletion({
-        model: "mistral-medium",  // Use appropriate model based on your needs
+        model: "mistral-medium",
         messages: [
             {
                 role: "system",
@@ -499,7 +388,7 @@ async function _enhanceWithMistral(params) {
             },
             {
                 role: "user",
-                content: `Transform this basic content request into a comprehensive, LLM-ready prompt that anyone could copy and paste directly into any AI system: "${originalPrompt}"`
+                content: `Please enhance this basic prompt into a comprehensive, sophisticated instruction: "${originalPrompt}"`
             }
         ],
         temperature: 0.7,
@@ -510,10 +399,10 @@ async function _enhanceWithMistral(params) {
 }
 
 /**
- * Sanitize input to prevent XSS and other injection attacks
- * @param {string} text - The text to sanitize
- * @returns {string} - Sanitized text
- */
+* Sanitize input to prevent XSS and other injection attacks
+* @param {string} text - The text to sanitize
+* @returns {string} - Sanitized text
+*/
 function sanitizeInput(text) {
     if (!text) return text;
 
@@ -534,17 +423,14 @@ function sanitizeInput(text) {
     return text
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
-    // Note: We're NOT encoding quotes anymore to avoid the &quot; issue
-    // .replace(/"/g, '&quot;')
-    // .replace(/'/g, '&#039;');
 }
 
 /**
- * Enhances a prompt using the configured AI provider
- * @param {Object} params - The parameters for enhancement
- * @param {string} params.originalPrompt - The original prompt text
- * @returns {Promise<string>} The enhanced prompt
- */
+* Enhances a prompt using the configured AI provider
+* @param {Object} params - The parameters for enhancement
+* @param {string} params.originalPrompt - The original prompt text
+* @returns {Promise<string>} The enhanced prompt
+*/
 async function enhancePrompt(params) {
     const { originalPrompt } = params;
 
@@ -580,9 +466,24 @@ async function enhancePrompt(params) {
                 console.log('Using OpenAI for prompt enhancement');
                 enhancedPrompt = await _enhanceWithOpenAI({ originalPrompt: sanitizedPrompt });
             } else {
-                // Fallback to direct prompt generation if no provider is available
-                const contentType = detectContentType(sanitizedPrompt);
-                enhancedPrompt = generateLLMReadyPrompt(sanitizedPrompt, contentType);
+                // Fallback to a direct prompt if no provider is available
+                const context = analyzePromptContext(sanitizedPrompt);
+
+                if (context.usePreferredStyle) {
+                    // Use the preferred style for appropriate content types
+                    enhancedPrompt = generatePreferredStylePrompt(context);
+                } else {
+                    // Use a more general style for other content types
+                    enhancedPrompt = `You are an expert-level content strategist and professional writer with deep knowledge and experience in ${context.subject}.
+
+I need you to create a comprehensive, engaging content piece on this topic: "${context.topic}"
+
+Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points. Your content should demonstrate genuine expertise and offer unique perspectives not commonly found in basic articles on this topic.
+
+Structure your content with clear sections for easy navigation. Use a professional but conversational tone, employ concrete specific language, and use active voice throughout.
+
+Please write a comprehensive piece that would be valuable for the target audience. Be original, specific, and demonstrate genuine expertise on this topic.`;
+                }
             }
         }
 
@@ -606,10 +507,23 @@ async function enhancePrompt(params) {
     } catch (error) {
         logError('Prompt Enhancement Error', error);
 
-        // If there's an error, fall back to direct prompt generation
+        // If there's an error, fall back to a simple enhancement
         try {
-            const contentType = detectContentType(sanitizedPrompt);
-            return generateLLMReadyPrompt(sanitizedPrompt, contentType);
+            const context = analyzePromptContext(sanitizedPrompt);
+
+            if (context.usePreferredStyle) {
+                return generatePreferredStylePrompt(context);
+            } else {
+                return `You are an expert-level content strategist and professional writer with deep knowledge of ${context.subject}.
+
+I need you to create a comprehensive, engaging content piece on this topic: "${sanitizedPrompt}"
+
+Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points. Your content should demonstrate genuine expertise and offer unique perspectives not commonly found in basic articles on this topic.
+
+Structure your content with clear sections, each delivering specific value. Use professional but conversational tone, employ concrete specific language, and use active voice throughout.
+
+Please write a comprehensive piece that would be valuable for the target audience. Be original, specific, and demonstrate genuine expertise on this topic.`;
+            }
         } catch (fallbackError) {
             // If all else fails, provide a meaningful fallback
             return `You are an expert-level content strategist and professional writer.
@@ -620,8 +534,6 @@ Focus on providing in-depth analysis and industry insights rather than basic inf
 
 Structure your content with clear headings, logical progression, and smooth transitions. Use a professional but conversational tone and employ concrete, specific language rather than vague generalizations.
 
-Avoid common AI patterns like rhetorical questions as transitions, generic calls to action, bullet points of obvious statements, and overused phrases like "let's dive in" or "in today's world."
-
 Be original, specific, and demonstrate genuine expertise on this topic.`;
         }
     }
@@ -630,8 +542,6 @@ Be original, specific, and demonstrate genuine expertise on this topic.`;
 module.exports = {
     enhancePrompt,
     // Export these for testing
-    detectContentType,
-    getContentTypePatterns,
-    getResultPatternsToAvoid,
-    generateLLMReadyPrompt
+    analyzePromptContext,
+    generatePreferredStylePrompt
 };

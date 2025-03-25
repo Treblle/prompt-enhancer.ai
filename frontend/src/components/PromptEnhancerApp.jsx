@@ -113,12 +113,11 @@ const PromptEnhancerApp = () => {
         }, [charIndex, isDeleting, textIndex, getRandomText, texts]);
 
         return (
-            <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2 h-5 italic">
+            <p className="text-xs text-center text-gray-500 dark:text-gray-400 typewriter-text">
                 {displayText}<span className="animate-pulse">|</span>
             </p>
         );
     };
-
     // Try with Claude - Just open a new Claude window
     const tryWithClaude = () => {
         try {
