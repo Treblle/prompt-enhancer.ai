@@ -10,6 +10,7 @@ AI Prompt Enhancer is designed to transform basic prompts into optimized, high-q
 - **Multi-AI Provider Support**: Works with both Mistral and OpenAI.
 - **Open Source**: Completely customizable and community-driven.
 - **Security-Focused**: Built with API key protection as a priority.
+- **Mobile-Friendly**: Responsive design optimized for all devices.
 
 ## 🛠 Tech Stack
 
@@ -72,6 +73,19 @@ The `npm run setup` command helps you securely configure your environment:
 - Guides you through adding your API keys
 - Installs security measures to prevent key exposure
 
+### API Key Management
+
+The application uses different API keys for different environments:
+
+- **Development & Local**: A unique randomly generated API key for each developer's environment
+- **Production**: A fixed, hardcoded API key that shouldn't be changed
+
+This approach ensures consistent behavior in production while allowing developers to work independently.
+
+### Important Note on API Keys
+
+**DO NOT CHANGE THE PRODUCTION API KEY**. The production key (`071ab274d796058af0f2c1c205b78009670fc774bd574960`) is hardcoded throughout the application. Changing it would break the deployed application.
+
 ### Encrypting Your Keys
 
 For additional security, you can encrypt your API keys:
@@ -109,12 +123,17 @@ The project uses `.env` files for configuration. For required variables, refer t
 - `AI_PROVIDER`: Choose between 'mistral' or 'openai'
 - `MISTRAL_API_KEY`: Mistral AI API key
 - `OPENAI_API_KEY`: OpenAI API key
-- `API_KEY`: Authentication key for the API
+- `API_KEY`: Authentication key for the API (generated during setup)
 
 ### Frontend Environment Variables
 
 - `REACT_APP_API_URL`: Backend API URL
-- `REACT_APP_API_KEY`: API authentication key
+- `REACT_APP_API_KEY`: API authentication key (synchronized with backend)
+
+## 🔄 Environment Differences
+
+- **Development**: Random API keys, debug logging, localhost services
+- **Production**: Fixed API key, minimal logging, production-optimized services
 
 ## 🤝 Contributing
 

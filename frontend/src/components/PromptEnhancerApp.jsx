@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Sparkles, ExternalLink } from 'lucide-react';
+import { Sparkles, ExternalLink, Copy, Check } from 'lucide-react';
 
 import apiService from '../services/apiService';
 
@@ -8,6 +8,21 @@ const PromptEnhancerApp = () => {
     const [enhancedPrompt, setEnhancedPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [copied, setCopied] = useState(false);
+
+    // Copy to clipboard functionality
+    const copyToClipboard = () => {
+        if (!enhancedPrompt) return;
+
+        navigator.clipboard.writeText(enhancedPrompt)
+            .then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            })
+            .catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+    };
 
     // TypewriterText Component
     const TypewriterText = () => {
@@ -181,14 +196,14 @@ const PromptEnhancerApp = () => {
 
     return (
         <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-950 p-2 sm:p-4">
-            <div className="w-full max-w-3xl bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden h-[700px] flex flex-col prompt-enhancer-card">
+            <div className="w-full max-w-3xl bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden h-[90vh] sm:h-[700px] flex flex-col prompt-enhancer-card">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-800 px-4 sm:px-8 py-4 sm:py-6 relative prompt-header">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-800 px-4 sm:px-8 py-3 sm:py-6 relative prompt-header">
                     <div className="flex items-center justify-between">
-                        <h1 className="text-2xl sm:text-3xl font-bold text-white">AI Prompt Enhancer</h1>
-                        <Sparkles className="text-yellow-300 h-6 w-6 sm:h-7 sm:w-7" />
+                        <h1 className="text-xl sm:text-3xl font-bold text-white">AI Prompt Enhancer</h1>
+                        <Sparkles className="text-yellow-300 h-5 w-5 sm:h-7 sm:w-7" />
                     </div>
-                    <p className="text-blue-100 text-sm sm:text-base mt-1 sm:mt-2">
+                    <p className="text-blue-100 text-xs sm:text-base mt-1 sm:mt-2">
                         Transform basic prompts into optimized instructions for better AI responses
                     </p>
                 </div>
@@ -196,7 +211,7 @@ const PromptEnhancerApp = () => {
                 {/* Main Content */}
                 <div className="p-3 sm:p-6 flex-1 flex flex-col overflow-hidden prompt-content">
                     {/* Original Prompt */}
-                    <div className="mb-3 sm:mb-4">
+                    <div className="mb-2 sm:mb-4">
                         <div className="flex items-center justify-between mb-1 sm:mb-2">
                             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Original Prompt
@@ -205,17 +220,17 @@ const PromptEnhancerApp = () => {
                         <textarea
                             value={originalPrompt}
                             onChange={(e) => setOriginalPrompt(e.target.value)}
-                            className="w-full h-[100px] p-3 sm:p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 prompt-textarea"
+                            className="w-full h-[80px] sm:h-[100px] p-2 sm:p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 prompt-textarea"
                             placeholder="Write a blog post about AI → Detailed, structured guidance for creating an engaging article"
                         />
                     </div>
 
                     {/* Enhance Button */}
-                    <div className="flex justify-center mb-3 sm:mb-4">
+                    <div className="flex justify-center mb-2 sm:mb-4">
                         <button
                             onClick={enhancePrompt}
                             disabled={isLoading}
-                            className="px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-800 text-white font-medium rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150 flex items-center disabled:opacity-50 disabled:cursor-not-allowed enhance-button"
+                            className="px-4 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-800 text-white font-medium rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150 flex items-center disabled:opacity-50 disabled:cursor-not-allowed enhance-button"
                         >
                             {isLoading ? (
                                 <>
@@ -235,7 +250,7 @@ const PromptEnhancerApp = () => {
                     </div>
 
                     {error && (
-                        <div className="mt-1 mb-3 flex justify-center">
+                        <div className="mt-1 mb-2 flex justify-center">
                             <div className="px-3 sm:px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg flex items-center text-sm">
                                 <span>{error}</span>
                             </div>
@@ -251,7 +266,24 @@ const PromptEnhancerApp = () => {
                                 </label>
                             </div>
                             {enhancedPrompt && (
-                                <div className="flex items-center">
+                                <div className="flex items-center space-x-2">
+                                    <button
+                                        onClick={copyToClipboard}
+                                        className="text-xs sm:text-sm flex items-center px-2 sm:px-3 py-1 rounded transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                        aria-label="Copy to clipboard"
+                                    >
+                                        {copied ? (
+                                            <>
+                                                <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                                Copied!
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                                Copy
+                                            </>
+                                        )}
+                                    </button>
                                     <button
                                         onClick={tryWithClaude}
                                         className="text-xs sm:text-sm flex items-center px-2 sm:px-3 py-1 rounded transition-colors bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700"
@@ -262,14 +294,14 @@ const PromptEnhancerApp = () => {
                                 </div>
                             )}
                         </div>
-                        <div className="flex-1 p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg whitespace-pre-wrap overflow-y-auto text-gray-800 dark:text-gray-200 result-area">
+                        <div className="flex-1 p-2 sm:p-4 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg whitespace-pre-wrap overflow-y-auto text-gray-800 dark:text-gray-200 result-area text-sm sm:text-base">
                             {renderEnhancedPrompt()}
                         </div>
                     </div>
                 </div>
 
                 {/* Footer with Typewriter Effect */}
-                <div className="bg-gray-50 dark:bg-gray-800 px-4 sm:px-6 py-2 sm:py-3 border-t border-gray-200 dark:border-gray-700">
+                <div className="bg-gray-50 dark:bg-gray-800 px-3 sm:px-6 py-2 sm:py-3 border-t border-gray-200 dark:border-gray-700">
                     <TypewriterText />
                 </div>
             </div>
