@@ -110,6 +110,16 @@ header {
     z-index: 50;
 }
 
+/* Typewriter text styles */
+.typewriter-text {
+    overflow: visible !important;
+    min-height: 1.2em;
+    height: auto !important;
+    word-wrap: break-word;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
 /* Improved Mobile Responsive Adjustments */
 @media (max-width: 640px) {
 
@@ -173,6 +183,8 @@ header {
     /* Adjust content padding for mobile */
     .prompt-content {
         padding: 10px !important;
+        max-height: calc(100% - 50px);
+        /* Adjust to make room for footer */
     }
 
     /* Input and output areas */
@@ -193,7 +205,7 @@ header {
 
     /* Enhanced result area */
     .result-area {
-        max-height: 40vh !important;
+        max-height: 35vh !important;
         padding: 8px !important;
         font-size: 14px !important;
     }
@@ -233,6 +245,25 @@ header {
     footer img {
         height: 16px !important;
     }
+
+    /* Adjust the footer height and typewriter display on mobile */
+    .prompt-enhancer-card>div:last-child {
+        padding: 8px 10px;
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Ensure the typewriter text has enough space */
+    .prompt-enhancer-card>div:last-child p {
+        margin: 0;
+        line-height: 1.2;
+        height: auto !important;
+        min-height: 20px;
+        padding: 4px 0;
+        overflow: visible;
+    }
 }
 
 /* Media query for iPhone SE and other very small devices */
@@ -258,6 +289,15 @@ header {
     header a span {
         display: none;
         /* Hide "Star on GitHub" text, show only icon */
+    }
+
+    /* Smaller typewriter area on very small screens */
+    .prompt-enhancer-card>div:last-child {
+        padding: 6px 8px;
+    }
+
+    .prompt-enhancer-card>div:last-child p {
+        font-size: 10px !important;
     }
 }
 
