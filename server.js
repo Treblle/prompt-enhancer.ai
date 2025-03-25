@@ -22,9 +22,14 @@ app.get('/api-check', (req, res) => {
         openAIConfigured: !!process.env.OPENAI_API_KEY,
         nodeEnv: process.env.NODE_ENV,
         corsOrigins: process.env.CORS_ALLOWED_ORIGINS,
-        treblleConfigured: process.env.NODE_ENV === 'production' ?
-            (!!process.env.TREBLLE_API_KEY && !!process.env.TREBLLE_PROJECT_ID) :
-            'Disabled in non-production'
+        treblleConfigured: process.env.NODE_ENV === 'production'
+            ? {
+                apiKeyAvailable: !!process.env.TREBLLE_API_KEY,
+                projectIdAvailable: !!process.env.TREBLLE_PROJECT_ID,
+                apiKeyPrefix: process.env.TREBLLE_API_KEY ? process.env.TREBLLE_API_KEY.substring(0, 4) : null,
+                enabled: !!process.env.TREBLLE_API_KEY && !!process.env.TREBLLE_PROJECT_ID
+            }
+            : 'Disabled in non-production'
     });
 });
 
