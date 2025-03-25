@@ -29,7 +29,7 @@ jobs:
         run: |
           echo "NODE_ENV=production" > .env
           echo "PORT=5000" >> .env
-          echo "API_KEY=${{ secrets.API_KEY }}" >> .env
+          echo "API_KEY=071ab274d796058af0f2c1c205b78009670fc774bd574960" >> .env
           echo "AI_PROVIDER=openai" >> .env
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
           echo "CORS_ALLOWED_ORIGINS=https://prompt-enhancer.ai" >> .env
@@ -37,8 +37,8 @@ jobs:
       - name: Create frontend environment file
         run: |
           echo "REACT_APP_API_URL=/v1" > frontend/.env.production
-          echo "REACT_APP_API_KEY=${{ secrets.API_KEY }}" >> frontend/.env.production
+          echo "REACT_APP_API_KEY=071ab274d796058af0f2c1c205b78009670fc774bd574960" >> frontend/.env.production
           echo "REACT_APP_API_URL=/v1" > frontend/.env
-          echo "REACT_APP_API_KEY=${{ secrets.API_KEY }}" >> frontend/.env
+          echo "REACT_APP_API_KEY=071ab274d796058af0f2c1c205b78009670fc774bd574960" >> frontend/.env
           echo "REACT_APP_API_URL=/v1" > frontend/.env.local 
-          echo "REACT_APP_API_KEY=${{ secrets.API_KEY }}" >> frontend/.env.local
+          echo "REACT_APP_API_KEY=071ab274d796058af0f2c1c205b78009670fc774bd574960" >> frontend/.env.local

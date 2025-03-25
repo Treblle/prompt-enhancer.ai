@@ -1,16 +1,20 @@
-// Configuration
 const API_BASE_URL = process.env.REACT_APP_API_URL ||
     (process.env.NODE_ENV === 'development'
         ? 'http://localhost:5000/v1'
-        : 'https://prompt-enhancer.ai');
+        : '/v1');
 
-const API_KEY = process.env.REACT_APP_API_KEY;
+// Fixed API key for production, otherwise use environment variable
+const DEFAULT_PRODUCTION_KEY = '071ab274d796058af0f2c1c205b78009670fc774bd574960';
+const API_KEY = process.env.NODE_ENV === 'production'
+    ? DEFAULT_PRODUCTION_KEY
+    : process.env.REACT_APP_API_KEY;
 
 // Debug logging for API configuration
 console.log('API Configuration:', {
     baseUrl: API_BASE_URL,
     apiKeyAvailable: !!API_KEY,
-    apiKeyPrefix: API_KEY ? API_KEY.substring(0, 4) : 'Not set'
+    apiKeyPrefix: API_KEY ? API_KEY.substring(0, 4) : 'Not set',
+    environment: process.env.NODE_ENV
 });
 
 // Utility function for logging
