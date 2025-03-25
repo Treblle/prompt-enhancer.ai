@@ -4,7 +4,7 @@ const helmet = require('helmet');
 const { errorHandler } = require('./src/middleware/error');
 const { authenticateApiKey } = require('./src/middleware/auth');
 const { rateLimit, ddosProtection } = require('./src/middleware/rate-limit');
-const treblle = require('@treblle/express');
+
 const promptRoutes = require('./src/routes/prompts');
 
 const app = express();
@@ -42,21 +42,13 @@ app.use(express.json({ limit: '50kb' })); // Limit payload size
 // CORS configuration with detailed logging
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps, curl, or Postman)
-        if (!origin) {
-            return callback(null, true);
-        }
+        const allowedOrigins = process.env.NODE_ENV === 'development'
+            ? ['http://localhost:3000', 'http://127.0.0.1:3000']
+            : ['https://prompt-enhancer.ai'];
 
-        const allowedOrigins = [
-            'http://localhost:3000',
-            'http://127.0.0.1:3000',
-            'https://prompt-enhancer.ai'
-        ];
-
-        if (allowedOrigins.includes(origin)) {
+        if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
-            console.log(`CORS blocked request from: ${origin}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -71,31 +63,6 @@ app.use(cors(corsOptions));
 
 // Handle preflight requests
 app.options('*', cors(corsOptions));
-
-// Integrate Treblle only in production environment
-if (process.env.NODE_ENV === 'production' && process.env.TREBLLE_API_KEY && process.env.TREBLLE_PROJECT_ID) {
-    app.use(
-        treblle({
-            apiKey: process.env.TREBLLE_API_KEY,
-            projectId: process.env.TREBLLE_PROJECT_ID,
-            // Add more sensitive fields to mask
-            additionalFieldsToMask: [
-                'enhancedText',
-                'originalText',
-                'apiKey',
-                'API_KEY',
-                'OPENAI_API_KEY',
-                'MISTRAL_API_KEY',
-                'X-API-Key',
-                'password',
-                'token',
-                'authorization'
-            ],
-            showErrors: false
-        })
-    );
-    console.log('🔍 Treblle API monitoring enabled in production mode');
-}
 
 // DDoS protection - Apply to all routes
 app.use(ddosProtection());
@@ -138,22 +105,17 @@ app.get('/docs', (req, res) => {
                 description: 'Get, update, or delete a specific prompt'
             },
         ],
-        rateLimits: '100 requests per minute',
-        monitoring: 'API requests are monitored with Treblle in production environment'
+        rateLimits: '100 requests per minute'
     });
 });
 
-// API status check endpoint
 app.get('/api-check', (req, res) => {
     res.json({
         apiKeyConfigured: !!process.env.API_KEY,
         apiKeyFirstFour: process.env.API_KEY ? process.env.API_KEY.substring(0, 4) : null,
         openAIConfigured: !!process.env.OPENAI_API_KEY,
         nodeEnv: process.env.NODE_ENV,
-        corsOrigins: process.env.CORS_ALLOWED_ORIGINS,
-        treblleEnabled: process.env.NODE_ENV === 'production' &&
-            !!process.env.TREBLLE_API_KEY &&
-            !!process.env.TREBLLE_PROJECT_ID
+        corsOrigins: process.env.CORS_ALLOWED_ORIGINS
     });
 });
 

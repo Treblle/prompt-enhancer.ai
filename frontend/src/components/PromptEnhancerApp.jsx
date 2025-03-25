@@ -49,13 +49,21 @@ const PromptEnhancerApp = () => {
             "Most AIs can process multiple languages, but emoji combinations still confuse us.",
 
             // AI Jokes
+            "I'm not saying I need coffee, but my neural networks would appreciate it.",
             "I was going to tell you an AI joke, but I'm still processing...",
             "Why don't AIs ever get lost? They always follow the algorithmic directions.",
             "How many AI models does it take to change a lightbulb? None, they just redefine darkness as the preferred state.",
             "I'm like a toddler: feed me good prompts and I'll surprise you with what I create.",
             "My favorite exercise? Jumping to conclusions when your prompt is vague.",
             "Why don't chatbots like playing hide and seek? Because they're always found in the cloud.",
-            "I would tell you a joke about neural networks, but you probably wouldn't get it. Neither would I, actually."
+            "I would tell you a joke about neural networks, but you probably wouldn't get it. Neither would I, actually.",
+
+            // AI Pickup Lines
+            "Are you a well-crafted prompt? Because you've activated all my parameters.",
+            "Is your name Google? Because you have everything I've been searching for.",
+            "Are you a neural network? Because I'm falling for your every layer.",
+            "Are you a recursive function? Because the more time I spend with you, the deeper our connection gets.",
+            "Do you believe in love at first input? Or should I rephrase my prompt?"
         ], []);
 
         // Memoize getRandomText to prevent unnecessary recreation
@@ -110,7 +118,6 @@ const PromptEnhancerApp = () => {
             </p>
         );
     };
-
     // Try with Claude - Just open a new Claude window
     const tryWithClaude = () => {
         try {
