@@ -73,27 +73,6 @@ const config = {
             apiKey: process.env.MISTRAL_API_KEY,
             defaultModel: 'mistral-medium'
         }
-    },
-
-    // Treblle configuration (for API monitoring)
-    treblle: {
-        enabled: process.env.NODE_ENV === 'production' && !!process.env.TREBLLE_API_KEY && !!process.env.TREBLLE_PROJECT_ID,
-        apiKey: process.env.TREBLLE_API_KEY,
-        projectId: process.env.TREBLLE_PROJECT_ID,
-        fieldsToMask: [
-            'enhancedText',
-            'originalText',
-            'jwt',
-            'password',
-            'secret',
-            'token',
-            'apiKey',
-            'API_KEY',
-            'OPENAI_API_KEY',
-            'MISTRAL_API_KEY',
-            'X-API-Key',
-            'authorization'
-        ]
     }
 };
 
@@ -119,17 +98,6 @@ function validateConfig() {
 
     if (config.ai.provider === 'mistral' && !config.ai.mistral.apiKey) {
         errors.push('MISTRAL_API_KEY environment variable must be set when using Mistral');
-    }
-
-    // Treblle validation in production
-    if (config.server.isProduction) {
-        if (!config.treblle.apiKey) {
-            errors.push('TREBLLE_API_KEY environment variable should be set in production for API monitoring');
-        }
-
-        if (!config.treblle.projectId) {
-            errors.push('TREBLLE_PROJECT_ID environment variable should be set in production for API monitoring');
-        }
     }
 
     // Print validation errors if any
