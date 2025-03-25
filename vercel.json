@@ -19,11 +19,19 @@
   ],
   "routes": [
     {
+      "src": "/api-check",
+      "dest": "server.js"
+    },
+    {
       "src": "/v1/(.*)",
       "dest": "server.js"
     },
     {
       "src": "/docs",
+      "dest": "server.js"
+    },
+    {
+      "src": "/test-server",
       "dest": "server.js"
     },
     {

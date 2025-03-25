@@ -7,6 +7,13 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 
+app.get('/test-server', (req, res) => {
+    res.json({
+        message: 'Server is running',
+        env: process.env.NODE_ENV
+    });
+});
+
 // Check if .env file exists
 const envPath = path.join(__dirname, '.env');
 if (process.env.NODE_ENV !== 'production' && !fs.existsSync(envPath)) {
