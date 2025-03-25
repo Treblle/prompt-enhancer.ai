@@ -33,12 +33,26 @@ app.use(helmet({
 
 // Apply Treblle logging only in production environments
 if (process.env.NODE_ENV === 'production') {
-    app.use(treblle({
-        apiKey: process.env.TREBLLE_API_KEY,
-        projectId: process.env.TREBLLE_PROJECT_ID,
-        additionalFieldsToMask: ['text', 'originalText', 'enhancedText'], // Mask prompt content for privacy
-    }));
-    console.log('🔍 Treblle API monitoring enabled for production');
+    const treblleApiKey = process.env.TREBLLE_API_KEY;
+    const treblleProjectId = process.env.TREBLLE_PROJECT_ID;
+
+    console.log('Treblle Configuration:');
+    console.log(`API Key: ${treblleApiKey ? treblleApiKey.substring(0, 4) + '...' : 'Not Set'}`);
+    console.log(`Project ID: ${treblleProjectId || 'Not Set'}`);
+
+    if (treblleApiKey && treblleProjectId) {
+        try {
+            app.use(treblle({
+                apiKey: treblleApiKey,
+                projectId: treblleProjectId,
+            }));
+            console.log('🔍 Treblle API monitoring successfully enabled for production');
+        } catch (error) {
+            console.error('❌ Failed to initialize Treblle:', error);
+        }
+    } else {
+        console.warn('⚠️ Treblle not configured: Missing API Key or Project ID');
+    }
 }
 
 // Logging middleware for debugging
