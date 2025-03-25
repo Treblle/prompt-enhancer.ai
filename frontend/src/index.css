@@ -101,6 +101,15 @@ code {
     transform: scale(1.1);
 }
 
+/* Header Controls Styling */
+header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+}
+
 /* Improved Mobile Responsive Adjustments */
 @media (max-width: 640px) {
 
@@ -115,7 +124,8 @@ code {
 
     /* Optimize card sizing and spacing for mobile */
     .prompt-enhancer-card {
-        height: 90vh !important;
+        height: calc(100vh - 80px) !important;
+        /* Account for header */
         width: 95vw !important;
         max-width: 100%;
         margin: 5px auto;
@@ -123,6 +133,29 @@ code {
     }
 
     /* Make header more compact on mobile */
+    header {
+        padding: 0.5rem;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    /* GitHub button mobile styling */
+    header a {
+        height: 32px !important;
+        padding: 0 8px !important;
+    }
+
+    /* Theme toggle - make slightly smaller on mobile */
+    .toggle-button {
+        width: 32px !important;
+        height: 32px !important;
+        padding: 0.25rem !important;
+    }
+
+    /* App header styling */
     .prompt-header {
         padding: 10px 12px !important;
     }
@@ -219,6 +252,12 @@ code {
 
     .prompt-content {
         padding: 8px !important;
+    }
+
+    /* Even smaller controls for tiny screens */
+    header a span {
+        display: none;
+        /* Hide "Star on GitHub" text, show only icon */
     }
 }
 

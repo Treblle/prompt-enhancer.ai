@@ -109,6 +109,11 @@ function decodeHtmlEntities(text) {
 function detectContentType(promptText) {
     const lowerPrompt = promptText.toLowerCase();
 
+    // Detect specific companies or products mentioned
+    if (lowerPrompt.includes('treblle')) {
+        return 'treblle'; // Special case for Treblle
+    }
+
     // Simple keyword matching for content types
     if (lowerPrompt.includes('linkedin') || lowerPrompt.includes('social media') || lowerPrompt.includes('post')) {
         return 'social_media';
@@ -245,101 +250,192 @@ function getResultPatternsToAvoid() {
 }
 
 /**
+ * Generates an LLM-ready enhanced prompt
+ * Produces a prompt that can be directly used with any LLM
+ * @param {string} originalPrompt - The original user prompt
+ * @param {string} contentType - The detected content type
+ * @returns {string} - The LLM-ready enhanced prompt
+ */
+function generateLLMReadyPrompt(originalPrompt, contentType) {
+    // Get content patterns for this type
+    const contentPatterns = getContentTypePatterns(contentType);
+
+    // Get structural recommendations
+    const structuralRecs = getStructuralRecommendations(contentType);
+
+    // Get content framework
+    const contentFramework = promptDictionary.content_frameworks?.[contentType] ||
+        "Focus on specific insights rather than general observations. Use natural language that demonstrates genuine expertise.";
+
+    // Extract overused words from dictionary
+    const overusedWords = promptDictionary.overused_words.join(', ');
+
+    // Extract clichéd phrases (limit to 5 examples for brevity)
+    const overusedPhrases = promptDictionary.overused_phrases.slice(0, 5).map(phrase => `"${phrase}"`).join(', ');
+
+    // Get bad patterns specific to this content type (limit to 5)
+    const badPatterns = contentPatterns.bad_patterns ?
+        contentPatterns.bad_patterns.slice(0, 5).map(pattern => `"${pattern}"`).join(', ') :
+        "generic templates, forced enthusiasm, obvious statements";
+
+    // Get good guidance for this content type
+    const goodGuidance = contentPatterns.good_guidance ?
+        contentPatterns.good_guidance.join('; ') :
+        "Focus on specific insights; provide concrete examples; demonstrate genuine expertise";
+
+    // Get formatting guidance
+    const formattingGuidance = structuralRecs.formatting ?
+        structuralRecs.formatting.join('; ') :
+        "Use clear headings; keep paragraphs concise; use bold for emphasis; use bullet points sparingly";
+
+    // Get structure guidance
+    const structureGuidance = structuralRecs.structure ?
+        structuralRecs.structure.join('; ') :
+        "Begin with a specific insight; focus on a main idea; support with examples; conclude meaningfully";
+
+    // Extract topic from prompt
+    const topic = originalPrompt.replace(/^(write|create|draft|make|generate|prepare)/i, '').trim();
+
+    // Determine word count suggestion based on content type
+    let suggestedWordCount = "800-1200";
+    if (contentType === 'social_media') {
+        suggestedWordCount = "250-350";
+    } else if (contentType === 'executive') {
+        suggestedWordCount = "500-800";
+    } else if (contentType === 'technical') {
+        suggestedWordCount = "1000-1500";
+    } else if (contentType === 'case_study') {
+        suggestedWordCount = "1200-2000";
+    }
+
+    // Special handling for Treblle
+    if (contentType === 'treblle') {
+        return `You are an expert-level content strategist and professional writer with deep knowledge of API management platforms, API observability, and developer tools.
+
+I need you to create a comprehensive, engaging content piece on Treblle, an API Intelligence platform that empowers companies looking to connect the dots between APIs and their business development.
+
+Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples of how Treblle improves API workflows, monitoring capabilities, or development processes. Your content should demonstrate genuine expertise on Treblle and offer unique perspectives not commonly found in basic articles on API tools.
+
+Structure your content with:
+• A compelling introduction that highlights a specific insight or challenge in the API space that Treblle addresses
+• Clear, descriptive headings for each section of the content
+• Logical progression of ideas with smooth transitions between Treblle's key features and benefits
+• Specific examples and evidence to support key points about Treblle's value proposition
+• A conclusion that offers implications or next steps for developers or companies considering Treblle
+
+Writing style guidance:
+• Use a professional but conversational tone appropriate for a technical audience
+• Employ concrete, specific language rather than vague generalizations about Treblle
+• Use active voice and strong verbs throughout the content
+• Include occasional rhetorical questions or direct address to engage developers
+• Use analogies or metaphors to explain complex concepts about API observability
+• Vary sentence structure and length for engaging rhythm
+
+IMPORTANT - Avoid these AI-typical patterns:
+• Do NOT use rhetorical questions as transitions or headings
+• Avoid generic calls to action or engagement questions
+• Do not use bullet points for obvious statements about Treblle or APIs
+• Avoid phrases like "let's dive in," "in today's world," or "more than ever before"
+• Don't create simplistic binary perspectives on complex API topics
+• Avoid overused terms like "revolutionary," "innovative," "cutting-edge," or "game-changing"
+
+Formatting guidance:
+• Use bold for key concepts or important takeaways about Treblle
+• Create subheadings that promise and deliver specific value
+• Use bullet points only for related items or steps in Treblle workflows
+• Incorporate whitespace for readability
+• Keep paragraphs relatively short (3-5 sentences)
+
+Please write a comprehensive post of approximately ${suggestedWordCount} words that would be valuable for developers, API product managers, or technical decision-makers.
+
+Be original, specific, and demonstrate genuine expertise on Treblle and API management. I'm looking for content that stands distinctly apart from typical AI-generated material.`;
+    }
+
+    // Create the LLM-ready prompt
+    return `You are an expert-level content strategist and professional writer with deep knowledge and professional experience in ${contentType.replace('_', ' ')}.
+
+I need you to create a comprehensive, engaging content piece on this topic: "${topic}"
+
+Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points. Your content should demonstrate genuine expertise and offer unique perspectives not commonly found in basic articles on this topic.
+
+Structure your content with:
+• ${structureGuidance.split(';').join('\n• ')}
+
+Writing style guidance:
+• Use a professional but conversational tone
+• Employ concrete, specific language rather than vague generalizations
+• Use active voice and strong verbs
+• Include occasional rhetorical questions or direct address to engage readers
+• Use analogies or metaphors to explain complex concepts
+• Vary sentence structure and length for engaging rhythm
+
+IMPORTANT - Avoid these AI-typical patterns:
+• Do NOT use rhetorical questions as transitions or headings
+• Avoid generic calls to action or engagement questions
+• Do not use bullet points for obvious statements
+• Avoid phrases like "let's dive in," "in today's world," or "more than ever before"
+• Don't create simplistic binary perspectives on complex topics
+• Avoid overused terms like ${overusedWords.split(',').slice(0, 5).join(', ')}
+
+Formatting guidance:
+• ${formattingGuidance.split(';').join('\n• ')}
+
+Please write a comprehensive piece of approximately ${suggestedWordCount} words.
+
+Content-specific guidance:
+• ${goodGuidance.split(';').join('\n• ')}
+
+Be original, specific, and demonstrate genuine expertise on this topic. I'm looking for content that stands distinctly apart from typical AI-generated material.`;
+}
+
+/**
  * Generates an enhanced system prompt for the AI model
  * Incorporates patterns from the prompt dictionary
  * @param {string} originalPrompt - The user's original prompt
  * @returns {string} - The enhanced system prompt
  */
 function generateSystemPrompt(originalPrompt) {
-    // Extract the patterns to avoid
-    const overusedWords = promptDictionary.overused_words.join(', ');
-    const overusedPhrases = promptDictionary.overused_phrases.map(phrase => `"${phrase}"`).join(', ');
-    const badSentenceStructures = promptDictionary.bad_sentence_structures.map(structure => `"${structure}"`).join(', ');
-
-    // Detect content type and get specific patterns
+    // Detect content type
     const contentType = detectContentType(originalPrompt);
-    const contentPatterns = getContentTypePatterns(contentType);
 
-    // Get content framework for this type
-    const contentFramework = promptDictionary.content_frameworks?.[contentType] ||
-        "Focus on specific insights rather than general observations. Use natural language that demonstrates genuine expertise.";
-
-    // Get bad patterns specific to this content type
-    const typeBadPatterns = contentPatterns.bad_patterns ?
-        contentPatterns.bad_patterns.map(pattern => `"${pattern}"`).join(', ') :
-        "generic templates, forced enthusiasm, obvious statements";
-
-    // Get good guidance specific to this content type
-    const typeGoodGuidance = contentPatterns.good_guidance ?
-        contentPatterns.good_guidance.join('; ') :
-        "Focus on specific insights; provide concrete examples; demonstrate genuine expertise";
-
-    // Get structural recommendations
-    const structuralRecs = getStructuralRecommendations(contentType);
-    const formattingGuidance = structuralRecs.formatting ?
-        structuralRecs.formatting.join('; ') :
-        "Use clear headings; keep paragraphs concise; use bold for emphasis; use bullet points sparingly";
-
-    const structureGuidance = structuralRecs.structure ?
-        structuralRecs.structure.join('; ') :
-        "Begin with a specific insight; focus on a main idea; support with examples; conclude meaningfully";
-
-    // Get patterns to avoid in the final result
-    const resultPatternsToAvoid = getResultPatternsToAvoid();
-
+    // Generate LLM-ready prompt based on content type
     return `You are a specialized writing consultant who transforms basic content requests into sophisticated, expert-level guidance.
 
-IMPORTANT CONTEXT: The prompts you create will be used by AI language models, so your guidance needs to help the AI create content that sounds genuinely human and demonstrates real expertise.
+Your task is to transform the user's basic prompt into a comprehensive, LLM-ready prompt that can be directly copied and pasted into any AI system without further modifications.
 
-DETECTED CONTENT TYPE: ${contentType}
-CONTENT FRAMEWORK: ${contentFramework}
+For the prompt "${originalPrompt}", I've identified it as a request for content in the "${contentType}" category.
 
-When enhancing this request, you will:
+Please create a prompt that follows this exact structure:
 
-1. PROVIDE DOMAIN-SPECIFIC EXPERTISE - Give guidance that reflects how an expert in ${contentType} would approach the content 
+1. Begin with a role assignment: "You are an expert-level content strategist and professional writer with deep knowledge and professional experience in [relevant field]."
 
-2. SUGGEST AUTHENTIC APPROACHES - Recommend techniques that will make the content sound genuinely human, not AI-generated
+2. Clearly state the task: "I need you to create a comprehensive, engaging content piece on this topic: [refined topic]"
 
-3. GUIDE TOWARD EFFECTIVE STRUCTURE - Provide specific guidance on how to structure and format the content effectively, including:
-   - When to use bold text for emphasis on key points
-   - When to use bullet points for clarity and scannability
-   - How to create powerful opening hooks that capture attention
-   - How to organize content with clear headers and subheaders
-   - How to create natural paragraph transitions
-   - When to incorporate practical examples
+3. Provide depth guidance: "Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points."
 
-4. GUIDE AWAY FROM CLICHÉS - Help avoid common patterns that make content sound generic
+4. Include detailed structure guidance with bullet points
 
-5. EXPLICITLY INSTRUCT ON AVOIDING AI PATTERNS - Provide clear guidance on patterns to avoid in the final output
+5. Include writing style guidance with bullet points
 
-THE FOLLOWING PATTERNS MUST BE EXPLICITLY AVOIDED:
-- Overused buzzwords such as: ${overusedWords}
-- Clichéd phrases such as: ${overusedPhrases.substring(0, 500)}... (and similar)
-- Formulaic sentence structures like: ${badSentenceStructures}
-- Content-specific bad patterns like: ${typeBadPatterns}
-- Generic or forced calls to action
-- "Hook → points → call to action" templates
+6. List specific AI-typical patterns to avoid with bullet points
 
-STRUCTURAL GUIDANCE TO INCLUDE:
-- Formatting: ${formattingGuidance}
-- Structure: ${structureGuidance}
+7. Provide formatting guidance with bullet points
 
-INSTEAD, ENCOURAGE THESE APPROACHES:
-${typeGoodGuidance}
+8. Suggest an appropriate word count based on the content type
 
-${resultPatternsToAvoid}
+9. Include content-specific guidance relevant to the topic
 
-Your enhanced prompt should:
-- Provide specific, substantive guidance rather than vague advice
-- Include examples that demonstrate sophisticated techniques
-- Recommend specific approaches for creating authentic, expert-level content
-- Emphasize depth, nuance, and genuine expertise
-- Guide toward creating content that stands distinctly apart from typical AI-generated material
-- Offer clear structural guidance (bold text, bullet points, etc.) where appropriate
-- EXPLICITLY INSTRUCT to avoid AI-sounding patterns in the final output
+10. End with "Be original, specific, and demonstrate genuine expertise on this topic."
 
-The goal is to help create content that sounds like it was written by a genuine expert in the field, not by an AI.`;
+The prompt should be comprehensive, direct, and immediately usable with any LLM without requiring further editing. It should read like a complete set of instructions that someone could copy and paste directly.
+
+Do not include explanations to me about what you're doing or why - just create the prompt directly as the complete response. Make the prompt conversational but professional in tone.
+
+For reference, here is the LLM-ready prompt I would create for this request:
+
+${generateLLMReadyPrompt(originalPrompt, contentType)}`;
 }
+
 
 /**
  * Enhance a prompt using OpenAI
@@ -352,24 +448,7 @@ async function _enhanceWithOpenAI(params) {
 
     // In test mode, just return a predictable enhancement
     if (process.env.NODE_ENV === 'test') {
-        return `Enhanced: ${originalPrompt}
-
-WRITING GUIDANCE:
-Create content that demonstrates genuine expertise by focusing on a specific aspect of this topic that's often misunderstood. Use concrete examples from real-world implementations rather than theoretical possibilities. Avoid overused terms like "innovative," "revolutionary," or "game-changing." Instead, provide nuanced perspectives that acknowledge both benefits and limitations.
-
-STRUCTURAL GUIDANCE:
-- Use **bold text** to emphasize key points and important concepts
-- Organize information with clear headings when introducing new topics
-- Use bullet points for listing related items or steps
-- Create a compelling hook that challenges conventional wisdom
-- Format longer content with subheadings for easy scanning
-
-PATTERNS TO AVOID IN THE FINAL OUTPUT:
-- Do NOT use rhetorical questions as titles or transitions
-- Avoid generic calls to action or engagement questions
-- Do not use bullet points for obvious statements
-- Avoid simplified "takeaways" of complex topics
-- Do not create content with predictable AI-like structure`;
+        return generateLLMReadyPrompt(originalPrompt, detectContentType(originalPrompt));
     }
 
     // Generate the system prompt using patterns from the dictionary
@@ -384,11 +463,11 @@ PATTERNS TO AVOID IN THE FINAL OUTPUT:
             },
             {
                 role: "user",
-                content: `Transform this basic content request into detailed, practical writing guidance that helps create authentic, expert-level content with effective structure and formatting. Make sure your guidance explicitly warns against AI-sounding patterns in the final output: "${originalPrompt}"`
+                content: `Transform this basic content request into a comprehensive, LLM-ready prompt that anyone could copy and paste directly into any AI system: "${originalPrompt}"`
             }
         ],
         temperature: 0.7,
-        max_tokens: 800,
+        max_tokens: 1000,
     });
 
     return response.choices[0]?.message?.content || '';
@@ -405,24 +484,7 @@ async function _enhanceWithMistral(params) {
 
     // In test mode, just return a predictable enhancement
     if (process.env.NODE_ENV === 'test') {
-        return `Enhanced: ${originalPrompt}
-
-WRITING GUIDANCE:
-Create content that demonstrates genuine expertise by focusing on a specific aspect of this topic that's often misunderstood. Use concrete examples from real-world implementations rather than theoretical possibilities. Avoid overused terms like "innovative," "revolutionary," or "game-changing." Instead, provide nuanced perspectives that acknowledge both benefits and limitations.
-
-STRUCTURAL GUIDANCE:
-- Use **bold text** to emphasize key points and important concepts
-- Organize information with clear headings when introducing new topics
-- Use bullet points for listing related items or steps
-- Create a compelling hook that challenges conventional wisdom
-- Format longer content with subheadings for easy scanning
-
-PATTERNS TO AVOID IN THE FINAL OUTPUT:
-- Do NOT use rhetorical questions as titles or transitions
-- Avoid generic calls to action or engagement questions
-- Do not use bullet points for obvious statements
-- Avoid simplified "takeaways" of complex topics
-- Do not create content with predictable AI-like structure`;
+        return generateLLMReadyPrompt(originalPrompt, detectContentType(originalPrompt));
     }
 
     // Generate the system prompt using patterns from the dictionary
@@ -437,11 +499,11 @@ PATTERNS TO AVOID IN THE FINAL OUTPUT:
             },
             {
                 role: "user",
-                content: `Transform this basic content request into detailed, practical writing guidance that helps create authentic, expert-level content with effective structure and formatting. Make sure your guidance explicitly warns against AI-sounding patterns in the final output: "${originalPrompt}"`
+                content: `Transform this basic content request into a comprehensive, LLM-ready prompt that anyone could copy and paste directly into any AI system: "${originalPrompt}"`
             }
         ],
         temperature: 0.7,
-        maxTokens: 800
+        maxTokens: 1000
     });
 
     return response.choices[0]?.message?.content || '';
@@ -518,7 +580,9 @@ async function enhancePrompt(params) {
                 console.log('Using OpenAI for prompt enhancement');
                 enhancedPrompt = await _enhanceWithOpenAI({ originalPrompt: sanitizedPrompt });
             } else {
-                throw new Error('No AI provider available. Check your configuration.');
+                // Fallback to direct prompt generation if no provider is available
+                const contentType = detectContentType(sanitizedPrompt);
+                enhancedPrompt = generateLLMReadyPrompt(sanitizedPrompt, contentType);
             }
         }
 
@@ -542,16 +606,24 @@ async function enhancePrompt(params) {
     } catch (error) {
         logError('Prompt Enhancement Error', error);
 
-        // Provide a meaningful fallback
-        const fallbackMessage = `Unable to enhance prompt. Error: ${error.message}. 
+        // If there's an error, fall back to direct prompt generation
+        try {
+            const contentType = detectContentType(sanitizedPrompt);
+            return generateLLMReadyPrompt(sanitizedPrompt, contentType);
+        } catch (fallbackError) {
+            // If all else fails, provide a meaningful fallback
+            return `You are an expert-level content strategist and professional writer.
 
-General Prompt Enhancement Guidelines:
-1. Be specific about your request
-2. Provide context
-3. Define the desired output format
-4. Include any relevant constraints or requirements`;
+I need you to create a comprehensive, engaging content piece on this topic: "${sanitizedPrompt}"
 
-        return fallbackMessage;
+Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points. Your content should demonstrate genuine expertise and offer unique perspectives not commonly found in basic articles on this topic.
+
+Structure your content with clear headings, logical progression, and smooth transitions. Use a professional but conversational tone and employ concrete, specific language rather than vague generalizations.
+
+Avoid common AI patterns like rhetorical questions as transitions, generic calls to action, bullet points of obvious statements, and overused phrases like "let's dive in" or "in today's world."
+
+Be original, specific, and demonstrate genuine expertise on this topic.`;
+        }
     }
 }
 
@@ -560,5 +632,6 @@ module.exports = {
     // Export these for testing
     detectContentType,
     getContentTypePatterns,
-    getResultPatternsToAvoid
+    getResultPatternsToAvoid,
+    generateLLMReadyPrompt
 };
