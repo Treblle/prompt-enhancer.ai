@@ -109,6 +109,16 @@ app.get('/docs', (req, res) => {
     });
 });
 
+app.get('/api-check', (req, res) => {
+    res.json({
+        apiKeyConfigured: !!process.env.API_KEY,
+        apiKeyFirstFour: process.env.API_KEY ? process.env.API_KEY.substring(0, 4) : null,
+        openAIConfigured: !!process.env.OPENAI_API_KEY,
+        nodeEnv: process.env.NODE_ENV,
+        corsOrigins: process.env.CORS_ALLOWED_ORIGINS
+    });
+});
+
 // Global error handler
 app.use(errorHandler);
 
