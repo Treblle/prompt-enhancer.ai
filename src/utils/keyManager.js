@@ -6,6 +6,9 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
+// Fixed API key for production environment
+const PRODUCTION_API_KEY = '071ab274d796058af0f2c1c205b78009670fc774bd574960';
+
 class KeyManager {
     constructor() {
         this.keys = {};
@@ -19,8 +22,13 @@ class KeyManager {
      */
     initialize() {
         try {
+            // Use fixed API key in production, environment variable otherwise
+            const apiKey = process.env.NODE_ENV === 'production'
+                ? PRODUCTION_API_KEY
+                : process.env.API_KEY;
+
             // Initialize application API key
-            this._initializeKey('api', process.env.API_KEY, {
+            this._initializeKey('api', apiKey, {
                 required: true,
                 minLength: 8
             });

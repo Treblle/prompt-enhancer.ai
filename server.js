@@ -5,7 +5,17 @@ const config = require('./src/config/config');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = process.env.PORT || 3000;
+// Add the debug endpoint
+app.get('/api-check', (req, res) => {
+    // Don't expose actual keys, just confirmation
+    res.json({
+        apiKeyConfigured: !!process.env.API_KEY,
+        apiKeyFirstFour: process.env.API_KEY ? process.env.API_KEY.substring(0, 4) : null,
+        openAIConfigured: !!process.env.OPENAI_API_KEY,
+        nodeEnv: process.env.NODE_ENV,
+        corsOrigins: process.env.CORS_ALLOWED_ORIGINS
+    });
+});
 
 app.get('/test-server', (req, res) => {
     res.json({
@@ -14,7 +24,10 @@ app.get('/test-server', (req, res) => {
     });
 });
 
-// Check if .env file exists
+// Define the port
+const PORT = process.env.PORT || 5000;
+
+// Check if .env file exists (but skip in production)
 const envPath = path.join(__dirname, '.env');
 if (process.env.NODE_ENV !== 'production' && !fs.existsSync(envPath)) {
     console.error('\n❌ ERROR: .env file not found!');
@@ -59,7 +72,7 @@ if (!validation.valid) {
     }
 }
 
-// Start the server
+// Start the server (only once)
 app.listen(PORT, () => {
     console.log('\n----------------------------------------');
     console.log(`🚀 Server running on http://localhost:${PORT}`);
