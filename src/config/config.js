@@ -1,5 +1,8 @@
 require('dotenv').config();
 
+// Fixed API key for production environment - NEVER CHANGE THIS VALUE
+const PRODUCTION_API_KEY = '071ab274d796058af0f2c1c205b78009670fc774bd574960';
+
 /**
  * Application configuration with validation and defaults
  */
@@ -8,12 +11,14 @@ const config = {
     server: {
         port: parseInt(process.env.PORT, 10) || 5000,
         env: process.env.NODE_ENV || 'development',
-        logLevel: process.env.LOG_LEVEL || 'info'
+        logLevel: process.env.LOG_LEVEL || 'info',
+        isProduction: process.env.NODE_ENV === 'production'
     },
 
     // API configuration
     api: {
-        key: process.env.API_KEY,
+        // Use hardcoded key for production, environment variable otherwise
+        key: process.env.NODE_ENV === 'production' ? PRODUCTION_API_KEY : process.env.API_KEY,
         version: '1.0.0',
         baseUrl: '/v1',
     },
@@ -25,7 +30,7 @@ const config = {
             ? process.env.CORS_ALLOWED_ORIGINS.split(',')
             : (process.env.NODE_ENV === 'development'
                 ? ['http://localhost:3000']
-                : ['https://your-production-domain.com']),
+                : ['https://prompt-enhancer.ai']),
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true,
         maxAge: 86400 // 24 hours
@@ -75,9 +80,15 @@ const config = {
 function validateConfig() {
     const errors = [];
 
-    // API key must be set
-    if (!config.api.key) {
-        errors.push('API_KEY environment variable must be set');
+    // API key validation
+    if (process.env.NODE_ENV === 'production') {
+        // In production, confirm we're using the production API key
+        if (config.api.key !== PRODUCTION_API_KEY) {
+            errors.push('Production environment must use the hardcoded production API key');
+        }
+    } else if (!config.api.key) {
+        // In development, API key must be set
+        errors.push('API_KEY environment variable must be set in development');
     }
 
     // AI provider configuration validation

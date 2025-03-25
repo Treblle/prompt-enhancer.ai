@@ -73,6 +73,8 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     transition: background 0.4s, color 0.4s;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior-y: none;
 }
 
 body.light {
@@ -99,49 +101,140 @@ code {
     transform: scale(1.1);
 }
 
-/* Mobile Responsive Adjustments */
+/* Improved Mobile Responsive Adjustments */
 @media (max-width: 640px) {
 
-    /* Adjust card size for mobile */
+    /* Prevent zoom on input focus in iOS */
+    input,
+    textarea,
+    select,
+    button {
+        font-size: 16px;
+        /* Prevents zoom on iOS */
+    }
+
+    /* Optimize card sizing and spacing for mobile */
     .prompt-enhancer-card {
-        height: auto !important;
-        min-height: 85vh;
-        max-height: 95vh;
-        width: 95% !important;
-        margin: 10px auto;
+        height: 90vh !important;
+        width: 95vw !important;
+        max-width: 100%;
+        margin: 5px auto;
+        border-radius: 12px;
     }
 
     /* Make header more compact on mobile */
     .prompt-header {
-        padding: 12px 16px !important;
+        padding: 10px 12px !important;
     }
 
     .prompt-header h1 {
-        font-size: 1.5rem !important;
+        font-size: 1.25rem !important;
+        line-height: 1.3;
     }
 
     .prompt-header p {
-        font-size: 0.875rem !important;
+        font-size: 0.75rem !important;
+        margin-top: 0.25rem !important;
     }
 
     /* Adjust content padding for mobile */
     .prompt-content {
-        padding: 12px !important;
+        padding: 10px !important;
     }
 
     /* Input and output areas */
     .prompt-textarea {
         height: 80px !important;
+        padding: 8px !important;
+        font-size: 14px !important;
     }
 
     /* Enhance button */
     .enhance-button {
         width: 100% !important;
         justify-content: center;
+        padding-top: 8px !important;
+        padding-bottom: 8px !important;
+        font-size: 14px !important;
     }
 
     /* Enhanced result area */
     .result-area {
-        max-height: 35vh !important;
+        max-height: 40vh !important;
+        padding: 8px !important;
+        font-size: 14px !important;
+    }
+
+    /* Fixed positioning for mobile devices */
+    .fixed {
+        position: fixed !important;
+    }
+
+    /* Improved button sizes on mobile */
+    button {
+        min-height: 36px;
+        /* Ensures buttons are tap-friendly */
+    }
+
+    /* Fix bottom spacing issues */
+    .mt-auto {
+        margin-top: auto !important;
+    }
+
+    /* Prevent overflow issues */
+    html,
+    body {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    /* Footer adjustments */
+    footer {
+        padding: 8px 0 !important;
+    }
+
+    footer p {
+        font-size: 0.7rem !important;
+    }
+
+    footer img {
+        height: 16px !important;
+    }
+}
+
+/* Media query for iPhone SE and other very small devices */
+@media (max-width: 375px) {
+    .prompt-header h1 {
+        font-size: 1.1rem !important;
+    }
+
+    .prompt-header p {
+        font-size: 0.7rem !important;
+    }
+
+    .prompt-enhancer-card {
+        margin: 2px !important;
+        width: 98vw !important;
+    }
+
+    .prompt-content {
+        padding: 8px !important;
+    }
+}
+
+/* Fix for sticky hover on mobile devices */
+@media (hover: hover) {
+    .hover\:bg-gray-300:hover {
+        background-color: #d1d8e0;
+    }
+}
+
+/* Add safe area insets for modern iOS devices */
+@supports(padding: max(0px)) {
+    body {
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
     }
 }

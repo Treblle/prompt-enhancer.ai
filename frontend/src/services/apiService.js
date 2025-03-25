@@ -1,21 +1,27 @@
+// Define API base URL based on environment
 const API_BASE_URL = process.env.REACT_APP_API_URL ||
     (process.env.NODE_ENV === 'development'
-        ? 'http://localhost:5001/v1'
+        ? 'http://localhost:5000/v1'
         : 'https://prompt-enhancer.ai/v1');
 
-// Fixed API key for production, otherwise use environment variable
-const DEFAULT_PRODUCTION_KEY = '071ab274d796058af0f2c1c205b78009670fc774bd574960';
+// Fixed API key for production - NEVER CHANGE THIS VALUE
+const PRODUCTION_API_KEY = '071ab274d796058af0f2c1c205b78009670fc774bd574960';
+
+// Choose the appropriate API key based on environment
 const API_KEY = process.env.NODE_ENV === 'production'
-    ? DEFAULT_PRODUCTION_KEY
+    ? PRODUCTION_API_KEY
     : process.env.REACT_APP_API_KEY;
 
-// Debug logging for API configuration
-console.log('API Configuration:', {
-    baseUrl: API_BASE_URL,
-    apiKeyAvailable: !!API_KEY,
-    apiKeyPrefix: API_KEY ? API_KEY.substring(0, 4) : 'Not set',
-    environment: process.env.NODE_ENV
-});
+// Debug logging for API configuration (only in development)
+if (process.env.NODE_ENV === 'development') {
+    console.log('API Configuration:', {
+        baseUrl: API_BASE_URL,
+        apiKeyAvailable: !!API_KEY,
+        apiKeyPrefix: API_KEY ? API_KEY.substring(0, 4) : 'Not set',
+        environment: process.env.NODE_ENV,
+        isProductionKey: API_KEY === PRODUCTION_API_KEY
+    });
+}
 
 // Utility function for logging
 function logApiError(context, error) {

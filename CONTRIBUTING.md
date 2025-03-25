@@ -37,6 +37,19 @@ This project and everyone participating in it are governed by our [Code of Condu
 
    The setup script will guide you through creating your local `.env` file and configuring API keys.
 
+### API Keys and Environment Configuration 🔒
+
+Our project uses different API keys for development and production:
+
+- **Development Environment**: The setup script will generate a random API key for your local development
+- **Production Environment**: Uses a fixed hardcoded API key (`071ab274d796058af0f2c1c205b78009670fc774bd574960`)
+
+**IMPORTANT:**
+
+- Never change the production API key in any files
+- Never commit your local development API key
+- When contributing, ensure your changes respect this API key management approach
+
 ### API Keys Security 🔒
 
 **IMPORTANT:** API keys and secrets should never be committed to the repository.
@@ -52,8 +65,7 @@ If you're a maintainer or setting up your own fork with CI/CD:
 1. Go to your GitHub repository
 2. Click on "Settings" → "Secrets and variables" → "Actions"
 3. Add the following secrets:
-   - `API_KEY` - Authentication key for the API
-   - `REACT_APP_API_KEY` - SAME AS API_KEY
+   - `REACT_APP_API_KEY` - Should be set to the production API key: `071ab274d796058af0f2c1c205b78009670fc774bd574960`
    - `OPENAI_API_KEY` - Your OpenAI API key
    - `MISTRAL_API_KEY` - Your Mistral AI API key (if using Mistral)
 
@@ -116,45 +128,6 @@ Our GitHub Actions workflows will use these secrets to build and deploy without 
 
 9. Wait for review and address any feedback
 
-## Using Act for Testing GitHub Actions Locally 🧪
-
-You can test GitHub Actions workflows locally using [Act](https://github.com/nektos/act).
-
-### Installing Act on Windows
-
-#### Option 1: Using Chocolatey
-
-```bash
-choco install act-cli
-```
-
-#### Option 2: Using Git Bash with Docker
-
-1. Make sure Docker Desktop is installed and running
-2. In Git Bash, run:
-
-```bash
-# Download the latest binary
-curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | bash
-```
-
-#### Option 3: Manual Installation
-
-1. Download the latest release from [GitHub Releases](https://github.com/nektos/act/releases)
-2. Extract the executable and place it in a directory in your PATH
-
-### Using Act with GitHub Secrets
-
-To run GitHub Actions workflows locally with secrets:
-
-```bash
-# Run the default workflow with secrets
-act -s API_KEY=test_key -s OPENAI_API_KEY=test_openai_key
-
-# Run a specific workflow
-act push -W .github/workflows/deploy.yml -s API_KEY=test_key
-```
-
 ## Development Guidelines 📝
 
 ### Backend (Node.js)
@@ -165,6 +138,7 @@ act push -W .github/workflows/deploy.yml -s API_KEY=test_key
 - Write modular, reusable code
 - Handle errors gracefully
 - Never log sensitive information like API keys
+- **IMPORTANT:** Do not change the hardcoded production API key value
 
 ### Frontend (React)
 
@@ -173,6 +147,7 @@ act push -W .github/workflows/deploy.yml -s API_KEY=test_key
 - Use Tailwind CSS utility classes
 - Keep components small and focused
 - Use TypeScript for type safety (recommended)
+- Ensure mobile responsiveness
 
 ### Git Commit Messages
 
@@ -215,13 +190,5 @@ act push -W .github/workflows/deploy.yml -s API_KEY=test_key
 2. Feedback and suggestions will be provided
 3. Changes may be requested
 4. Once approved, PR will be merged
-
-## Financial Contributions 💖
-
-If you want to support the project:
-
-- Star the repository
-- Share with your network
-- Consider sponsoring via GitHub Sponsors
 
 **Thank you for contributing! Together, we can make AI Prompt Enhancer even more awesome! 🌟**
