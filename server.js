@@ -21,7 +21,9 @@ app.get('/api-check', (req, res) => {
         apiKeyIsProduction: apiKey === PRODUCTION_API_KEY,
         openAIConfigured: !!process.env.OPENAI_API_KEY,
         nodeEnv: process.env.NODE_ENV,
-        corsOrigins: process.env.CORS_ALLOWED_ORIGINS
+        corsOrigins: process.env.CORS_ALLOWED_ORIGINS,
+        treblleConfigured: !!process.env.TREBLLE_API_KEY && !!process.env.TREBLLE_PROJECT_ID,
+        treblleEnabled: process.env.NODE_ENV === 'production' && !!process.env.TREBLLE_API_KEY
     });
 });
 
@@ -73,6 +75,24 @@ if (process.env.AI_PROVIDER === 'openai') {
     console.log(`Mistral API Key: ${keyStatus.mistral?.available ? '✅ Available' : '❌ Missing'}`);
 }
 
+// Log Treblle status
+if (process.env.NODE_ENV === 'production') {
+    const treblleApiKey = keyStatus.treblle_api?.available ? '✅ Available' : '❌ Missing';
+    const treblleProjectId = keyStatus.treblle_project?.available ? '✅ Available' : '❌ Missing';
+
+    console.log('\n----------------------------------------');
+    console.log('🔍 Treblle API Monitoring Status:');
+    console.log('----------------------------------------');
+    console.log(`Treblle API Key: ${treblleApiKey}`);
+    console.log(`Treblle Project ID: ${treblleProjectId}`);
+
+    if (keyStatus.treblle_api?.available && keyStatus.treblle_project?.available) {
+        console.log('✅ Treblle API Monitoring ENABLED');
+    } else {
+        console.log('❌ Treblle API Monitoring DISABLED (missing credentials)');
+    }
+}
+
 // Show warnings in development, exit in production if validation fails
 if (!validation.valid) {
     console.log('\n⚠️ Environment Validation Warnings:');
@@ -105,9 +125,18 @@ app.listen(PORT, () => {
     console.log(`📝 API Documentation: http://localhost:${PORT}/docs`);
     console.log(`🔒 Security: Rate limiting and DDoS protection active`);
     console.log(`🔑 Environment: ${process.env.NODE_ENV}`);
+
     if (process.env.NODE_ENV === 'production') {
         console.log(`🔒 Using PRODUCTION API Key`);
+
+        if (process.env.TREBLLE_API_KEY && process.env.TREBLLE_PROJECT_ID) {
+            console.log(`🔍 Treblle API Monitoring: ENABLED`);
+            console.log(`🔗 View API requests at: https://app.treblle.com/projects/${process.env.TREBLLE_PROJECT_ID}`);
+        } else {
+            console.log(`🔍 Treblle API Monitoring: DISABLED (missing credentials)`);
+        }
     }
+
     console.log('----------------------------------------\n');
 });
 

@@ -32,6 +32,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@treblle/express": "^1.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -43,6 +44,7 @@
     "openai": "^4.88.0",
     "rate-limiter-flexible": "^3.0.6",
     "redis": "^4.6.7",
+    "treblle": "^1.5.1",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
