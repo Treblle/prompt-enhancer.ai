@@ -12,7 +12,7 @@ const GithubStarButton = () => {
             title="Star on GitHub"
         >
             <Github className="h-4 w-4 mr-1.5 text-gray-700 dark:text-gray-300" />
-            <span className="text-xs text-gray-700 dark:text-gray-300 whitespace-nowrap">Star on GitHub</span>
+            <span className="text-xs text-gray-700 dark:text-gray-300 whitespace-nowrap button-text">Star on GitHub</span>
         </a>
     );
 };
@@ -54,9 +54,7 @@ const ThemeToggle = () => {
     };
 
     return (
-        <div className="fixed top-4 right-4 z-50 flex space-x-2 items-center">
-            <GithubStarButton />
-
+        <div className="flex items-center">
             <div className="container">
                 <input
                     type="checkbox"
@@ -91,10 +89,16 @@ const ThemeToggle = () => {
 const AppLayout = ({ children }) => {
     return (
         <div className="flex flex-col h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-            <ThemeToggle />
+            {/* Fixed header with controls - properly positioned in a header bar */}
+            <header className="bg-gray-100 dark:bg-gray-800 py-2 px-4 flex justify-end items-center gap-2 shadow-sm z-10">
+                <GithubStarButton />
+                <ThemeToggle />
+            </header>
+
             <main className="flex-1 flex flex-col overflow-hidden">
                 {children}
             </main>
+
             <footer className="bg-gray-200 dark:bg-gray-800 py-3 text-center border-t border-gray-300 dark:border-gray-700">
                 <p className="text-sm text-gray-600 dark:text-gray-300 flex items-center justify-center">
                     Powered by <a

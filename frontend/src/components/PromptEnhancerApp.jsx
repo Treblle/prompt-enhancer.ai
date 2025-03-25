@@ -195,8 +195,8 @@ const PromptEnhancerApp = () => {
     };
 
     return (
-        <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-950 p-2 sm:p-4">
-            <div className="w-full max-w-3xl bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden h-[90vh] sm:h-[700px] flex flex-col prompt-enhancer-card">
+        <div className="flex justify-center items-center min-h-[calc(100vh-40px)] bg-gray-50 dark:bg-gray-950 p-2 sm:p-4">
+            <div className="w-full max-w-3xl bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden h-[calc(90vh-40px)] sm:h-[700px] flex flex-col prompt-enhancer-card">
                 {/* Header */}
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-800 px-4 sm:px-8 py-3 sm:py-6 relative prompt-header">
                     <div className="flex items-center justify-between">
@@ -259,37 +259,37 @@ const PromptEnhancerApp = () => {
 
                     {/* Enhanced Prompt Result */}
                     <div className="flex-1 flex flex-col overflow-hidden">
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-1 sm:mb-2 gap-2 sm:gap-0">
+                        <div className="flex justify-between items-center mb-1 sm:mb-2 gap-1">
                             <div className="flex items-center">
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Enhanced Prompt
                                 </label>
                             </div>
                             {enhancedPrompt && (
-                                <div className="flex items-center space-x-2">
+                                <div className="flex items-center space-x-1 sm:space-x-2 action-buttons">
                                     <button
                                         onClick={copyToClipboard}
-                                        className="text-xs sm:text-sm flex items-center px-2 sm:px-3 py-1 rounded transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                        className="text-xs sm:text-sm flex items-center px-2 py-1 rounded transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
                                         aria-label="Copy to clipboard"
                                     >
                                         {copied ? (
                                             <>
                                                 <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                                Copied!
+                                                <span className="button-text">Copied!</span>
                                             </>
                                         ) : (
                                             <>
                                                 <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                                Copy
+                                                <span className="button-text">Copy</span>
                                             </>
                                         )}
                                     </button>
                                     <button
                                         onClick={tryWithClaude}
-                                        className="text-xs sm:text-sm flex items-center px-2 sm:px-3 py-1 rounded transition-colors bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700"
+                                        className="text-xs sm:text-sm flex items-center px-2 py-1 rounded transition-colors bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700"
                                     >
                                         <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                        Try with Claude
+                                        <span className="button-text">Try with Claude</span>
                                     </button>
                                 </div>
                             )}
