@@ -44,6 +44,19 @@ class KeyManager {
                 required: process.env.AI_PROVIDER === 'mistral'
             });
 
+            // Initialize Treblle keys if in production mode
+            if (process.env.NODE_ENV === 'production') {
+                this._initializeKey('treblle_api', process.env.TREBLLE_API_KEY, {
+                    required: false,
+                    minLength: 8
+                });
+
+                this._initializeKey('treblle_project', process.env.TREBLLE_PROJECT_ID, {
+                    required: false,
+                    minLength: 8
+                });
+            }
+
             this.initialized = true;
             return true;
         } catch (error) {
@@ -335,6 +348,16 @@ class KeyManager {
 
         if (aiProvider === 'mistral' && !this.isKeyAvailable('mistral')) {
             errors.push('Mistral API key is required when using Mistral provider');
+        }
+
+        // Check Treblle keys in production
+        if (process.env.NODE_ENV === 'production') {
+            if (!this.isKeyAvailable('treblle_api')) {
+                warnings.push('Treblle API key is missing. API monitoring will be disabled.');
+            }
+            if (!this.isKeyAvailable('treblle_project')) {
+                warnings.push('Treblle Project ID is missing. API monitoring will be disabled.');
+            }
         }
 
         // Add warnings about API keys in production
