@@ -58,6 +58,15 @@ Our project uses different API keys for development and production:
 - For deployment and CI/CD, we use GitHub Secrets (described below)
 - When submitting PRs, never include actual API keys in your code or comments
 
+### API Monitoring with Treblle 📊
+
+The project uses Treblle for API monitoring and observability, but only in the production environment:
+
+- **Development**: Treblle is disabled by default in local environments
+- **Production**: Treblle automatically logs all API requests made to the production server
+
+When working in development mode, you don't need to configure Treblle credentials. For production deployment, Treblle API keys are managed through GitHub Secrets and Vercel Environment Variables.
+
 ### Setting Up GitHub Secrets for CI/CD (For Maintainers)
 
 If you're a maintainer or setting up your own fork with CI/CD:
@@ -68,6 +77,8 @@ If you're a maintainer or setting up your own fork with CI/CD:
    - `REACT_APP_API_KEY` - Should be set to the production API key: `071ab274d796058af0f2c1c205b78009670fc774bd574960`
    - `OPENAI_API_KEY` - Your OpenAI API key
    - `MISTRAL_API_KEY` - Your Mistral AI API key (if using Mistral)
+   - `TREBLLE_API_KEY` - Your Treblle API key for API monitoring
+   - `TREBLLE_PROJECT_ID` - Your Treblle project ID for API monitoring
 
 Our GitHub Actions workflows will use these secrets to build and deploy without exposing sensitive data.
 
