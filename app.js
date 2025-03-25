@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const treblle = require('@treblle/express');
 const { errorHandler } = require('./src/middleware/error');
 const { authenticateApiKey } = require('./src/middleware/auth');
 const { rateLimit, ddosProtection } = require('./src/middleware/rate-limit');
@@ -29,6 +30,16 @@ app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
 }));
+
+// Apply Treblle logging only in production environments
+if (process.env.NODE_ENV === 'production') {
+    app.use(treblle({
+        apiKey: process.env.TREBLLE_API_KEY,
+        projectId: process.env.TREBLLE_PROJECT_ID,
+        additionalFieldsToMask: ['text', 'originalText', 'enhancedText'], // Mask prompt content for privacy
+    }));
+    console.log('🔍 Treblle API monitoring enabled for production');
+}
 
 // Logging middleware for debugging
 app.use((req, res, next) => {
@@ -115,7 +126,8 @@ app.get('/api-check', (req, res) => {
         apiKeyFirstFour: process.env.API_KEY ? process.env.API_KEY.substring(0, 4) : null,
         openAIConfigured: !!process.env.OPENAI_API_KEY,
         nodeEnv: process.env.NODE_ENV,
-        corsOrigins: process.env.CORS_ALLOWED_ORIGINS
+        corsOrigins: process.env.CORS_ALLOWED_ORIGINS,
+        treblleConfigured: process.env.NODE_ENV === 'production' ? !!process.env.TREBLLE_API_KEY : 'Disabled in non-production'
     });
 });
 

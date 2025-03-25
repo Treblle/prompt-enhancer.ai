@@ -33,6 +33,8 @@ jobs:
           echo "AI_PROVIDER=openai" >> .env
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
           echo "CORS_ALLOWED_ORIGINS=https://prompt-enhancer.ai" >> .env
+          echo "TREBLLE_API_KEY=${{ secrets.TREBLLE_API_KEY }}" >> .env
+          echo "TREBLLE_PROJECT_ID=${{ secrets.TREBLLE_PROJECT_ID }}" >> .env
           
       - name: Create frontend environment file
         run: |
