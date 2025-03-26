@@ -10,6 +10,11 @@ const promptRoutes = require('./src/routes/prompts');
 
 const app = express();
 
+console.log('Treblle Configuration Check:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('TREBLLE_API_KEY:', process.env.TREBLLE_API_KEY ? 'SET (masked)' : 'NOT SET');
+console.log('TREBLLE_PROJECT_ID:', process.env.TREBLLE_PROJECT_ID ? 'SET (masked)' : 'NOT SET');
+
 // Security middleware
 app.use(helmet({
     contentSecurityPolicy: {
@@ -36,19 +41,22 @@ if (process.env.NODE_ENV === 'production') {
     const treblleApiKey = process.env.TREBLLE_API_KEY;
     const treblleProjectId = process.env.TREBLLE_PROJECT_ID;
 
-    console.log('Treblle Configuration:');
-    console.log(`API Key: ${treblleApiKey ? treblleApiKey.substring(0, 4) + '...' : 'Not Set'}`);
-    console.log(`Project ID: ${treblleProjectId || 'Not Set'}`);
+    console.log('Detailed Treblle Configuration:');
+    console.log(`API Key Available: ${!!treblleApiKey}`);
+    console.log(`Project ID Available: ${!!treblleProjectId}`);
 
     if (treblleApiKey && treblleProjectId) {
         try {
-            app.use(treblle({
+            const treblleMiddleware = treblle({
                 apiKey: treblleApiKey,
                 projectId: treblleProjectId,
-            }));
-            console.log('🔍 Treblle API monitoring successfully enabled for production');
+                additionalFieldsToMask: ['text', 'originalText', 'enhancedText'], // Mask prompt content for privacy
+            });
+
+            app.use(treblleMiddleware);
+            console.log('✅ Treblle middleware successfully added');
         } catch (error) {
-            console.error('❌ Failed to initialize Treblle:', error);
+            console.error('❌ Error initializing Treblle middleware:', error);
         }
     } else {
         console.warn('⚠️ Treblle not configured: Missing API Key or Project ID');
