@@ -45,8 +45,6 @@
   ],
   "env": {
     "NODE_ENV": "production",
-    "API_KEY": "071ab274d796058af0f2c1c205b78009670fc774bd574960",
-    "TREBLLE_API_KEY": "${TREBLLE_API_KEY}",
-    "TREBLLE_PROJECT_ID": "${TREBLLE_PROJECT_ID}"
+    "API_KEY": "071ab274d796058af0f2c1c205b78009670fc774bd574960"
   }
 }
