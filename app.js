@@ -40,6 +40,12 @@ if (process.env.NODE_ENV === 'production') {
     console.log(`API Key: ${treblleApiKey ? treblleApiKey.substring(0, 4) + '...' : 'Not Set'}`);
     console.log(`Project ID: ${treblleProjectId || 'Not Set'}`);
 
+    // Added detailed environment variables check
+    console.log('Environment Variables Check:');
+    console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`TREBLLE_API_KEY exists: ${!!process.env.TREBLLE_API_KEY}`);
+    console.log(`TREBLLE_PROJECT_ID exists: ${!!process.env.TREBLLE_PROJECT_ID}`);
+
     if (treblleApiKey && treblleProjectId) {
         try {
             app.use(treblle({
@@ -49,9 +55,20 @@ if (process.env.NODE_ENV === 'production') {
             console.log('🔍 Treblle API monitoring successfully enabled for production');
         } catch (error) {
             console.error('❌ Failed to initialize Treblle:', error);
+            console.error('Error details:', error.message);
+            if (error.stack) console.error('Stack trace:', error.stack);
         }
     } else {
         console.warn('⚠️ Treblle not configured: Missing API Key or Project ID');
+
+        // Try alternative approach with direct initialization
+        console.log('Attempting alternative Treblle initialization approach...');
+        try {
+            app.use(treblle());
+            console.log('🔍 Alternative Treblle initialization approach attempted');
+        } catch (altError) {
+            console.error('❌ Alternative approach also failed:', altError.message);
+        }
     }
 }
 
@@ -135,13 +152,21 @@ app.get('/docs', (req, res) => {
 });
 
 app.get('/api-check', (req, res) => {
+    // Enhanced api-check with more details for Treblle troubleshooting
     res.json({
         apiKeyConfigured: !!process.env.API_KEY,
         apiKeyFirstFour: process.env.API_KEY ? process.env.API_KEY.substring(0, 4) : null,
         openAIConfigured: !!process.env.OPENAI_API_KEY,
         nodeEnv: process.env.NODE_ENV,
         corsOrigins: process.env.CORS_ALLOWED_ORIGINS,
-        treblleConfigured: process.env.NODE_ENV === 'production' ? !!process.env.TREBLLE_API_KEY : 'Disabled in non-production'
+        treblleConfigured: process.env.NODE_ENV === 'production'
+            ? {
+                apiKeyConfigured: !!process.env.TREBLLE_API_KEY,
+                apiKeyFirstFour: process.env.TREBLLE_API_KEY ? process.env.TREBLLE_API_KEY.substring(0, 4) : 'Not Set',
+                projectIdConfigured: !!process.env.TREBLLE_PROJECT_ID,
+                projectIdFirstFour: process.env.TREBLLE_PROJECT_ID ? process.env.TREBLLE_PROJECT_ID.substring(0, 4) : 'Not Set'
+            }
+            : 'Disabled in non-production'
     });
 });
 
