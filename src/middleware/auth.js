@@ -3,6 +3,11 @@ const crypto = require('crypto');
 // Simple in-memory cache for failed attempts
 const failedAttempts = new Map();
 
+// Get whitelisted IPs from environment variable
+const WHITELISTED_IPS = process.env.WHITELISTED_IPS
+    ? process.env.WHITELISTED_IPS.split(',').map(ip => ip.trim())
+    : [];
+
 /**
  * API Key authentication middleware
  * @param {Object} req - Express request object
@@ -12,21 +17,30 @@ const failedAttempts = new Map();
 exports.authenticateApiKey = (req, res, next) => {
     const apiKey = req.header('X-API-Key');
     const clientIp = req.ip || req.connection.remoteAddress;
+    const forwardedIp = req.header('X-Forwarded-For') ? req.header('X-Forwarded-For').split(',')[0].trim() : null;
+
+    // Check if client IP is whitelisted
+    const isWhitelisted = WHITELISTED_IPS.includes(clientIp) ||
+        (forwardedIp && WHITELISTED_IPS.includes(forwardedIp));
 
     // Check if IP has been temporarily blocked due to failed attempts
-    const ipAttempts = failedAttempts.get(clientIp);
-    if (ipAttempts && ipAttempts.blocked && Date.now() < ipAttempts.blockedUntil) {
-        return res.status(429).json({
-            error: {
-                code: 'too_many_failed_attempts',
-                message: 'Too many failed authentication attempts. Please try again later.'
-            }
-        });
+    if (!isWhitelisted) {
+        const ipAttempts = failedAttempts.get(clientIp);
+        if (ipAttempts && ipAttempts.blocked && Date.now() < ipAttempts.blockedUntil) {
+            return res.status(429).json({
+                error: {
+                    code: 'too_many_failed_attempts',
+                    message: 'Too many failed authentication attempts. Please try again later.'
+                }
+            });
+        }
     }
 
     // Check if API key exists
     if (!apiKey) {
-        recordFailedAttempt(clientIp);
+        if (!isWhitelisted) {
+            recordFailedAttempt(clientIp);
+        }
         return res.status(401).json({
             error: {
                 code: 'missing_api_key',
@@ -45,7 +59,9 @@ exports.authenticateApiKey = (req, res, next) => {
     const validApiKey = process.env.API_KEY;
 
     if (!safeCompare(apiKey, validApiKey)) {
-        recordFailedAttempt(clientIp);
+        if (!isWhitelisted) {
+            recordFailedAttempt(clientIp);
+        }
         return res.status(401).json({
             error: {
                 code: 'invalid_api_key',

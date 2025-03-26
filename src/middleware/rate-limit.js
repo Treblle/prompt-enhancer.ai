@@ -1,6 +1,11 @@
 const Redis = require('redis');
 const { RateLimiterMemory } = require('rate-limiter-flexible');
 
+// Get whitelisted IPs from environment variable
+const WHITELISTED_IPS = process.env.WHITELISTED_IPS
+    ? process.env.WHITELISTED_IPS.split(',').map(ip => ip.trim())
+    : [];
+
 // Try to create Redis client, fall back to memory if Redis is not available
 let redisClient;
 let rateLimiterRedis;
@@ -109,6 +114,21 @@ exports.rateLimit = (options = {}) => {
     });
 
     return async (req, res, next) => {
+        // Check if client IP is whitelisted
+        const clientIp = req.ip || req.connection.remoteAddress;
+        const forwardedIp = req.header('X-Forwarded-For') ? req.header('X-Forwarded-For').split(',')[0].trim() : null;
+        const isWhitelisted = WHITELISTED_IPS.includes(clientIp) ||
+            (forwardedIp && WHITELISTED_IPS.includes(forwardedIp));
+
+        // If IP is whitelisted, bypass rate limiting
+        if (isWhitelisted) {
+            // Add mock rate limit headers for consistency
+            res.set('X-RateLimit-Limit', maxRequests);
+            res.set('X-RateLimit-Remaining', maxRequests);
+            res.set('X-RateLimit-Reset', Date.now() + windowMs);
+            return next();
+        }
+
         // Force API rate limit for testing if specific header is present
         if (req.header('X-Force-API-Rate-Limit') === 'true') {
             res.set('X-RateLimit-Limit', maxRequests);
@@ -204,6 +224,17 @@ exports.ddosProtection = (options = {}) => {
     });
 
     return async (req, res, next) => {
+        // Check if client IP is whitelisted
+        const clientIp = req.ip || req.connection.remoteAddress;
+        const forwardedIp = req.header('X-Forwarded-For') ? req.header('X-Forwarded-For').split(',')[0].trim() : null;
+        const isWhitelisted = WHITELISTED_IPS.includes(clientIp) ||
+            (forwardedIp && WHITELISTED_IPS.includes(forwardedIp));
+
+        // If IP is whitelisted, bypass DDoS protection
+        if (isWhitelisted) {
+            return next();
+        }
+
         // Skip if the API rate limit test header is present to ensure it hits the API rate limiter
         if (req.header('X-Force-API-Rate-Limit') === 'true') {
             return next();
