@@ -84,9 +84,11 @@ app.use(express.json({ limit: '50kb' })); // Limit payload size
 // CORS configuration with detailed logging
 const corsOptions = {
     origin: function (origin, callback) {
-        const allowedOrigins = process.env.NODE_ENV === 'development'
-            ? ['http://localhost:3000', 'http://127.0.0.1:3000']
-            : ['https://prompt-enhancer.ai'];
+        const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS
+            ? process.env.CORS_ALLOWED_ORIGINS.split(',')
+            : (process.env.NODE_ENV === 'development'
+                ? ['http://localhost:3000', 'http://127.0.0.1:3000']
+                : ['https://prompt-enhancer.ai', 'https://www.prompt-enhancer.ai']);
 
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
