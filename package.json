@@ -48,7 +48,7 @@
     "redis": "^4.6.7",
     "swagger-cli": "^4.0.4",
     "swagger-ui-express": "^5.0.1",
-    "uuid": "^11.1.0"
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

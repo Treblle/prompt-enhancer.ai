@@ -4,6 +4,12 @@ info:
   description: |
     An API that transforms basic prompts into optimized, context-rich instructions for AI language models.
     Works with both Mistral and OpenAI to enhance prompts and generate better AI responses.
+
+    Security Features:
+    - Strict API key authentication
+    - Rate limiting to prevent abuse
+    - Compression for efficient data transfer
+    - X-Frame-Options set to DENY to prevent clickjacking
   version: 1.0.0
   contact:
     name: Prompt Enhancer Team
@@ -14,10 +20,12 @@ info:
     url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: https://prompt-enhancer.ai/v1
-    description: Production server
-  - url: https://cdn.prompt-enhancer.ai/v1
-    description: CDN-backed production server
+  - url: https://www.prompt-enhancer.ai/v1/prompts
+    description: Primary production server
+    x-cdnProvider:
+      - Cloudflare
+      - Fastly
+      - Akamai
   - url: http://localhost:5000/v1
     description: Local development server
 
@@ -38,6 +46,8 @@ paths:
       operationId: enhancePrompt
       tags:
         - Prompts
+      security:
+        - ApiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -62,36 +72,102 @@ paths:
                 type: string
               description: Compression method used for the response
               example: "gzip"
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+            X-RateLimit-Policy:
+              $ref: "#/components/headers/X-RateLimit-Policy"
+            Content-Type:
+              schema:
+                type: string
+                enum: ["application/json"]
+              description: Indicates JSON response content type
+              example: "application/json"
         "400":
           description: Bad request - Invalid input
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
         "401":
           description: Unauthorized - API key is missing or invalid
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
         "429":
           description: Too many requests - Rate limit exceeded
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before making another request
         "500":
           description: Internal server error
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
         "413":
           description: Payload Too Large - Input text exceeds maximum allowed size
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
+      x-operation-security:
+        requiredScopes:
+          - prompts:create
+        rateLimitPolicy:
+          limit: 100
+          window: 60
+          unit: seconds
 
     get:
       summary: List enhanced prompts
@@ -99,6 +175,8 @@ paths:
       operationId: listPrompts
       tags:
         - Prompts
+      security:
+        - ApiKeyAuth: []
       parameters:
         - name: limit
           in: query
@@ -132,38 +210,74 @@ paths:
                     type: integer
                     description: Total number of prompts available
           headers:
-            Content-Encoding:
+            X-Frame-Options:
               schema:
                 type: string
-              description: Compression method used for the response
-              example: "gzip"
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+            X-RateLimit-Policy:
+              $ref: "#/components/headers/X-RateLimit-Policy"
         "401":
           description: Unauthorized - API key is missing or invalid
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
         "500":
           description: Internal server error
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
+      x-operation-security:
+        requiredScopes:
+          - prompts:read
+        rateLimitPolicy:
+          limit: 100
+          window: 60
+          unit: seconds
 
   /prompts/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Unique identifier of the prompt to retrieve
+        schema:
+          type: string
+          format: uuid
+          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
     get:
       summary: Get a specific prompt
       description: Retrieves details of a single enhanced prompt
       operationId: getPrompt
       tags:
         - Prompts
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Unique identifier of the prompt to retrieve
-          schema:
-            type: string
+      security:
+        - ApiKeyAuth: []
       responses:
         "200":
           description: Prompt details retrieved successfully
@@ -172,29 +286,66 @@ paths:
               schema:
                 $ref: "#/components/schemas/PromptResponse"
           headers:
-            Content-Encoding:
+            X-Frame-Options:
               schema:
                 type: string
-              description: Compression method used for the response
-              example: "gzip"
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+            X-RateLimit-Policy:
+              $ref: "#/components/headers/X-RateLimit-Policy"
         "401":
           description: Unauthorized - API key is missing or invalid
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
         "404":
           description: Prompt not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
         "500":
           description: Internal server error
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
+      x-operation-security:
+        requiredScopes:
+          - prompts:read
+        rateLimitPolicy:
+          limit: 100
+          window: 60
+          unit: seconds
 
     put:
       summary: Update a prompt
@@ -202,13 +353,8 @@ paths:
       operationId: updatePrompt
       tags:
         - Prompts
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Unique identifier of the prompt to update
-          schema:
-            type: string
+      security:
+        - ApiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -223,41 +369,92 @@ paths:
               schema:
                 $ref: "#/components/schemas/PromptResponse"
           headers:
-            Content-Encoding:
+            X-Frame-Options:
               schema:
                 type: string
-              description: Compression method used for the response
-              example: "gzip"
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+            X-RateLimit-Policy:
+              $ref: "#/components/headers/X-RateLimit-Policy"
         "400":
           description: Bad request - Invalid input
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
         "401":
           description: Unauthorized - API key is missing or invalid
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
         "404":
           description: Prompt not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
         "413":
           description: Payload Too Large - Input text exceeds maximum allowed size
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
         "500":
           description: Internal server error
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
+      x-operation-security:
+        requiredScopes:
+          - prompts:update
+        rateLimitPolicy:
+          limit: 100
+          window: 60
+          unit: seconds
 
     delete:
       summary: Delete a prompt
@@ -265,34 +462,64 @@ paths:
       operationId: deletePrompt
       tags:
         - Prompts
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Unique identifier of the prompt to delete
-          schema:
-            type: string
+      security:
+        - ApiKeyAuth: []
       responses:
         "204":
           description: Prompt successfully deleted
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
         "401":
           description: Unauthorized - API key is missing or invalid
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
         "404":
           description: Prompt not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
         "500":
           description: Internal server error
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+          headers:
+            X-Frame-Options:
+              schema:
+                type: string
+                enum: ["DENY"]
+              description: Prevents clickjacking by disabling iframe embedding
+              example: "DENY"
+x-operation-security:
+  requiredScopes:
+    - prompts:delete
+  rateLimitPolicy:
+    limit: 100
+    window: 60
+    unit: seconds
 
 components:
   schemas:
@@ -326,7 +553,8 @@ components:
         id:
           type: string
           description: Unique identifier for the enhanced prompt
-          example: "prompt_abc123"
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         originalText:
           type: string
           description: The original prompt text provided by the user
@@ -385,17 +613,25 @@ components:
 
   headers:
     X-RateLimit-Limit:
-      description: Request limit per minute
+      description: Maximum number of requests allowed in the current window
       schema:
         type: integer
+        minimum: 1
       example: 100
     X-RateLimit-Remaining:
-      description: Remaining requests allowed in the current period
+      description: Number of requests remaining in the current window
       schema:
         type: integer
+        minimum: 0
       example: 95
     X-RateLimit-Reset:
-      description: The time at which the current rate limit window resets (Unix timestamp)
+      description: The timestamp at which the current rate limit window resets (ISO 8601 format)
       schema:
-        type: integer
-      example: 1626369250
+        type: string
+        format: date-time
+      example: "2023-07-15T14:30:00Z"
+    X-RateLimit-Policy:
+      description: Detailed rate limiting policy
+      schema:
+        type: string
+      example: "100 requests per 60 seconds"
