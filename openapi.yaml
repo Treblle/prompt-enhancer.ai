@@ -1,11 +1,13 @@
 openapi: 3.0.3
 info:
   title: AI Prompt Enhancer API
-  description: An API that transforms basic prompts into optimized, context-rich instructions for AI language models
+  description: |
+    An API that transforms basic prompts into optimized, context-rich instructions for AI language models.
+    Works with both Mistral and OpenAI to enhance prompts and generate better AI responses.
   version: 1.0.0
   contact:
-    name: Rahul Khinchi
-    email: support@prompt-enhancer.ai
+    name: Prompt Enhancer Team
+    email: rahul@treblle.com
     url: https://prompt-enhancer.ai
   license:
     name: MIT License
@@ -14,6 +16,8 @@ info:
 servers:
   - url: https://prompt-enhancer.ai/v1
     description: Production server
+  - url: https://cdn.prompt-enhancer.ai/v1
+    description: CDN-backed production server
   - url: http://localhost:5000/v1
     description: Local development server
 
@@ -52,16 +56,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PromptResponse"
+          headers:
+            Content-Encoding:
+              schema:
+                type: string
+              description: Compression method used for the response
+              example: "gzip"
         "400":
           description: Bad request - Invalid input
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized - API key is missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "429":
           description: Too many requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "500":
           description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "413":
+          description: Payload Too Large - Input text exceeds maximum allowed size
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
     get:
       summary: List enhanced prompts
@@ -72,6 +102,7 @@ paths:
       parameters:
         - name: limit
           in: query
+          description: Maximum number of prompts to return per page
           schema:
             type: integer
             default: 10
@@ -79,6 +110,7 @@ paths:
             maximum: 100
         - name: offset
           in: query
+          description: Number of prompts to skip for pagination
           schema:
             type: integer
             default: 0
@@ -93,10 +125,30 @@ paths:
                 properties:
                   prompts:
                     type: array
+                    description: Array of enhanced prompts
                     items:
                       $ref: "#/components/schemas/PromptResponse"
                   total:
                     type: integer
+                    description: Total number of prompts available
+          headers:
+            Content-Encoding:
+              schema:
+                type: string
+              description: Compression method used for the response
+              example: "gzip"
+        "401":
+          description: Unauthorized - API key is missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /prompts/{id}:
     get:
@@ -109,6 +161,7 @@ paths:
         - name: id
           in: path
           required: true
+          description: Unique identifier of the prompt to retrieve
           schema:
             type: string
       responses:
@@ -118,8 +171,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PromptResponse"
+          headers:
+            Content-Encoding:
+              schema:
+                type: string
+              description: Compression method used for the response
+              example: "gzip"
+        "401":
+          description: Unauthorized - API key is missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
           description: Prompt not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
     put:
       summary: Update a prompt
@@ -131,6 +206,7 @@ paths:
         - name: id
           in: path
           required: true
+          description: Unique identifier of the prompt to update
           schema:
             type: string
       requestBody:
@@ -146,8 +222,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PromptResponse"
+          headers:
+            Content-Encoding:
+              schema:
+                type: string
+              description: Compression method used for the response
+              example: "gzip"
+        "400":
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized - API key is missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
           description: Prompt not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "413":
+          description: Payload Too Large - Input text exceeds maximum allowed size
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
     delete:
       summary: Delete a prompt
@@ -159,30 +269,59 @@ paths:
         - name: id
           in: path
           required: true
+          description: Unique identifier of the prompt to delete
           schema:
             type: string
       responses:
         "204":
           description: Prompt successfully deleted
+        "401":
+          description: Unauthorized - API key is missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
           description: Prompt not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
 components:
   schemas:
     PromptRequest:
       type: object
+      description: Request body for creating or updating a prompt enhancement
       required:
         - text
       properties:
         text:
           type: string
-          description: The original prompt text
+          description: The original prompt text to be enhanced
           minLength: 1
-          maxLength: 1000
+          maxLength: 8000
           example: "Write about quantum computing"
+        format:
+          type: string
+          description: The desired format for the enhanced prompt
+          enum:
+            - structured
+            - paragraph
+            - bullet
+            - conversational
+          default: structured
+          example: "structured"
 
     PromptResponse:
       type: object
+      description: Response containing the enhanced prompt information
       properties:
         id:
           type: string
@@ -190,28 +329,52 @@ components:
           example: "prompt_abc123"
         originalText:
           type: string
-          description: The original prompt text
+          description: The original prompt text provided by the user
+          example: "Write about quantum computing"
         enhancedText:
           type: string
           description: The enhanced, more detailed prompt text
           example: "As a professional expert in quantum computing, provide a comprehensive overview..."
+        format:
+          type: string
+          description: The format used for enhancing the prompt
+          enum:
+            - structured
+            - paragraph
+            - bullet
+            - conversational
+          example: "structured"
         createdAt:
           type: string
           format: date-time
           description: Timestamp of prompt creation
+          example: "2023-07-15T14:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp of the last prompt update (if applicable)
+          example: "2023-07-15T15:45:00Z"
 
     Error:
       type: object
+      description: Standard error response format
       properties:
-        code:
-          type: string
-          description: Machine-readable error code
-        message:
-          type: string
-          description: Human-readable error message
-        details:
+        error:
           type: object
-          description: Additional error details (when available)
+          description: Error details
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+              example: "validation_error"
+            message:
+              type: string
+              description: Human-readable error message
+              example: "The 'text' field is required"
+            details:
+              type: object
+              description: Additional error details (when available)
+              example: { "param": "text", "reason": "missing_required_field" }
 
   securitySchemes:
     ApiKeyAuth:
@@ -219,3 +382,20 @@ components:
       in: header
       name: X-API-Key
       description: API key for authentication and access control
+
+  headers:
+    X-RateLimit-Limit:
+      description: Request limit per minute
+      schema:
+        type: integer
+      example: 100
+    X-RateLimit-Remaining:
+      description: Remaining requests allowed in the current period
+      schema:
+        type: integer
+      example: 95
+    X-RateLimit-Reset:
+      description: The time at which the current rate limit window resets (Unix timestamp)
+      schema:
+        type: integer
+      example: 1626369250
