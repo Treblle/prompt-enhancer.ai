@@ -1,67 +1,75 @@
 const Redis = require('redis');
 const { RateLimiterMemory } = require('rate-limiter-flexible');
 
-// Configuration for rate limiting headers
-const RATE_LIMIT_HEADERS = {
-    LIMIT: 100,       // Max requests per window
-    WINDOW_MS: 60000, // 1 minute window
-    BLOCK_DURATION: 300000 // 5 minutes block duration
-};
+// Get whitelisted IPs from environment variable
+const WHITELISTED_IPS = process.env.WHITELISTED_IPS
+    ? process.env.WHITELISTED_IPS.split(',').map(ip => ip.trim())
+    : [];
 
-exports.rateLimit = (options = {}) => {
-    const {
-        maxRequests = RATE_LIMIT_HEADERS.LIMIT,
-        windowMs = RATE_LIMIT_HEADERS.WINDOW_MS,
-        keyGenerator = (req) => req.ip
-    } = options;
+// Try to create Redis client, fall back to memory if Redis is not available
+let redisClient;
+let rateLimiterRedis;
+let ipRateLimiter;
+let apiKeyRateLimiter;
 
-    const limiter = new RateLimiterMemory({
-        points: maxRequests,
-        duration: windowMs / 1000,
-        blockDuration: RATE_LIMIT_HEADERS.BLOCK_DURATION / 1000
-    });
+try {
+    // Try to connect to Redis if configured
+    if (process.env.REDIS_URL) {
+        redisClient = Redis.createClient({
+            url: process.env.REDIS_URL,
+            socket: {
+                connectTimeout: 3000, // 3 seconds timeout
+            }
+        });
 
-    return async (req, res, next) => {
-        try {
-            const key = keyGenerator(req);
-            const rateLimiterRes = await limiter.consume(key);
+        // Handle Redis errors
+        redisClient.on('error', (err) => {
+            console.error('Redis error:', err);
+        });
 
-            // Always set rate limit headers, including policy details
-            const currentTimestamp = Date.now();
-            res.set('X-RateLimit-Limit', maxRequests);
-            res.set('X-RateLimit-Remaining', rateLimiterRes.remainingPoints);
-            res.set('X-RateLimit-Reset', new Date(currentTimestamp + rateLimiterRes.msBeforeNext).toISOString());
-            res.set('X-RateLimit-Policy', `${maxRequests} requests per ${windowMs / 1000} seconds`);
+        // Connect to Redis
+        (async () => {
+            try {
+                await redisClient.connect();
+                console.log('Connected to Redis successfully');
 
-            // Compression headers
-            res.vary('Accept-Encoding');
-            res.setHeader('Content-Encoding', 'gzip');
+                // Initialize Redis rate limiters after successful connection
+                rateLimiterRedis = new RateLimiterRedis({
+                    storeClient: redisClient,
+                    keyPrefix: 'rl_api',
+                    points: 60, // 60 requests
+                    duration: 60, // per minute
+                });
 
-            next();
-        } catch (rateLimiterRes) {
-            // Rate limit exceeded
-            const currentTimestamp = Date.now();
-            res.set('X-RateLimit-Limit', maxRequests);
-            res.set('X-RateLimit-Remaining', 0);
-            res.set('X-RateLimit-Reset', new Date(currentTimestamp + rateLimiterRes.msBeforeNext).toISOString());
-            res.set('X-RateLimit-Policy', `${maxRequests} requests per ${windowMs / 1000} seconds`);
-            res.set('Retry-After', Math.ceil(rateLimiterRes.msBeforeNext / 1000));
+                // Stricter rate limit for IP-based requests (DDoS protection)
+                ipRateLimiter = new RateLimiterRedis({
+                    storeClient: redisClient,
+                    keyPrefix: 'rl_ip',
+                    points: 30, // 30 requests 
+                    duration: 60, // per minute
+                    blockDuration: 300, // Block for 5 minutes if exceeded
+                });
 
-            // Compression and frame options headers
-            res.vary('Accept-Encoding');
-            res.setHeader('Content-Encoding', 'gzip');
-            res.setHeader('X-Frame-Options', 'DENY');
-
-            return res.status(429).json({
-                error: {
-                    code: 'rate_limit_exceeded',
-                    message: 'Too many requests, please try again later',
-                    retryAfter: Math.ceil(rateLimiterRes.msBeforeNext / 1000)
-                }
-            });
-        }
-    };
-};
+                // More lenient rate limit for API key requests
+                apiKeyRateLimiter = new RateLimiterRedis({
+                    storeClient: redisClient,
+                    keyPrefix: 'rl_apikey',
+                    points: 100, // 100 requests
+                    duration: 60, // per minute
+                });
+            } catch (err) {
+                console.error('Redis connection failed:', err);
+                setupMemoryRateLimiters();
+            }
+        })();
+    } else {
+        console.log('Redis URL not provided, using in-memory rate limiting');
+        setupMemoryRateLimiters();
+    }
+} catch (err) {
+    console.error('Rate limiter initialization error:', err);
+    setupMemoryRateLimiters();
+}
 
 // Setup in-memory rate limiters if Redis is not available
 function setupMemoryRateLimiters() {

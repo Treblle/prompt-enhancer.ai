@@ -14,7 +14,7 @@ const promptRoutes = require('./src/routes/prompts');
 
 const app = express();
 
-// Enhanced security middleware
+// Security middleware
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -33,28 +33,22 @@ app.use(helmet({
     crossOriginOpenerPolicy: true,
     crossOriginResourcePolicy: { policy: "cross-origin" },
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-    frameguard: {
-        action: "deny"
-    },
-    customFunc: (req, res, next) => {
-        res.setHeader('X-Frame-Options', 'DENY');
-        res.setHeader('X-XSS-Protection', '1; mode=block');
-        res.setHeader('X-Content-Type-Options', 'nosniff');
-
-        // Compression headers
-        res.vary('Accept-Encoding');
-        next();
-    }
 }));
 
 // Add compression middleware
 app.use(compression({
+    // Compression filter: only compress responses with the following content types
     filter: (req, res) => {
         if (req.headers['x-no-compression']) {
+            // Don't compress responses if this request header is present
             return false;
         }
-        return /json|text|javascript|css|xml|svg/.test(res.getHeader('Content-Type'));
+        // Compress all JSON and text responses
+        return (
+            /json|text|javascript|css|xml|svg/.test(res.getHeader('Content-Type'))
+        );
     },
+    // Compression level (0-9)
     level: 6
 }));
 
@@ -128,7 +122,7 @@ app.use((req, res, next) => {
 });
 
 // Parse JSON bodies
-app.use(express.json({ limit: '50kb' }));
+app.use(express.json({ limit: '50kb' })); // Limit payload size
 
 // CORS configuration with detailed logging
 const corsOptions = {
@@ -147,15 +141,7 @@ const corsOptions = {
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'X-API-Key', 'Origin', 'Accept', 'Content-Encoding'],
-    exposedHeaders: [
-        'Content-Encoding',
-        'X-RateLimit-Limit',
-        'X-RateLimit-Remaining',
-        'X-RateLimit-Reset',
-        'X-RateLimit-Policy',
-        'Retry-After',
-        'X-Frame-Options'
-    ],
+    exposedHeaders: ['Content-Encoding', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
     credentials: true,
     optionsSuccessStatus: 200
 };
@@ -171,8 +157,8 @@ app.use(ddosProtection());
 
 // Apply rate limiting to all API routes
 const apiLimiter = rateLimit({
-    maxRequests: 100,
-    windowMs: 60 * 1000
+    maxRequests: 100, // 100 requests
+    windowMs: 60 * 1000 // per minute
 });
 
 // Load OpenAPI specification
@@ -235,7 +221,7 @@ const swaggerUiOptions = {
 // Mount Swagger UI
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec, swaggerUiOptions));
 
-// API routes with authentication and rate limiting
+// API routes
 app.use('/v1/prompts', authenticateApiKey, apiLimiter, promptRoutes);
 
 // Landing page route
