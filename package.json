@@ -20,7 +20,8 @@
     "encrypt-keys": "node tools/encrypt-keys.js",
     "install-hooks": "node tools/install-git-hooks.js",
     "security-check": "node tools/security-check.js",
-    "postinstall": "npm run install-hooks"
+    "postinstall": "npm run install-hooks",
+    "generate-docs": "swagger-cli bundle ./openapi.yaml --outfile ./public/openapi.json --type json"
   },
   "keywords": [
     "api",
@@ -33,6 +34,7 @@
   "license": "ISC",
   "dependencies": {
     "@treblle/express": "^0.0.8",
+    "compression": "^1.8.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -44,6 +46,8 @@
     "openai": "^4.88.0",
     "rate-limiter-flexible": "^3.0.6",
     "redis": "^4.6.7",
+    "swagger-cli": "^4.0.4",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

@@ -1,6 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
+const swaggerUi = require('swagger-ui-express');
+const fs = require('fs');
+const path = require('path');
 const treblle = require('@treblle/express');
 const { errorHandler } = require('./src/middleware/error');
 const { authenticateApiKey } = require('./src/middleware/auth');
@@ -30,6 +34,45 @@ app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
 }));
+
+// Add compression middleware
+app.use(compression({
+    // Compression filter: only compress responses with the following content types
+    filter: (req, res) => {
+        if (req.headers['x-no-compression']) {
+            // Don't compress responses if this request header is present
+            return false;
+        }
+        // Compress all JSON and text responses
+        return (
+            /json|text|javascript|css|xml|svg/.test(res.getHeader('Content-Type'))
+        );
+    },
+    // Compression level (0-9)
+    level: 6
+}));
+
+// CDN Detection middleware
+app.use((req, res, next) => {
+    // Check for CDN-specific headers
+    const isCdnRequest = req.headers['x-cdn-request'] === 'true' ||
+        req.headers['x-forwarded-host']?.includes('cdn.prompt-enhancer.ai');
+
+    if (isCdnRequest) {
+        // Add appropriate cache headers for CDN
+        res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minute cache
+        res.setHeader('CDN-Cache-Control', 'public, max-age=300');
+
+        // Add cache validation headers
+        const now = new Date();
+        res.setHeader('Last-Modified', now.toUTCString());
+
+        // Flag this as a CDN request for other middlewares
+        req.isCdnRequest = true;
+    }
+
+    next();
+});
 
 // Apply Treblle logging only in production environments
 if (process.env.NODE_ENV === 'production') {
@@ -88,7 +131,7 @@ const corsOptions = {
             ? process.env.CORS_ALLOWED_ORIGINS.split(',')
             : (process.env.NODE_ENV === 'development'
                 ? ['http://localhost:3000', 'http://127.0.0.1:3000']
-                : ['https://prompt-enhancer.ai', 'https://www.prompt-enhancer.ai']);
+                : ['https://prompt-enhancer.ai', 'https://www.prompt-enhancer.ai', 'https://cdn.prompt-enhancer.ai']);
 
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
@@ -97,7 +140,8 @@ const corsOptions = {
         }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-API-Key', 'Origin', 'Accept'],
+    allowedHeaders: ['Content-Type', 'X-API-Key', 'Origin', 'Accept', 'Content-Encoding'],
+    exposedHeaders: ['Content-Encoding', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
     credentials: true,
     optionsSuccessStatus: 200
 };
@@ -117,6 +161,66 @@ const apiLimiter = rateLimit({
     windowMs: 60 * 1000 // per minute
 });
 
+// Load OpenAPI specification
+let openApiSpec;
+try {
+    // Try the public directory first (where generate-docs puts it)
+    const publicOpenApiPath = path.join(__dirname, 'public', 'openapi.json');
+    const rootOpenApiPath = path.join(__dirname, 'openapi.json');
+
+    if (fs.existsSync(publicOpenApiPath)) {
+        console.log('Loading OpenAPI specification from public directory');
+        openApiSpec = JSON.parse(fs.readFileSync(publicOpenApiPath, 'utf8'));
+    } else if (fs.existsSync(rootOpenApiPath)) {
+        console.log('Loading OpenAPI specification from root directory');
+        openApiSpec = JSON.parse(fs.readFileSync(rootOpenApiPath, 'utf8'));
+    } else {
+        console.warn('OpenAPI specification file not found, will use empty spec');
+        // Fallback to a minimal spec
+        openApiSpec = {
+            openapi: "3.0.3",
+            info: {
+                title: "AI Prompt Enhancer API",
+                version: "1.0.0",
+                description: "API documentation not yet generated. Run 'npm run generate-docs' to create it."
+            },
+            paths: {}
+        };
+    }
+} catch (error) {
+    console.error('Error loading OpenAPI specification:', error.message);
+    openApiSpec = {
+        openapi: "3.0.3",
+        info: {
+            title: "AI Prompt Enhancer API",
+            version: "1.0.0",
+            description: "Error loading API documentation."
+        },
+        paths: {}
+    };
+}
+
+// Log some info about the loaded spec
+if (openApiSpec && openApiSpec.paths) {
+    const pathCount = Object.keys(openApiSpec.paths).length;
+    console.log(`Loaded OpenAPI spec with ${pathCount} path(s)`);
+}
+
+// Swagger UI options
+const swaggerUiOptions = {
+    explorer: true,
+    customCss: '.swagger-ui .topbar { display: none }',
+    swaggerOptions: {
+        docExpansion: 'list',
+        filter: true,
+        tagsSorter: 'alpha',
+        operationsSorter: 'alpha',
+    }
+};
+
+// Mount Swagger UI
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec, swaggerUiOptions));
+
 // API routes
 app.use('/v1/prompts', authenticateApiKey, apiLimiter, promptRoutes);
 
@@ -129,28 +233,15 @@ app.get('/', (req, res) => {
     });
 });
 
-// Documentation route
-app.get('/docs', (req, res) => {
-    res.json({
-        name: 'AI Prompt Enhancer API',
-        version: '1.0.0',
-        description: 'An API that takes basic prompts and enhances them for better AI responses from LLM models like GPT-4, Claude, and Gemini.',
-        baseUrl: '/v1',
-        authentication: 'API Key Authentication (X-API-Key header)',
-        endpoints: [
-            {
-                path: '/v1/prompts',
-                methods: ['GET', 'POST'],
-                description: 'List or create enhanced prompts'
-            },
-            {
-                path: '/v1/prompts/:id',
-                methods: ['GET', 'PUT', 'DELETE'],
-                description: 'Get, update, or delete a specific prompt'
-            },
-        ],
-        rateLimits: '100 requests per minute'
-    });
+// Add redirect from old /docs endpoint to the new Swagger UI
+app.get('/api-docs', (req, res) => {
+    res.redirect('/docs');
+});
+
+// Keep the original /docs endpoint for backward compatibility
+// But also serve the full OpenAPI spec there
+app.get('/docs-json', (req, res) => {
+    res.json(openApiSpec);
 });
 
 app.get('/api-check', (req, res) => {
@@ -161,6 +252,9 @@ app.get('/api-check', (req, res) => {
         openAIConfigured: !!process.env.OPENAI_API_KEY,
         nodeEnv: process.env.NODE_ENV,
         corsOrigins: process.env.CORS_ALLOWED_ORIGINS,
+        compressionEnabled: true,
+        cdnConfigured: true,
+        swaggerUiEnabled: true,
         treblleConfigured: process.env.NODE_ENV === 'production'
             ? {
                 apiKeyConfigured: !!process.env.TREBLLE_API_KEY,
