@@ -3,6 +3,7 @@ const app = require('./app');
 const config = require('./src/config/config');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
 
 // Define the port
 const PORT = process.env.PORT || 5000;
@@ -119,15 +120,96 @@ if (!isValidConfig) {
     }
 }
 
-// Start the server (only once)
-app.listen(PORT, () => {
-    console.log('\n----------------------------------------');
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log('----------------------------------------');
-    console.log(`📝 API Documentation: http://localhost:${PORT}/docs`);
-    console.log(`🔒 Security: Rate limiting and DDoS protection active`);
-    console.log(`🔑 Environment: ${process.env.NODE_ENV}`);
-    console.log('----------------------------------------\n');
-});
+// Function to securely log errors to file
+function secureLogError(errorId, errorObj) {
+    try {
+        const logDir = path.join(__dirname, 'logs');
+        if (!fs.existsSync(logDir)) {
+            fs.mkdirSync(logDir, { recursive: true });
+        }
+
+        // Extract only necessary information from error
+        const errorInfo = {
+            id: errorId,
+            name: errorObj.name,
+            message: errorObj.message,
+            timestamp: new Date().toISOString(),
+            stack: errorObj.stack
+        };
+
+        fs.appendFileSync(
+            path.join(logDir, 'secure-debug.log'),
+            `[${errorInfo.timestamp}] ${errorId}: ${errorInfo.name}: ${errorInfo.message}\n${errorInfo.stack}\n\n`
+        );
+        return true;
+    } catch (logErr) {
+        console.error(`Could not write to debug log: ${logErr.message}`);
+        return false;
+    }
+}
+
+// Check if HTTPS is enabled for development
+if (process.env.USE_HTTPS === 'true') {
+    try {
+        const keyPath = process.env.HTTPS_KEY_PATH || 'certificates/key.pem';
+        const certPath = process.env.HTTPS_CERT_PATH || 'certificates/cert.pem';
+
+        // Check if certificate files exist
+        if (!fs.existsSync(path.resolve(__dirname, keyPath))) {
+            throw new Error(`HTTPS key file not found: ${keyPath}`);
+        }
+
+        if (!fs.existsSync(path.resolve(__dirname, certPath))) {
+            throw new Error(`HTTPS certificate file not found: ${certPath}`);
+        }
+
+        const httpsOptions = {
+            key: fs.readFileSync(path.resolve(__dirname, keyPath)),
+            cert: fs.readFileSync(path.resolve(__dirname, certPath))
+        };
+
+        // Create HTTPS server
+        const server = https.createServer(httpsOptions, app);
+
+        server.listen(PORT, () => {
+            console.log('\n----------------------------------------');
+            console.log(`🔒 HTTPS Server running on https://localhost:${PORT}`);
+            console.log('----------------------------------------');
+            console.log(`📝 API Documentation: https://localhost:${PORT}/docs`);
+            console.log(`🔒 Security: Rate limiting and DDoS protection active`);
+            console.log(`🔑 Environment: ${process.env.NODE_ENV}`);
+            console.log('----------------------------------------\n');
+        });
+    } catch (error) {
+        const errorId = `err-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 5)}`;
+        console.error(`\n❌ Error starting HTTPS server (Error ID: ${errorId})`);
+
+        // Securely log the error details
+        if (process.env.NODE_ENV !== 'production') {
+            const logged = secureLogError(errorId, error);
+            console.debug(`Debug details for ${errorId}: HTTPS server error. ${logged ? 'Details logged to secure-debug.log' : 'Could not log details.'}`);
+        }
+
+        console.log('⚠️ Falling back to HTTP server');
+        startHttpServer();
+    }
+} else {
+    // Start HTTP server
+    startHttpServer();
+}
+
+// Function to start HTTP server
+function startHttpServer() {
+    // Start the server
+    app.listen(PORT, () => {
+        console.log('\n----------------------------------------');
+        console.log(`🚀 Server running on http://localhost:${PORT}`);
+        console.log('----------------------------------------');
+        console.log(`📝 API Documentation: http://localhost:${PORT}/docs`);
+        console.log(`🔒 Security: Rate limiting and DDoS protection active`);
+        console.log(`🔑 Environment: ${process.env.NODE_ENV}`);
+        console.log('----------------------------------------\n');
+    });
+}
 
 module.exports = app;

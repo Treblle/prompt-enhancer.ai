@@ -9,6 +9,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <meta name="theme-color" content="#4f46e5" />
 
+  <!-- Security Headers -->
+  <!-- Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: https://cdn.prod.website-files.com; connect-src 'self' http://localhost:5000 https://*.prompt-enhancer.ai; font-src 'self' https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
+
+  <!-- Permissions Policy -->
+  <meta http-equiv="Permissions-Policy"
+    content="accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()">
+
+  <!-- Referrer Policy -->
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <!-- X-Content-Type-Options -->
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+
   <!-- Primary Meta Tags -->
   <title>AI Prompt Enhancer - Transform Basic Prompts into Powerful AI Instructions</title>
   <meta name="description"
@@ -48,6 +63,8 @@
 <body>
   <noscript>You need to enable JavaScript to run this app.</noscript>
   <div id="root"></div>
+
+  <!-- Security response headers will be added by the server -->
 </body>
 
 </html>

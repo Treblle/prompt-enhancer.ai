@@ -15,7 +15,16 @@ const authRoutes = require('./src/routes/auth');
 
 const app = express();
 
-// Enhanced security middleware with improved CSP
+// Force HTTPS in production
+app.use((req, res, next) => {
+    if (process.env.NODE_ENV === 'production' && !req.secure && req.headers['x-forwarded-proto'] !== 'https') {
+        // Redirect to https
+        return res.redirect(`https://${req.headers.host}${req.url}`);
+    }
+    next();
+});
+
+// Enhanced security middleware with improved CSP and Permissions-Policy
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -29,10 +38,11 @@ app.use(helmet({
             mediaSrc: ["'self'"],
             frameSrc: ["'none'"],
             formAction: ["'self'"],
-            workerSrc: ["'self'"],
+            workerSrc: ["'self'", "blob:"],
             manifestSrc: ["'self'"],
             baseUri: ["'self'"],
             frameAncestors: ["'none'"],
+            upgradeInsecureRequests: process.env.NODE_ENV === 'production' // Force all HTTP to HTTPS
         },
     },
     crossOriginEmbedderPolicy: true,
@@ -40,7 +50,7 @@ app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
     hsts: {
-        maxAge: 15552000, // 180 days
+        maxAge: 31536000, // 1 year in seconds
         includeSubDomains: true,
         preload: true
     },
@@ -51,8 +61,59 @@ app.use(helmet({
     expectCt: {
         enforce: true,
         maxAge: 86400 // 1 day
+    },
+    // Add Permissions-Policy header
+    permissionsPolicy: {
+        features: {
+            accelerometer: [],
+            ambientLightSensor: [],
+            autoplay: [],
+            camera: [],
+            documentDomain: [],
+            encryptedMedia: [],
+            fullscreen: ["self"],
+            geolocation: [],
+            gyroscope: [],
+            magnetometer: [],
+            microphone: [],
+            midi: [],
+            payment: [],
+            pictureInPicture: [],
+            speaker: [],
+            syncXhr: [],
+            usb: [],
+            vibrate: [],
+            vr: []
+        }
     }
 }));
+
+// Additional security headers middleware
+app.use((req, res, next) => {
+    // Clear-Site-Data header for logout routes (if applicable)
+    if (req.path === '/logout' || req.path === '/v1/auth/logout') {
+        res.setHeader('Clear-Site-Data', '"cache", "cookies", "storage"');
+    }
+
+    // Cross-Origin-Embedder-Policy
+    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+
+    // Cross-Origin-Opener-Policy
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+
+    // Cross-Origin-Resource-Policy
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+
+    // Cache control for sensitive routes
+    if (req.path.startsWith('/v1/auth/') || req.path.startsWith('/v1/prompts')) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Surrogate-Control', 'no-store');
+        res.setHeader('Expires', '0');
+    }
+
+    next();
+});
 
 // Add compression middleware
 app.use(compression({

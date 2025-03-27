@@ -1,13 +1,13 @@
 // This file configures the test environment
 
-// Load test environment variables
+// Set environment variables for testing
 process.env.NODE_ENV = 'test';
-process.env.TEST_API_KEY = 'test_api_key';
-process.env.API_KEY = 'api_key_12345';
+process.env.TEST_API_KEY = process.env.TEST_API_KEY || 'test_api_key_placeholder';
+process.env.API_KEY = process.env.API_KEY || 'api_key_placeholder';
 process.env.SKIP_RATE_LIMIT = 'true';
 
-// Configure OpenAI API key for test environment
-process.env.OPENAI_API_KEY = 'sk-test123456789';
+// Configure mock API key for test environment
+process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || 'sk-test_placeholder';
 
 // Set up global test timeouts
 jest.setTimeout(30000); // 30 second timeout for tests
