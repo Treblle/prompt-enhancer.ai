@@ -30,6 +30,9 @@ PATTERNS=(
     
     # .env file should never be committed
     "^.env$"
+
+    # Check for hardcoded API keys with known names
+    "PRODUCTION_API_KEY="
 )
 
 # Files to exclude from checking (relative to repo root)
@@ -37,8 +40,10 @@ EXCLUDE_FILES=(
     ".git-hooks/pre-commit"
     "tools/encrypt-keys.js"
     "tools/setup-env.js"
+    "tools/security-check.js"
     ".gitignore"
     "README.md"
+    "test/setup.js"
 )
 
 # Get staged files that are being added or modified

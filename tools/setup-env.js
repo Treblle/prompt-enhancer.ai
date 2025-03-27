@@ -4,8 +4,8 @@
  * Environment Setup Tool
  * 
  * This tool helps set up the .env file securely for development.
- * It generates dynamic API keys for development and local environments,
- * but uses a fixed hardcoded API key for production.
+ * It generates dynamic API keys for development environments.
+ * In production, keys should be set directly in the deployment platform.
  */
 
 const fs = require('fs');
@@ -20,11 +20,6 @@ const GITIGNORE_PATH = path.join(__dirname, '../.gitignore');
 const FRONTEND_ENV_PATH = path.join(__dirname, '../frontend/.env');
 const FRONTEND_ENV_DEV_PATH = path.join(__dirname, '../frontend/.env.development');
 const FRONTEND_ENV_LOCAL_PATH = path.join(__dirname, '../frontend/.env.local');
-const FRONTEND_ENV_PROD_PATH = path.join(__dirname, '../frontend/.env.production');
-
-// Hardcoded production API key - NEVER CHANGE THIS VALUE
-// This is the key that will be used in production environments
-const PRODUCTION_API_KEY = '071ab274d796058af0f2c1c205b78009670fc774bd574960';
 
 // Set up readline interface
 const rl = readline.createInterface({
@@ -49,28 +44,23 @@ function setupEnvFromCI() {
     if (isRunningInCI()) {
         console.log('Setting up environment from CI variables');
 
-        // For CI environments, we use the production API key
         try {
             let envContent = `# Environment generated from CI/CD process\n`;
             envContent += `NODE_ENV=${process.env.NODE_ENV || 'production'}\n`;
             envContent += `PORT=${process.env.PORT || '5000'}\n`;
-            // Always use the production API key in CI/CD environments
-            envContent += `API_KEY=${PRODUCTION_API_KEY}\n`;
+            envContent += `API_KEY=${process.env.API_KEY || ''}\n`;
             envContent += `AI_PROVIDER=${process.env.AI_PROVIDER || 'openai'}\n`;
 
             if (process.env.AI_PROVIDER === 'openai' || !process.env.AI_PROVIDER) {
-                envContent += `OPENAI_API_KEY=${process.env.OPENAI_API_KEY || 'replace_with_your_openai_key'}\n`;
+                envContent += `OPENAI_API_KEY=${process.env.OPENAI_API_KEY || ''}\n`;
             } else if (process.env.AI_PROVIDER === 'mistral') {
-                envContent += `MISTRAL_API_KEY=${process.env.MISTRAL_API_KEY || 'replace_with_your_mistral_key'}\n`;
+                envContent += `MISTRAL_API_KEY=${process.env.MISTRAL_API_KEY || ''}\n`;
             }
 
             envContent += `CORS_ALLOWED_ORIGINS=${process.env.CORS_ALLOWED_ORIGINS || 'https://prompt-enhancer.ai'}\n`;
 
             fs.writeFileSync(ENV_PATH, envContent);
-            console.log('✅ .env file created from CI variables with production API key');
-
-            // Also create frontend .env file with the production API key
-            syncFrontendApiKey(PRODUCTION_API_KEY, true);
+            console.log('✅ .env file created from CI variables');
 
             return true;
         } catch (error) {
@@ -124,9 +114,8 @@ function ensureGitignore() {
 /**
  * Sync API key between backend and frontend
  * @param {string} apiKey - The API key to sync
- * @param {boolean} isProduction - Whether this is for production environment
  */
-async function syncFrontendApiKey(apiKey, isProduction = false) {
+async function syncFrontendApiKey(apiKey) {
     try {
         const frontendEnvPaths = [
             FRONTEND_ENV_PATH,
@@ -134,14 +123,8 @@ async function syncFrontendApiKey(apiKey, isProduction = false) {
             FRONTEND_ENV_LOCAL_PATH
         ];
 
-        // For production environment, we'll handle it separately
-        if (isProduction) {
-            frontendEnvPaths.push(FRONTEND_ENV_PROD_PATH);
-        }
-
         for (const envPath of frontendEnvPaths) {
             let envContent = '';
-            const isProductionFile = envPath === FRONTEND_ENV_PROD_PATH;
 
             // Create directory if it doesn't exist
             const dirPath = path.dirname(envPath);
@@ -153,30 +136,17 @@ async function syncFrontendApiKey(apiKey, isProduction = false) {
             if (fs.existsSync(envPath)) {
                 envContent = fs.readFileSync(envPath, 'utf8');
 
-                // For production file, always use the hardcoded production API key
-                const keyToUse = isProductionFile ? PRODUCTION_API_KEY : apiKey;
-
                 // Replace existing API key
                 if (envContent.includes('REACT_APP_API_KEY=')) {
-                    envContent = envContent.replace(/REACT_APP_API_KEY=.*(\r?\n|$)/, `REACT_APP_API_KEY=${keyToUse}$1`);
+                    envContent = envContent.replace(/REACT_APP_API_KEY=.*(\r?\n|$)/, `REACT_APP_API_KEY=${apiKey}$1`);
                 } else {
                     // Add API key if it doesn't exist
-                    envContent += `\nREACT_APP_API_KEY=${keyToUse}\n`;
+                    envContent += `\nREACT_APP_API_KEY=${apiKey}\n`;
                 }
             } else {
                 // Create new file with API key
                 let baseUrl = 'http://localhost:5000/v1';
-
-                // For production file, always use the hardcoded production API key
-                const keyToUse = isProductionFile ? PRODUCTION_API_KEY : apiKey;
-
-                // Use appropriate URL for different environments
-                if (isProductionFile) {
-                    baseUrl = '/v1'; // For production, use relative path
-                    console.log('💡 Setting production API URL to relative path: ' + baseUrl);
-                }
-
-                envContent = `REACT_APP_API_URL=${baseUrl}\nREACT_APP_API_KEY=${keyToUse}\n`;
+                envContent = `REACT_APP_API_URL=${baseUrl}\nREACT_APP_API_KEY=${apiKey}\n`;
 
                 // Add development options to .env.development
                 if (envPath === FRONTEND_ENV_DEV_PATH) {
@@ -186,7 +156,7 @@ async function syncFrontendApiKey(apiKey, isProduction = false) {
 
             // Write updated content
             fs.writeFileSync(envPath, envContent);
-            console.log(`✅ API key synced to ${envPath}${isProductionFile ? ' (using production key)' : ''}`);
+            console.log(`✅ API key synced to ${envPath}`);
         }
     } catch (error) {
         console.error('Error syncing frontend API key:', error.message);
@@ -206,9 +176,8 @@ async function setupEnv() {
 
     console.log('\n🔧 Environment Setup Tool');
     console.log('-------------------------');
-    console.log('NOTE: Different API keys will be used for development and production:');
-    console.log('  - Development: Randomly generated key (unique for your local setup)');
-    console.log('  - Production: Fixed hardcoded key (071ab274796058af0f2c1c205b78009670fc774bd574960)');
+    console.log('NOTE: This will set up your development environment with randomly generated API keys.');
+    console.log('For production, API keys should be set in your deployment platform (GitHub Actions/Vercel).');
     console.log('-------------------------\n');
 
     // Check for .env.example
@@ -255,15 +224,13 @@ async function setupEnv() {
 
     console.log(`\nSetting up ${envType} environment with ${aiProvider} provider...`);
 
-    // Use the appropriate API key based on environment
-    let apiKey;
+    // Generate a random key for development
+    const apiKey = generateApiKey();
+    console.log(`\n✅ Generated new development API key: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`);
+
     if (envType === 'production') {
-        apiKey = PRODUCTION_API_KEY;
-        console.log(`\n✅ Using production API key: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`);
-    } else {
-        // Generate a random key for development
-        apiKey = generateApiKey();
-        console.log(`\n✅ Generated new development API key: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`);
+        console.log('\n⚠️ IMPORTANT: For production use, set API_KEY in your deployment platform (GitHub Actions/Vercel).');
+        console.log('   This development key should not be used in production.');
     }
 
     // Update environment variables
@@ -299,17 +266,19 @@ async function setupEnv() {
     ensureGitignore();
 
     // Sync API key to frontend
-    await syncFrontendApiKey(apiKey, envType === 'production');
-
-    if (envType === 'production') {
-        console.log('✅ Production API key synced to frontend environment files');
-    } else {
-        console.log('✅ Development API key synced to frontend environment files');
-        console.log('✅ Production API key set in .env.production for production builds');
-    }
+    await syncFrontendApiKey(apiKey);
+    console.log('✅ Development API key synced to frontend environment files');
 
     console.log('\n🚀 Your environment is ready!');
-    console.log(`Run "npm run ${envType === 'production' ? 'start' : 'dev'}" to start the application.`);
+
+    if (envType === 'production') {
+        console.log('\n⚠️ IMPORTANT REMINDER: For actual production deployment:');
+        console.log('   1. Set API_KEY as a secret in GitHub Actions or Vercel');
+        console.log('   2. Set OPENAI_API_KEY or MISTRAL_API_KEY in your deployment platform');
+        console.log('   3. Do not commit any .env files containing real keys');
+    }
+
+    console.log(`\nRun "npm run ${envType === 'production' ? 'start' : 'dev'}" to start the application.`);
 
     rl.close();
 }
@@ -349,13 +318,7 @@ function printInfo() {
     if (envVars.API_KEY) {
         const apiKey = envVars.API_KEY;
         console.log(`API Key: ${apiKey.substring(0, 4)}${'*'.repeat(10)}${apiKey.substring(apiKey.length - 4)}`);
-
-        // Check if using production key
-        if (apiKey === PRODUCTION_API_KEY) {
-            console.log('⚠️ Using PRODUCTION API key in this environment');
-        } else {
-            console.log('ℹ️ Using DEVELOPMENT API key in this environment');
-        }
+        console.log('ℹ️ This is a DEVELOPMENT API key');
     } else {
         console.log('API Key: Not set');
     }
@@ -379,8 +342,7 @@ function printInfo() {
         const frontendEnvPaths = [
             FRONTEND_ENV_PATH,
             FRONTEND_ENV_DEV_PATH,
-            FRONTEND_ENV_LOCAL_PATH,
-            FRONTEND_ENV_PROD_PATH
+            FRONTEND_ENV_LOCAL_PATH
         ];
 
         console.log('\n🔄 Frontend API Key Check:');
@@ -392,17 +354,9 @@ function printInfo() {
 
                 if (match && match[1]) {
                     const frontendKey = match[1];
-                    const isProductionFile = envPath === FRONTEND_ENV_PROD_PATH;
-
-                    // For production files, they should always use the production API key
-                    if (isProductionFile) {
-                        const isCorrectProdKey = frontendKey === PRODUCTION_API_KEY;
-                        console.log(`${path.basename(envPath)}: ${isCorrectProdKey ? '✅ Correct production key' : '❌ Wrong production key!'}`);
-                    } else {
-                        // For development files, they should match the current environment's key
-                        const isMatch = frontendKey === envVars.API_KEY;
-                        console.log(`${path.basename(envPath)}: ${isMatch ? '✅ Matches' : '❌ Mismatch with current environment'}`);
-                    }
+                    // Check if frontend key matches backend key
+                    const isMatch = frontendKey === envVars.API_KEY;
+                    console.log(`${path.basename(envPath)}: ${isMatch ? '✅ Matches' : '❌ Mismatch with current environment'}`);
                 } else {
                     console.log(`${path.basename(envPath)}: ❌ No API key found`);
                 }
@@ -414,79 +368,8 @@ function printInfo() {
         console.error('Error checking frontend API keys:', error.message);
     }
 
+    console.log('\n⚠️ REMINDER: For production deployment, set API keys in your deployment platform (GitHub/Vercel)');
     console.log('---------------------------\n');
-    rl.close();
-}
-
-/**
- * Setup production-specific configuration
- */
-async function setupProduction() {
-    console.log('\n🚀 Production Environment Setup');
-    console.log('------------------------------');
-    console.log('This will configure your environment files to use the production API key.');
-    console.log(`Production API Key: ${PRODUCTION_API_KEY.substring(0, 4)}...${PRODUCTION_API_KEY.substring(PRODUCTION_API_KEY.length - 4)}`);
-    console.log('------------------------------\n');
-
-    const proceed = await new Promise((resolve) => {
-        rl.question('Do you want to proceed with production setup? (y/n): ', (answer) => {
-            resolve(answer.toLowerCase() === 'y');
-        });
-    });
-
-    if (!proceed) {
-        console.log('Operation cancelled.');
-        rl.close();
-        return;
-    }
-
-    // Create production frontend environment file
-    try {
-        let prodEnvContent = '';
-
-        if (fs.existsSync(FRONTEND_ENV_PROD_PATH)) {
-            prodEnvContent = fs.readFileSync(FRONTEND_ENV_PROD_PATH, 'utf8');
-
-            // Update API URL if needed
-            if (!prodEnvContent.includes('REACT_APP_API_URL=/v1')) {
-                prodEnvContent = prodEnvContent.replace(/REACT_APP_API_URL=.*(\r?\n|$)/, 'REACT_APP_API_URL=/v1$1');
-            } else if (!prodEnvContent.includes('REACT_APP_API_URL=')) {
-                prodEnvContent += '\nREACT_APP_API_URL=/v1\n';
-            }
-
-            // Update API key to production key
-            if (prodEnvContent.includes('REACT_APP_API_KEY=')) {
-                prodEnvContent = prodEnvContent.replace(/REACT_APP_API_KEY=.*(\r?\n|$)/, `REACT_APP_API_KEY=${PRODUCTION_API_KEY}$1`);
-            } else {
-                prodEnvContent += `\nREACT_APP_API_KEY=${PRODUCTION_API_KEY}\n`;
-            }
-        } else {
-            // Create new production environment file
-            prodEnvContent = `REACT_APP_API_URL=/v1\nREACT_APP_API_KEY=${PRODUCTION_API_KEY}\n`;
-        }
-
-        // Write the production environment file
-        fs.writeFileSync(FRONTEND_ENV_PROD_PATH, prodEnvContent);
-        console.log('✅ Production frontend environment file created/updated successfully.');
-
-        // Update Vercel configuration if it exists
-        const vercelConfigPath = path.join(__dirname, '../vercel.json');
-        if (fs.existsSync(vercelConfigPath)) {
-            const vercelConfig = JSON.parse(fs.readFileSync(vercelConfigPath, 'utf8'));
-
-            // Update API key in Vercel config
-            if (vercelConfig.env && vercelConfig.env.API_KEY) {
-                vercelConfig.env.API_KEY = PRODUCTION_API_KEY;
-                fs.writeFileSync(vercelConfigPath, JSON.stringify(vercelConfig, null, 2));
-                console.log('✅ Updated API key in vercel.json');
-            }
-        }
-
-        console.log('\n✅ Production setup completed successfully!');
-    } catch (error) {
-        console.error('Error setting up production environment:', error.message);
-    }
-
     rl.close();
 }
 
@@ -505,8 +388,6 @@ async function syncKeys() {
     try {
         const envContent = fs.readFileSync(ENV_PATH, 'utf8');
         const match = envContent.match(/API_KEY=([^\s\n]+)/);
-        const envTypeMatch = envContent.match(/NODE_ENV=([^\s\n]+)/);
-        const envType = envTypeMatch ? envTypeMatch[1] : 'development';
 
         if (!match || !match[1]) {
             console.error('\n❌ API key not found in backend .env file.');
@@ -515,29 +396,12 @@ async function syncKeys() {
         }
 
         const apiKey = match[1];
-        const isProduction = envType === 'production' || apiKey === PRODUCTION_API_KEY;
 
         console.log(`\n🔄 Found API key: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`);
-        console.log(`🔄 Environment type: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
+        console.log(`🔄 Environment type: DEVELOPMENT`);
 
-        await syncFrontendApiKey(apiKey, isProduction);
+        await syncFrontendApiKey(apiKey);
         console.log('\n✅ API keys synchronized successfully!');
-
-        // Always ensure production env file has the production key
-        let prodEnvContent = '';
-        if (fs.existsSync(FRONTEND_ENV_PROD_PATH)) {
-            prodEnvContent = fs.readFileSync(FRONTEND_ENV_PROD_PATH, 'utf8');
-            if (prodEnvContent.includes('REACT_APP_API_KEY=')) {
-                prodEnvContent = prodEnvContent.replace(/REACT_APP_API_KEY=.*(\r?\n|$)/, `REACT_APP_API_KEY=${PRODUCTION_API_KEY}$1`);
-            } else {
-                prodEnvContent += `\nREACT_APP_API_KEY=${PRODUCTION_API_KEY}\n`;
-            }
-        } else {
-            prodEnvContent = `REACT_APP_API_URL=/v1\nREACT_APP_API_KEY=${PRODUCTION_API_KEY}\n`;
-        }
-
-        fs.writeFileSync(FRONTEND_ENV_PROD_PATH, prodEnvContent);
-        console.log('✅ Production API key set in .env.production');
     } catch (error) {
         console.error('\n❌ Error syncing API keys:', error.message);
     }
@@ -552,16 +416,18 @@ function printHelp() {
     console.log('\n🔧 Environment Setup Tool');
     console.log('------------------------');
     console.log('Usage:');
-    console.log('  node setup-env.js setup       - Set up the .env file with appropriate API keys');
-    console.log('  node setup-env.js info        - Show current environment configuration');
-    console.log('  node setup-env.js sync        - Sync API keys between backend and frontend');
-    console.log('  node setup-env.js production  - Configure environment for production');
-    console.log('  node setup-env.js help        - Show this help message\n');
+    console.log('  node setup-env.js setup  - Set up the .env file with appropriate API keys');
+    console.log('  node setup-env.js info   - Show current environment configuration');
+    console.log('  node setup-env.js sync   - Sync API keys between backend and frontend');
+    console.log('  node setup-env.js help   - Show this help message\n');
 
-    console.log('API Key Handling:');
+    console.log('API Key Management:');
     console.log('  - Development environments use randomly generated API keys');
-    console.log('  - Production environment uses a fixed hardcoded API key');
-    console.log(`  - Production API Key: ${PRODUCTION_API_KEY.substring(0, 4)}...${PRODUCTION_API_KEY.substring(PRODUCTION_API_KEY.length - 4)}\n`);
+    console.log('  - Production environments should use keys set in GitHub Actions/Vercel\n');
+
+    console.log('IMPORTANT: Never commit API keys to the repository');
+    console.log('  - Set API_KEY as a secret in GitHub Actions or Vercel');
+    console.log('  - Set OPENAI_API_KEY or MISTRAL_API_KEY in your deployment platform');
 
     rl.close();
 }
@@ -580,10 +446,6 @@ function main() {
             break;
         case 'sync':
             syncKeys();
-            break;
-        case 'production':
-        case 'prod':
-            setupProduction();
             break;
         case 'help':
         default:

@@ -3,7 +3,6 @@ const app = require('./app');
 const config = require('./src/config/config');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 
 // Define the port
 const PORT = process.env.PORT || 5000;

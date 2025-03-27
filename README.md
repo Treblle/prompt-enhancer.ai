@@ -56,7 +56,7 @@ AI Prompt Enhancer is designed to transform basic prompts into optimized, high-q
 2. Setup Backend
 
    ```bash
-    cd ..
+   cd ..
    npm install
    npm run setup
    ```
@@ -72,7 +72,8 @@ AI Prompt Enhancer is designed to transform basic prompts into optimized, high-q
 The `npm run setup` command helps you securely configure your environment:
 
 - Creates a `.env` file based on `.env.example`
-- Guides you through adding your API keys
+- Generates a random API key for development use
+- Guides you through adding your AI provider API keys
 - Installs security measures to prevent key exposure
 
 ### API Key Management
@@ -80,13 +81,16 @@ The `npm run setup` command helps you securely configure your environment:
 The application uses different API keys for different environments:
 
 - **Development & Local**: A unique randomly generated API key for each developer's environment
-- **Production**: A fixed, hardcoded API key that shouldn't be changed
+- **Production**: API keys stored securely as environment variables in your deployment platform (GitHub Actions/Vercel)
 
-This approach ensures consistent behavior in production while allowing developers to work independently.
+No API keys are hardcoded in the codebase for improved security.
 
 ### Important Note on API Keys
 
-**DO NOT CHANGE THE PRODUCTION API KEY**. The production key (`071ab274d796058af0f2c1c205b78009670fc774bd574960`) is hardcoded throughout the application. Changing it would break the deployed application.
+**DO NOT COMMIT API KEYS TO THE REPOSITORY**. Set all keys as environment variables:
+
+- For development: Use the `.env` file (automatically ignored by Git)
+- For production: Set keys in GitHub Secrets and Vercel Environment Variables
 
 ### Encrypting Your Keys
 
@@ -114,6 +118,7 @@ npm run security-check
 - Pre-commit hooks to catch accidental key commits
 - Git ignorance of sensitive files
 - Validation checks on startup
+- Security checks to detect key exposure
 
 ## 🔐 Environment Configuration
 
@@ -126,7 +131,7 @@ The project uses `.env` files for configuration. For required variables, refer t
 - `AI_PROVIDER`: Choose between 'mistral' or 'openai'
 - `MISTRAL_API_KEY`: Mistral AI API key
 - `OPENAI_API_KEY`: OpenAI API key
-- `API_KEY`: Authentication key for the API (generated during setup)
+- `API_KEY`: Authentication key for the API
 
 ### Frontend Environment Variables
 
@@ -136,7 +141,7 @@ The project uses `.env` files for configuration. For required variables, refer t
 ## 🔄 Environment Differences
 
 - **Development**: Random API keys, debug logging, localhost services
-- **Production**: Fixed API key, minimal logging, production-optimized services
+- **Production**: API keys from environment variables, minimal logging, production-optimized services
 
 ## 📚 API Documentation
 
@@ -145,7 +150,7 @@ The API is documented using OpenAPI and is available at `/docs` when running the
 ### API Endpoints
 
 - `POST /v1/prompts`: Enhance a prompt
-- `GET /v1/prompts`: List enhanced prompts 
+- `GET /v1/prompts`: List enhanced prompts
 - `GET /v1/prompts/:id`: Get a specific enhanced prompt
 - `PUT /v1/prompts/:id`: Update a specific prompt
 - `DELETE /v1/prompts/:id`: Delete a specific prompt
@@ -158,7 +163,7 @@ fetch('https://prompt-enhancer.ai/v1/prompts', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'X-API-Key': '071ab274d796058af0f2c1c205b78009670fc774bd574960'
+    'X-API-Key': 'your-api-key' // Use the API key from your environment
   },
   body: JSON.stringify({
     text: 'Write about quantum computing',

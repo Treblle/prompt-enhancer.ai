@@ -76,6 +76,7 @@ if (!fs.existsSync(envExamplePath)) {
 
     // Check for real API keys in .env.example
     const apiKeyPatterns = [
+        { pattern: /API_KEY=[a-zA-Z0-9]{10,}/, description: 'Hardcoded API Key' },
         { pattern: /sk-[a-zA-Z0-9]{32,}/, description: 'OpenAI API Key' },
         { pattern: /[a-zA-Z0-9]{32,}/, description: 'Potential API Key' }
     ];
@@ -154,29 +155,30 @@ try {
 console.log('');
 
 // ------------------------------------------------------------------
-// Check for code exposures
+// Check for API key patterns in code
 // ------------------------------------------------------------------
-console.log(`${BLUE}Checking for potential key exposures in code...${RESET}`);
+console.log(`${BLUE}Checking for potential API key patterns in code...${RESET}`);
 
 try {
     // Create a list of files to check, excluding node_modules and .git
-    const gitFiles = execSync('git ls-files -- "*.js" "*.jsx" "*.json" "*.md" "*.html"', {
+    const gitFiles = execSync('git ls-files -- "*.js" "*.jsx" "*.json" "*.md" "*.html" "*.yml" "*.yaml"', {
         stdio: ['pipe', 'pipe', 'ignore']
     }).toString().trim().split('\n');
 
     const apiKeyPatterns = [
+        { pattern: /PRODUCTION_API_KEY/, description: 'Hardcoded Production API Key reference' },
+        { pattern: /='[a-zA-Z0-9]{16,}'/, description: 'Hardcoded API key value' },
+        { pattern: /="[a-zA-Z0-9]{16,}"/, description: 'Hardcoded API key value' },
         { pattern: /sk-[a-zA-Z0-9]{32,}/, description: 'OpenAI API Key' },
         { pattern: /[a-zA-Z0-9]{32,}(?!\.[\w-]+)/, description: 'Potential API Key (32+ chars)' },
-        { pattern: /api[_-]?key\s*[=:]\s*['"][^'"]+['"]/, description: 'API key assignment' },
-        { pattern: /secret\s*[=:]\s*['"][^'"]+['"]/, description: 'Secret assignment' }
+        { pattern: /api[_-]?key\s*[=:]\s*['"][a-zA-Z0-9]{16,}['"]/, description: 'API key assignment' }
     ];
 
     const excludePatterns = [
-        /keyManager\.js$/,
-        /encrypt-keys\.js$/,
-        /setup-env\.js$/,
         /security-check\.js$/,
-        /node_modules\//
+        /test\/.*\.js$/,
+        /node_modules\//,
+        /package(-lock)?\.json$/
     ];
 
     let foundExposures = false;
@@ -220,7 +222,7 @@ console.log(`${BLUE}==================================================${RESET}\n
 console.log(`${YELLOW}Key Security Reminders:${RESET}`);
 console.log(`${YELLOW}1. Never commit API keys or secrets to Git${RESET}`);
 console.log(`${YELLOW}2. Use environment variables for sensitive data${RESET}`);
-console.log(`${YELLOW}3. Regularly rotate your API keys${RESET}`);
+console.log(`${YELLOW}3. Store keys in your deployment platform (GitHub Actions/Vercel)${RESET}`);
 console.log(`${YELLOW}4. Keep your .env file secure and local${RESET}`);
 console.log(`${YELLOW}5. Use the encrypted backup feature for safekeeping${RESET}`);
 
