@@ -20,7 +20,7 @@
     "encrypt-keys": "node tools/encrypt-keys.js",
     "install-hooks": "node tools/install-git-hooks.js",
     "security-check": "node tools/security-check.js",
-    "postinstall": "npm run install-hooks",
+    "postinstall": "npm run install-hooks || true",
     "generate-docs": "swagger-cli bundle ./openapi.yaml --outfile ./public/openapi.json --type json",
     "audit": "npm audit --audit-level=high",
     "update-deps": "npm update",

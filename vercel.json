@@ -5,7 +5,8 @@
       "src": "server.js",
       "use": "@vercel/node",
       "config": {
-        "buildCommand": "touch .env && npm run generate-docs"
+        "buildCommand": "touch .env && npm run generate-docs",
+        "installCommand": "npm install --ignore-scripts"
       }
     },
     {

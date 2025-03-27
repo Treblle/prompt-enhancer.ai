@@ -17,8 +17,8 @@ const gitHooksDir = path.join(gitDir, 'hooks');
 
 // Check if .git directory exists
 if (!fs.existsSync(gitDir)) {
-    console.error('❌ .git directory not found. Are you in a git repository?');
-    process.exit(1);
+    console.warn('⚠️ .git directory not found. Skipping git hooks installation in this environment.');
+    process.exit(0); // Exit successfully instead of with an error
 }
 
 // Check if custom hooks directory exists
