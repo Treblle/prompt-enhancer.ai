@@ -1,8 +1,5 @@
 require('dotenv').config();
 
-// Fixed API key for production environment - NEVER CHANGE THIS VALUE
-const PRODUCTION_API_KEY = '071ab274d796058af0f2c1c205b78009670fc774bd574960';
-
 /**
  * Application configuration with validation and defaults
  */
@@ -17,8 +14,7 @@ const config = {
 
     // API configuration
     api: {
-        // Use hardcoded key for production, environment variable otherwise
-        key: process.env.NODE_ENV === 'production' ? PRODUCTION_API_KEY : process.env.API_KEY,
+        key: process.env.API_KEY,
         version: '1.0.0',
         baseUrl: '/v1',
     },
@@ -81,14 +77,8 @@ function validateConfig() {
     const errors = [];
 
     // API key validation
-    if (process.env.NODE_ENV === 'production') {
-        // In production, confirm we're using the production API key
-        if (config.api.key !== PRODUCTION_API_KEY) {
-            errors.push('Production environment must use the hardcoded production API key');
-        }
-    } else if (!config.api.key) {
-        // In development, API key must be set
-        errors.push('API_KEY environment variable must be set in development');
+    if (!config.api.key) {
+        errors.push('API_KEY environment variable must be set');
     }
 
     // AI provider configuration validation

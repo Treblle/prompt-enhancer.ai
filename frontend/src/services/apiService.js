@@ -4,13 +4,8 @@ const API_BASE_URL = process.env.REACT_APP_API_URL ||
         ? 'http://localhost:5000/v1'
         : 'https://prompt-enhancer.ai/v1');
 
-// Fixed API key for production - NEVER CHANGE THIS VALUE
-const PRODUCTION_API_KEY = '071ab274d796058af0f2c1c205b78009670fc774bd574960';
-
-// Choose the appropriate API key based on environment
-const API_KEY = process.env.NODE_ENV === 'production'
-    ? PRODUCTION_API_KEY
-    : process.env.REACT_APP_API_KEY;
+// Get API key from environment variable
+const API_KEY = process.env.REACT_APP_API_KEY;
 
 // Debug logging for API configuration (only in development)
 if (process.env.NODE_ENV === 'development') {
@@ -18,8 +13,7 @@ if (process.env.NODE_ENV === 'development') {
         baseUrl: API_BASE_URL,
         apiKeyAvailable: !!API_KEY,
         apiKeyPrefix: API_KEY ? API_KEY.substring(0, 4) : 'Not set',
-        environment: process.env.NODE_ENV,
-        isProductionKey: API_KEY === PRODUCTION_API_KEY
+        environment: process.env.NODE_ENV
     });
 }
 
@@ -44,7 +38,7 @@ class APIError extends Error {
 // Base fetch wrapper with enhanced error handling
 async function apiFetch(url, options = {}) {
     if (!API_KEY) {
-        console.error('API Key is not configured! Check your .env or .env.development file.');
+        console.error('API Key is not configured! Check environment variables.');
         throw new APIError('API Key is not configured', 500);
     }
 
@@ -111,7 +105,7 @@ const apiService = {
     enhancePrompt: async (data) => {
         // Validate input
         if (!data.text || typeof data.text !== 'string') {
-            throw new APIError('Invalid prompt text', 400);
+            throw new APIError('Invalid or missing original prompt', 400);
         }
 
         // Default format

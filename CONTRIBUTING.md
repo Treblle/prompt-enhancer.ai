@@ -35,28 +35,29 @@ This project and everyone participating in it are governed by our [Code of Condu
    npm run setup
    ```
 
-   The setup script will guide you through creating your local `.env` file and configuring API keys.
+   The setup script will guide you through creating your local `.env` file and generating a random API key for development use.
 
 ### API Keys and Environment Configuration 🔒
 
-Our project uses different API keys for development and production:
+Our project uses environment variables exclusively for API key management:
 
-- **Development Environment**: The setup script will generate a random API key for your local development
-- **Production Environment**: Uses a fixed hardcoded API key (`071ab274d796058af0f2c1c205b78009670fc774bd574960`)
+- **Development Environment**: Each developer gets a randomly generated API key that's stored locally
+- **Production Environment**: API keys are stored as environment variables in GitHub Actions and Vercel
 
 **IMPORTANT:**
 
-- Never change the production API key in any files
-- Never commit your local development API key
-- When contributing, ensure your changes respect this API key management approach
+- Never commit API keys to the repository
+- Use only environment variables for sensitive data
+- When contributing, ensure your changes adhere to this environment-based approach
 
 ### API Keys Security 🔒
 
 **IMPORTANT:** API keys and secrets should never be committed to the repository.
 
 - For local development, your `.env` file is automatically added to `.gitignore` to prevent accidental commits
-- For deployment and CI/CD, we use GitHub Secrets (described below)
+- For deployment and CI/CD, we use GitHub Secrets and Vercel Environment Variables
 - When submitting PRs, never include actual API keys in your code or comments
+- Never hardcode API keys or sensitive tokens in the source code
 
 ### API Monitoring with Treblle 📊
 
@@ -74,7 +75,7 @@ If you're a maintainer or setting up your own fork with CI/CD:
 1. Go to your GitHub repository
 2. Click on "Settings" → "Secrets and variables" → "Actions"
 3. Add the following secrets:
-   - `REACT_APP_API_KEY` - Should be set to the production API key: `071ab274d796058af0f2c1c205b78009670fc774bd574960`
+   - `API_KEY` - A strong, randomly generated API key
    - `OPENAI_API_KEY` - Your OpenAI API key
    - `MISTRAL_API_KEY` - Your Mistral AI API key (if using Mistral)
    - `TREBLLE_API_KEY` - Your Treblle API key for API monitoring
@@ -149,7 +150,7 @@ Our GitHub Actions workflows will use these secrets to build and deploy without 
 - Write modular, reusable code
 - Handle errors gracefully
 - Never log sensitive information like API keys
-- **IMPORTANT:** Do not change the hardcoded production API key value
+- **IMPORTANT:** Never hardcode API keys or secrets - always use environment variables
 
 ### Frontend (React)
 
@@ -159,6 +160,16 @@ Our GitHub Actions workflows will use these secrets to build and deploy without 
 - Keep components small and focused
 - Use TypeScript for type safety (recommended)
 - Ensure mobile responsiveness
+- Never embed API keys in frontend code - use environment variables injected at build time
+
+### Security Best Practices
+
+- Always use environment variables for sensitive data
+- Never commit `.env` files or files containing keys
+- Use the pre-commit hooks to prevent accidental key exposure
+- Regularly run `npm run security-check` to detect potential issues
+- Use encrypted storage for backups of sensitive information
+- Follow the principle of least privilege for API keys
 
 ### Git Commit Messages
 
