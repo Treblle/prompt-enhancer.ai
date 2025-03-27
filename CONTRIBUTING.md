@@ -35,29 +35,31 @@ This project and everyone participating in it are governed by our [Code of Condu
    npm run setup
    ```
 
-   The setup script will guide you through creating your local `.env` file and generating a random API key for development use.
+   The setup script will guide you through creating your local `.env` file, generating a random API key for development use, and creating a secure JWT secret for authentication.
 
-### API Keys and Environment Configuration 🔒
+### Authentication and Security 🔒
 
-Our project uses environment variables exclusively for API key management:
+Our project uses JWT-based authentication for improved security:
 
-- **Development Environment**: Each developer gets a randomly generated API key that's stored locally
-- **Production Environment**: API keys are stored as environment variables in GitHub Actions and Vercel
+- **Development Environment**: The setup script generates a random API key and JWT secret for local use
+- **Production Environment**: API keys and JWT secrets are stored as environment variables in GitHub Actions and Vercel
+- **Authentication Flow**: The frontend obtains a JWT token which is used for all API requests
+- **Token Management**: JWT tokens expire after 24 hours (configurable) and are automatically refreshed
 
 **IMPORTANT:**
 
-- Never commit API keys to the repository
+- Never commit API keys or JWT secrets to the repository
 - Use only environment variables for sensitive data
-- When contributing, ensure your changes adhere to this environment-based approach
+- When contributing, ensure your changes adhere to the JWT authentication flow
 
 ### API Keys Security 🔒
 
-**IMPORTANT:** API keys and secrets should never be committed to the repository.
+**IMPORTANT:** API keys and JWT secrets should never be committed to the repository.
 
 - For local development, your `.env` file is automatically added to `.gitignore` to prevent accidental commits
-- For deployment and CI/CD, we use GitHub Secrets and Vercel Environment Variables
-- When submitting PRs, never include actual API keys in your code or comments
-- Never hardcode API keys or sensitive tokens in the source code
+- For deployment and CI/CD, use GitHub Secrets and Vercel Environment Variables
+- When submitting PRs, never include actual API keys or JWT secrets in your code or comments
+- Never hardcode sensitive credentials in the source code
 
 ### API Monitoring with Treblle 📊
 
@@ -76,6 +78,7 @@ If you're a maintainer or setting up your own fork with CI/CD:
 2. Click on "Settings" → "Secrets and variables" → "Actions"
 3. Add the following secrets:
    - `API_KEY` - A strong, randomly generated API key
+   - `JWT_SECRET` - A strong, random secret for JWT token generation
    - `OPENAI_API_KEY` - Your OpenAI API key
    - `MISTRAL_API_KEY` - Your Mistral AI API key (if using Mistral)
    - `TREBLLE_API_KEY` - Your Treblle API key for API monitoring
@@ -149,8 +152,18 @@ Our GitHub Actions workflows will use these secrets to build and deploy without 
 - Add comments for complex logic
 - Write modular, reusable code
 - Handle errors gracefully
-- Never log sensitive information like API keys
-- **IMPORTANT:** Never hardcode API keys or secrets - always use environment variables
+- Never log sensitive information like API keys or JWT secrets
+- **IMPORTANT:** Never hardcode API keys or JWT secrets - always use environment variables
+
+### Authentication Implementation
+
+When working with the authentication system:
+
+- Always use the `authenticateToken` middleware for new routes
+- Use the `authService` for token generation and validation
+- Keep the JWT secret secure in environment variables
+- Set reasonable token expiration times
+- Implement proper error handling for authentication failures
 
 ### Frontend (React)
 
@@ -160,16 +173,18 @@ Our GitHub Actions workflows will use these secrets to build and deploy without 
 - Keep components small and focused
 - Use TypeScript for type safety (recommended)
 - Ensure mobile responsiveness
-- Never embed API keys in frontend code - use environment variables injected at build time
+- Use the authentication service for token management
+- Never embed API keys in frontend code - use the token-based approach
 
 ### Security Best Practices
 
 - Always use environment variables for sensitive data
-- Never commit `.env` files or files containing keys
+- Never commit `.env` files or files containing keys and secrets
 - Use the pre-commit hooks to prevent accidental key exposure
 - Regularly run `npm run security-check` to detect potential issues
 - Use encrypted storage for backups of sensitive information
-- Follow the principle of least privilege for API keys
+- Follow the principle of least privilege for API access
+- Use HTTPS for all API communications
 
 ### Git Commit Messages
 

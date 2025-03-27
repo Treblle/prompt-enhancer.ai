@@ -9,7 +9,7 @@ AI Prompt Enhancer is designed to transform basic prompts into optimized, high-q
 - **Intelligent Prompt Enhancement**: Convert basic prompts into structured, context-rich instructions
 - **Multi-AI Provider Support**: Works with both Mistral and OpenAI (configurable through simple environment settings)
 - **Open Source**: Completely customizable and community-driven
-- **Security-Focused**: Built with API key protection as a priority
+- **Security-Focused**: Built with JWT-based authentication for improved security
 - **Mobile-Friendly**: Responsive design optimized for all devices
 - **API-Driven**: Use the REST API directly or via the frontend UI
 
@@ -23,6 +23,7 @@ AI Prompt Enhancer is designed to transform basic prompts into optimized, high-q
 - **Backend**:
   - Node.js
   - Express.js
+  - JWT authentication
   - Rate limiting and DDoS protection built-in
 
 - **AI Providers**:
@@ -56,7 +57,7 @@ AI Prompt Enhancer is designed to transform basic prompts into optimized, high-q
 2. Setup Backend
 
    ```bash
-   cd ..
+    cd ..
    npm install
    npm run setup
    ```
@@ -73,21 +74,24 @@ The `npm run setup` command helps you securely configure your environment:
 
 - Creates a `.env` file based on `.env.example`
 - Generates a random API key for development use
+- Generates a secure JWT secret for token-based authentication
 - Guides you through adding your AI provider API keys
 - Installs security measures to prevent key exposure
 
-### API Key Management
+### Authentication System
 
-The application uses different API keys for different environments:
+The application uses JWT (JSON Web Token) for authentication:
 
-- **Development & Local**: A unique randomly generated API key for each developer's environment
-- **Production**: API keys stored securely as environment variables in your deployment platform (GitHub Actions/Vercel)
+- **Secure Authentication Flow**: The API key is used only to generate a short-lived token
+- **Token-Based Access**: All API requests use tokens instead of API keys
+- **Automatic Token Management**: The frontend handles token acquisition and refresh automatically
+- **Secure Communication**: Sensitive credentials are never exposed in network requests
 
-No API keys are hardcoded in the codebase for improved security.
+For development, the authentication system uses environment variables defined in your `.env` file. For production, these variables are securely stored in your deployment platform.
 
-### Important Note on API Keys
+### Important Note on Security
 
-**DO NOT COMMIT API KEYS TO THE REPOSITORY**. Set all keys as environment variables:
+**DO NOT COMMIT API KEYS OR JWT SECRETS TO THE REPOSITORY**. Set all keys and secrets as environment variables:
 
 - For development: Use the `.env` file (automatically ignored by Git)
 - For production: Set keys in GitHub Secrets and Vercel Environment Variables
@@ -111,15 +115,6 @@ Run security checks to ensure your repository is properly configured:
 npm run security-check
 ```
 
-### ⚠️ IMPORTANT
-
-**Never commit API keys to Git repositories**. We've implemented multiple safeguards:
-
-- Pre-commit hooks to catch accidental key commits
-- Git ignorance of sensitive files
-- Validation checks on startup
-- Security checks to detect key exposure
-
 ## 🔐 Environment Configuration
 
 The project uses `.env` files for configuration. For required variables, refer to `.env.example`.
@@ -128,15 +123,17 @@ The project uses `.env` files for configuration. For required variables, refer t
 
 - `PORT`: Server port
 - `NODE_ENV`: Environment (development, production, test)
+- `API_KEY`: Authentication key for the API
+- `JWT_SECRET`: Secret key for JWT token generation
+- `JWT_EXPIRY`: Token expiration time (e.g., "24h")
 - `AI_PROVIDER`: Choose between 'mistral' or 'openai'
 - `MISTRAL_API_KEY`: Mistral AI API key
 - `OPENAI_API_KEY`: OpenAI API key
-- `API_KEY`: Authentication key for the API
 
 ### Frontend Environment Variables
 
 - `REACT_APP_API_URL`: Backend API URL
-- `REACT_APP_API_KEY`: API authentication key (synchronized with backend)
+- `REACT_APP_API_KEY`: API authentication key (used only for initial token generation)
 
 ## 🔄 Environment Differences
 
@@ -149,6 +146,12 @@ The API is documented using OpenAPI and is available at `/docs` when running the
 
 ### API Endpoints
 
+#### Authentication Endpoints
+
+- `POST /v1/auth/token`: Generate a JWT token for authentication
+
+#### Prompt Endpoints
+
 - `POST /v1/prompts`: Enhance a prompt
 - `GET /v1/prompts`: List enhanced prompts
 - `GET /v1/prompts/:id`: Get a specific enhanced prompt
@@ -158,20 +161,44 @@ The API is documented using OpenAPI and is available at `/docs` when running the
 ### Example API Usage
 
 ```javascript
-// Example: Enhance a prompt using the API
-fetch('https://prompt-enhancer.ai/v1/prompts', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'X-API-Key': 'your-api-key' // Use the API key from your environment
-  },
-  body: JSON.stringify({
-    text: 'Write about quantum computing',
-    format: 'structured'
-  })
-})
-.then(response => response.json())
-.then(data => console.log(data.enhancedText));
+// Example: Generate a token for authentication
+async function getAuthToken() {
+  const response = await fetch('https://prompt-enhancer.ai/v1/auth/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      clientId: 'your-client-id',
+      clientSecret: 'your-api-key' // Use the API key from your environment
+    })
+  });
+  
+  const data = await response.json();
+  return data.access_token;
+}
+
+// Example: Enhance a prompt using JWT authentication
+async function enhancePrompt(text) {
+  // Get token
+  const token = await getAuthToken();
+  
+  // Use token for API request
+  const response = await fetch('https://prompt-enhancer.ai/v1/prompts', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      text: text,
+      format: 'structured'
+    })
+  });
+  
+  const data = await response.json();
+  return data.enhancedText;
+}
 ```
 
 ## 🧪 Testing

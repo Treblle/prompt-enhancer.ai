@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const authService = require('../services/authService');
 
 // Simple in-memory cache for failed attempts
 const failedAttempts = new Map();
@@ -9,12 +10,93 @@ const WHITELISTED_IPS = process.env.WHITELISTED_IPS
     : [];
 
 /**
- * API Key authentication middleware
+ * JWT authentication middleware
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+exports.authenticateToken = (req, res, next) => {
+    // Get the authorization header
+    const authHeader = req.headers.authorization;
+    const clientIp = req.ip || req.connection.remoteAddress;
+    const forwardedIp = req.header('X-Forwarded-For') ? req.header('X-Forwarded-For').split(',')[0].trim() : null;
+
+    // Check if client IP is whitelisted
+    const isWhitelisted = WHITELISTED_IPS.includes(clientIp) ||
+        (forwardedIp && WHITELISTED_IPS.includes(forwardedIp));
+
+    // Allow certain paths without authentication (like health checks or docs)
+    if (req.path === '/docs' || req.path === '/api-check' || req.path === '/health') {
+        return next();
+    }
+
+    // Check for bearer token
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        // For testing purposes, allow API key as fallback in test environment
+        if (process.env.NODE_ENV === 'test' && req.header('X-API-Key') === process.env.TEST_API_KEY) {
+            req.authTimestamp = Date.now();
+            return next();
+        }
+
+        if (!isWhitelisted) {
+            recordFailedAttempt(clientIp);
+        }
+
+        return res.status(401).json({
+            error: {
+                code: 'missing_token',
+                message: 'Authentication token is required. Please provide a valid token in the Authorization header.'
+            }
+        });
+    }
+
+    // Extract the token
+    const token = authHeader.split(' ')[1];
+
+    // Verify the token
+    const payload = authService.verifyToken(token);
+
+    if (!payload) {
+        if (!isWhitelisted) {
+            recordFailedAttempt(clientIp);
+        }
+
+        return res.status(401).json({
+            error: {
+                code: 'invalid_token',
+                message: 'Invalid or expired token provided.'
+            }
+        });
+    }
+
+    // Token is valid, reset failed attempts
+    if (failedAttempts.has(clientIp)) {
+        failedAttempts.delete(clientIp);
+    }
+
+    // Add the token payload to the request
+    req.user = payload;
+
+    // Add a timestamp for tracking authentication
+    req.authTimestamp = Date.now();
+
+    next();
+};
+
+/**
+ * Backwards compatibility middleware for API key authentication
+ * This is only for transition period - will be deprecated
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
  */
 exports.authenticateApiKey = (req, res, next) => {
+    // Check for Bearer token in Authorization header first
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        return exports.authenticateToken(req, res, next);
+    }
+
     const apiKey = req.header('X-API-Key');
     const clientIp = req.ip || req.connection.remoteAddress;
     const forwardedIp = req.header('X-Forwarded-For') ? req.header('X-Forwarded-For').split(',')[0].trim() : null;
@@ -36,6 +118,11 @@ exports.authenticateApiKey = (req, res, next) => {
         }
     }
 
+    // Allow certain paths without authentication
+    if (req.path === '/docs' || req.path === '/api-check' || req.path === '/health') {
+        return next();
+    }
+
     // Check if API key exists
     if (!apiKey) {
         if (!isWhitelisted) {
@@ -44,7 +131,7 @@ exports.authenticateApiKey = (req, res, next) => {
         return res.status(401).json({
             error: {
                 code: 'missing_api_key',
-                message: 'API key is required. Please provide an API key in the X-API-Key header.'
+                message: 'API key is required. Please provide an API key in the X-API-Key header or use JWT token authentication.'
             }
         });
     }
@@ -65,7 +152,7 @@ exports.authenticateApiKey = (req, res, next) => {
         return res.status(401).json({
             error: {
                 code: 'invalid_api_key',
-                message: 'Invalid API key provided.'
+                message: 'Invalid API key provided. Consider using token-based authentication instead.'
             }
         });
     }

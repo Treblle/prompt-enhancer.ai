@@ -1,18 +1,16 @@
+// Import auth service for token management
+import authService from './authService';
+
 // Define API base URL based on environment
 const API_BASE_URL = process.env.REACT_APP_API_URL ||
     (process.env.NODE_ENV === 'development'
         ? 'http://localhost:5000/v1'
         : 'https://prompt-enhancer.ai/v1');
 
-// Get API key from environment variable
-const API_KEY = process.env.REACT_APP_API_KEY;
-
 // Debug logging for API configuration (only in development)
 if (process.env.NODE_ENV === 'development') {
     console.log('API Configuration:', {
         baseUrl: API_BASE_URL,
-        apiKeyAvailable: !!API_KEY,
-        apiKeyPrefix: API_KEY ? API_KEY.substring(0, 4) : 'Not set',
         environment: process.env.NODE_ENV
     });
 }
@@ -37,28 +35,67 @@ class APIError extends Error {
 
 // Base fetch wrapper with enhanced error handling
 async function apiFetch(url, options = {}) {
-    if (!API_KEY) {
-        console.error('API Key is not configured! Check environment variables.');
-        throw new APIError('API Key is not configured', 500);
-    }
-
-    const defaultHeaders = {
-        'Content-Type': 'application/json',
-        'X-API-Key': API_KEY
-    };
-
-    const config = {
-        ...options,
-        headers: {
-            ...defaultHeaders,
-            ...options.headers
-        }
-    };
-
     try {
+        // Get the current authentication token
+        let token = authService.getToken();
+
+        // If no token exists, try to get one
+        if (!token) {
+            try {
+                token = await authService.initializeAuth();
+            } catch (authError) {
+                throw new APIError('Authentication failed', 401, authError);
+            }
+        }
+
+        const defaultHeaders = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
+
+        const config = {
+            ...options,
+            headers: {
+                ...defaultHeaders,
+                ...options.headers
+            }
+        };
+
         console.log('Making API request to:', url);
         const response = await fetch(url, config);
         console.log('Response status:', response.status);
+
+        // Handle 401 Unauthorized - token might be expired
+        if (response.status === 401) {
+            // Try to get a new token and retry the request
+            try {
+                console.log('Token expired, refreshing...');
+                const newToken = await authService.fetchToken();
+
+                // Update headers with new token
+                config.headers['Authorization'] = `Bearer ${newToken}`;
+
+                // Retry the request
+                console.log('Retrying request with new token');
+                const retryResponse = await fetch(url, config);
+
+                // If retry also fails, throw an error
+                if (!retryResponse.ok) {
+                    throw new APIError(
+                        'Authentication failed after token refresh',
+                        retryResponse.status
+                    );
+                }
+
+                // Parse and return retry response
+                const contentType = retryResponse.headers.get('content-type');
+                const isJsonResponse = contentType && contentType.includes('application/json');
+                return isJsonResponse ? await retryResponse.json() : await retryResponse.text();
+            } catch (refreshError) {
+                console.error('Token refresh failed:', refreshError);
+                throw new APIError('Authentication failed', 401, refreshError);
+            }
+        }
 
         // Parse response body
         const contentType = response.headers.get('content-type');

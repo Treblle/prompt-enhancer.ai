@@ -30,6 +30,8 @@ jobs:
           echo "NODE_ENV=production" > .env
           echo "PORT=5000" >> .env
           echo "API_KEY=${{ secrets.API_KEY }}" >> .env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+          echo "JWT_EXPIRY=24h" >> .env
           echo "AI_PROVIDER=openai" >> .env
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
           echo "CORS_ALLOWED_ORIGINS=https://prompt-enhancer.ai" >> .env
