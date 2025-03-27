@@ -176,6 +176,16 @@ When working with the authentication system:
 - Use the authentication service for token management
 - Never embed API keys in frontend code - use the token-based approach
 
+## Local HTTPS Development
+
+For secure local development:
+
+1. Generate self-signed certificates:
+
+   ```bash
+   mkdir -p certificates
+   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout certificates/key.pem -out certificates/cert.pem
+
 ### Security Best Practices
 
 - Always use environment variables for sensitive data

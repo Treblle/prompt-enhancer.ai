@@ -21,6 +21,12 @@ package-lock.json
 # Environment Variables
 .env
 .env.local
+.env.test
 .env.development.local
 .env.production.local
 .env.test.local
+
+# Logs
+logs/
+*.log
+secure-debug.log

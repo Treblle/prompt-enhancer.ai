@@ -1,0 +1,69 @@
+# .github/workflows/test.yml
+name: Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    env:
+      NODE_ENV: test
+      TEST_API_KEY: test_api_key_for_ci
+      API_KEY: api_key_for_ci_testing
+      OPENAI_API_KEY: sk-test123456789
+      SKIP_RATE_LIMIT: 'true'
+      
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Run tests
+        run: npm test
+        
+      - name: Create logs directory
+        run: mkdir -p logs
+        
+      - name: Run security checks
+        run: npm run security-check
+        
+      - name: Check for vulnerabilities
+        run: npm run audit:check || true
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Run npm audit
+        run: npm audit --production || true
+        
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+          
+      - name: Check frontend dependencies
+        run: |
+          cd frontend
+          npm audit --production || true
