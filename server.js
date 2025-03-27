@@ -1,6 +1,6 @@
 require('dotenv').config();
 const app = require('./app');
-const keyManager = require('./src/utils/keyManager');
+const KeyManager = require('./src/utils/keyManager');
 const config = require('./src/config/config');
 const fs = require('fs');
 const path = require('path');
