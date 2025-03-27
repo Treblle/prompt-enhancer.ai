@@ -22,15 +22,127 @@ servers:
     description: Local development server
 
 tags:
+  - name: Authentication
+    description: Authentication endpoints for token management
   - name: Prompts
     description: Prompt enhancement and management operations
-  - name: Authentication
-    description: API key authentication and access management
 
 security:
-  - ApiKeyAuth: []
+  - BearerAuth: []
+  - ApiKeyAuth: [] # Legacy authentication method
 
 paths:
+  /auth/token:
+    post:
+      summary: Generate authentication token
+      description: Generates a JWT token for API authentication
+      operationId: generateToken
+      tags:
+        - Authentication
+      security: [] # No auth required for token generation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenRequest"
+            examples:
+              basicAuth:
+                value:
+                  clientId: "frontend-client"
+                  clientSecret: "your-api-key-here"
+      responses:
+        "200":
+          description: Successfully generated token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "400":
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized - Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Too many requests - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/validate:
+    post:
+      summary: Validate authentication token
+      description: Validates a JWT token and returns its information
+      operationId: validateToken
+      tags:
+        - Authentication
+      security: [] # No auth required for token validation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: JWT token to validate
+      responses:
+        "200":
+          description: Token validation successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    description: Whether the token is valid
+                  clientId:
+                    type: string
+                    description: Client ID from the token
+                  scope:
+                    type: string
+                    description: Token scope
+                  expires:
+                    type: string
+                    format: date-time
+                    description: Token expiration time
+        "400":
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized - Invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /prompts:
     post:
       summary: Enhance a prompt
@@ -69,7 +181,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "401":
-          description: Unauthorized - API key is missing or invalid
+          description: Unauthorized - Authentication failed
           content:
             application/json:
               schema:
@@ -138,7 +250,7 @@ paths:
               description: Compression method used for the response
               example: "gzip"
         "401":
-          description: Unauthorized - API key is missing or invalid
+          description: Unauthorized - Authentication failed
           content:
             application/json:
               schema:
@@ -178,7 +290,7 @@ paths:
               description: Compression method used for the response
               example: "gzip"
         "401":
-          description: Unauthorized - API key is missing or invalid
+          description: Unauthorized - Authentication failed
           content:
             application/json:
               schema:
@@ -235,7 +347,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "401":
-          description: Unauthorized - API key is missing or invalid
+          description: Unauthorized - Authentication failed
           content:
             application/json:
               schema:
@@ -276,7 +388,7 @@ paths:
         "204":
           description: Prompt successfully deleted
         "401":
-          description: Unauthorized - API key is missing or invalid
+          description: Unauthorized - Authentication failed
           content:
             application/json:
               schema:
@@ -296,6 +408,42 @@ paths:
 
 components:
   schemas:
+    TokenRequest:
+      type: object
+      description: Request to generate an authentication token
+      required:
+        - clientSecret
+      properties:
+        clientId:
+          type: string
+          description: Client identifier
+          example: "frontend-client"
+        clientSecret:
+          type: string
+          description: Client secret (API key)
+          example: "your-api-key-here"
+
+    TokenResponse:
+      type: object
+      description: Authentication token response
+      properties:
+        access_token:
+          type: string
+          description: JWT access token
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        token_type:
+          type: string
+          description: Token type
+          example: "Bearer"
+        expires_in:
+          type: integer
+          description: Token expiration time in seconds
+          example: 86400
+        scope:
+          type: string
+          description: Token scope
+          example: "api:access"
+
     PromptRequest:
       type: object
       description: Request body for creating or updating a prompt enhancement
@@ -377,11 +525,17 @@ components:
               example: { "param": "text", "reason": "missing_required_field" }
 
   securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from the /auth/token endpoint
+
     ApiKeyAuth:
       type: apiKey
       in: header
       name: X-API-Key
-      description: API key for authentication and access control
+      description: Legacy API key authentication method (to be deprecated)
 
   headers:
     X-RateLimit-Limit:

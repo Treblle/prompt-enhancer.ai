@@ -7,10 +7,11 @@ const fs = require('fs');
 const path = require('path');
 const treblle = require('@treblle/express');
 const { errorHandler } = require('./src/middleware/error');
-const { authenticateApiKey } = require('./src/middleware/auth');
+const { authenticateToken, authenticateApiKey } = require('./src/middleware/auth');
 const { rateLimit, ddosProtection } = require('./src/middleware/rate-limit');
 
 const promptRoutes = require('./src/routes/prompts');
+const authRoutes = require('./src/routes/auth');
 
 const app = express();
 
@@ -159,7 +160,7 @@ const corsOptions = {
         }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-API-Key', 'Origin', 'Accept', 'Content-Encoding'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'Origin', 'Accept', 'Content-Encoding'],
     exposedHeaders: ['Content-Encoding', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
     credentials: true,
     optionsSuccessStatus: 200,
@@ -241,8 +242,11 @@ const swaggerUiOptions = {
 // Mount Swagger UI
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec, swaggerUiOptions));
 
-// API routes
-app.use('/v1/prompts', authenticateApiKey, apiLimiter, promptRoutes);
+// Authentication routes (no auth required)
+app.use('/v1/auth', apiLimiter, authRoutes);
+
+// API routes with JWT auth
+app.use('/v1/prompts', authenticateToken, apiLimiter, promptRoutes);
 
 // Landing page route
 app.get('/', (req, res) => {
@@ -269,6 +273,7 @@ app.get('/api-check', (req, res) => {
     res.json({
         apiKeyConfigured: !!process.env.API_KEY,
         openAIConfigured: !!process.env.OPENAI_API_KEY,
+        jwtConfigured: !!process.env.JWT_SECRET,
         nodeEnv: process.env.NODE_ENV,
         compressionEnabled: true,
         cdnConfigured: true,
@@ -280,6 +285,11 @@ app.get('/api-check', (req, res) => {
             }
             : 'Disabled in non-production'
     });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Global error handler
