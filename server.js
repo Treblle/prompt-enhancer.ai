@@ -1,10 +1,12 @@
 require('dotenv').config();
 const app = require('./app');
-const KeyManager = require('./src/utils/keyManager');
 const config = require('./src/config/config');
 const fs = require('fs');
 const path = require('path');
-const keyManager = new KeyManager();
+const crypto = require('crypto');
+
+// Define the port
+const PORT = process.env.PORT || 5000;
 
 // Add the debug endpoint with improved security
 app.get('/api-check', (req, res) => {
@@ -30,16 +32,6 @@ app.get('/api-check', (req, res) => {
     });
 });
 
-app.get('/test-server', (req, res) => {
-    res.json({
-        message: 'Server is running',
-        env: process.env.NODE_ENV
-    });
-});
-
-// Define the port
-const PORT = process.env.PORT || 5000;
-
 // Check if .env file exists (but skip in production)
 const envPath = path.join(__dirname, '.env');
 if (process.env.NODE_ENV !== 'production' && !fs.existsSync(envPath)) {
@@ -49,25 +41,32 @@ if (process.env.NODE_ENV !== 'production' && !fs.existsSync(envPath)) {
     process.exit(1);
 }
 
-// Initialize key manager before starting the server
-keyManager.initialize();
+// Basic key management functions
+function maskKey(key) {
+    if (!key || key.length < 8) return 'Invalid Key';
+    const firstChars = key.substring(0, 4);
+    const lastChars = key.substring(key.length - 4);
+    return `${firstChars}${'*'.repeat(Math.min(key.length - 8, 12))}${lastChars}`;
+}
 
-// Validate environment
-const validation = keyManager.validateEnvironment();
-const keyStatus = keyManager.getStatus();
+// Validate and check keys
+const API_KEY = process.env.API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
+const AI_PROVIDER = process.env.AI_PROVIDER || 'openai';
 
-// Log startup information with minimal key exposure
+// Log startup information with masked keys
 console.log('\n----------------------------------------');
 console.log('🔐 API Key Status:');
 console.log('----------------------------------------');
 
-console.log(`API Key: ${keyStatus.api?.available ? '✅ Available' : '❌ Missing'}`);
-console.log(`AI Provider: ${process.env.AI_PROVIDER || 'openai'}`);
+console.log(`API Key: ${API_KEY ? `✅ ${maskKey(API_KEY)}` : '❌ Missing'}`);
+console.log(`AI Provider: ${AI_PROVIDER}`);
 
-if (process.env.AI_PROVIDER === 'openai') {
-    console.log(`OpenAI API Key: ${keyStatus.openai?.available ? '✅ Available' : '❌ Missing'}`);
-} else if (process.env.AI_PROVIDER === 'mistral') {
-    console.log(`Mistral API Key: ${keyStatus.mistral?.available ? '✅ Available' : '❌ Missing'}`);
+if (AI_PROVIDER === 'openai') {
+    console.log(`OpenAI API Key: ${OPENAI_API_KEY ? `✅ ${maskKey(OPENAI_API_KEY)}` : '❌ Missing'}`);
+} else if (AI_PROVIDER === 'mistral') {
+    console.log(`Mistral API Key: ${MISTRAL_API_KEY ? `✅ ${maskKey(MISTRAL_API_KEY)}` : '❌ Missing'}`);
 }
 
 // Show Treblle status in production
@@ -86,10 +85,29 @@ if (process.env.NODE_ENV === 'production') {
     console.log(`Treblle API Monitoring: ⏸️ Disabled in non-production environment`);
 }
 
+// Simple environment validation
+let isValidConfig = true;
+const validationErrors = [];
+
+if (!API_KEY) {
+    validationErrors.push('API_KEY is not configured');
+    isValidConfig = false;
+}
+
+if (AI_PROVIDER === 'openai' && !OPENAI_API_KEY) {
+    validationErrors.push('OPENAI_API_KEY is required when using OpenAI provider');
+    isValidConfig = false;
+}
+
+if (AI_PROVIDER === 'mistral' && !MISTRAL_API_KEY) {
+    validationErrors.push('MISTRAL_API_KEY is required when using Mistral provider');
+    isValidConfig = false;
+}
+
 // Show warnings in development, exit in production if validation fails
-if (!validation.valid) {
+if (!isValidConfig) {
     console.log('\n⚠️ Environment Validation Warnings:');
-    validation.errors.forEach(error => {
+    validationErrors.forEach(error => {
         console.log(`  - ${error}`);
     });
 
@@ -102,14 +120,6 @@ if (!validation.valid) {
     }
 }
 
-// Display any warnings
-if (validation.warnings && validation.warnings.length > 0) {
-    console.log('\n⚠️ Environment Validation Warnings:');
-    validation.warnings.forEach(warning => {
-        console.log(`  - ${warning}`);
-    });
-}
-
 // Start the server (only once)
 app.listen(PORT, () => {
     console.log('\n----------------------------------------');
@@ -120,10 +130,5 @@ app.listen(PORT, () => {
     console.log(`🔑 Environment: ${process.env.NODE_ENV}`);
     console.log('----------------------------------------\n');
 });
-
-// Only define PORT variable in development
-if (process.env.NODE_ENV !== 'production') {
-    const PORT = process.env.PORT || 5000;
-}
 
 module.exports = app;
