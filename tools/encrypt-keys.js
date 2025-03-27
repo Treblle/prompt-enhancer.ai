@@ -20,6 +20,12 @@ const readline = require('readline');
 const KEYS_FILE = path.join(__dirname, '../.secure-keys.json');
 const ALGORITHM = 'aes-256-gcm';
 
+// Improved key derivation parameters
+const KDF_ITERATIONS = 100000; // 100,000 iterations for PBKDF2
+const KDF_DIGEST = 'sha512';   // Stronger hash algorithm
+const SALT_BYTES = 32;         // 256-bit salt
+const KEY_LENGTH = 32;         // 256-bit key
+
 // Set up readline interface for user interaction
 const rl = readline.createInterface({
     input: process.stdin,
@@ -82,13 +88,46 @@ function promptPassword(query) {
 }
 
 /**
- * Generate a secure key from a password
- * @param {string} password - User password
- * @returns {Buffer} - Derived key
+ * Validate password strength
+ * @param {string} password - Password to validate
+ * @returns {boolean} True if password meets strength requirements
  */
-function deriveKey(password) {
-    const salt = crypto.randomBytes(16);
-    const key = crypto.scryptSync(password, salt, 32);
+function isStrongPassword(password) {
+    // Minimum length check
+    if (password.length < 12) return false;
+
+    // Check for mixture of character types
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumbers = /[0-9]/.test(password);
+    const hasSpecialChars = /[^A-Za-z0-9]/.test(password);
+
+    return hasUppercase && hasLowercase && hasNumbers && hasSpecialChars;
+}
+
+/**
+ * Generate a secure key from a password using PBKDF2
+ * @param {string} password - User password
+ * @param {Buffer} [salt] - Salt for key derivation (generated if not provided)
+ * @returns {Object} - Derived key and salt
+ */
+function deriveKey(password, salt = null) {
+    // Generate a salt if not provided
+    if (!salt) {
+        salt = crypto.randomBytes(SALT_BYTES);
+    } else if (typeof salt === 'string') {
+        salt = Buffer.from(salt, 'hex');
+    }
+
+    // Use PBKDF2 for secure key derivation
+    const key = crypto.pbkdf2Sync(
+        password,
+        salt,
+        KDF_ITERATIONS,
+        KEY_LENGTH,
+        KDF_DIGEST
+    );
+
     return { key, salt };
 }
 
@@ -121,7 +160,14 @@ function encrypt(data, password) {
         encrypted,
         iv: iv.toString('hex'),
         authTag: authTag.toString('hex'),
-        salt: salt.toString('hex')
+        salt: salt.toString('hex'),
+        kdfParams: {
+            iterations: KDF_ITERATIONS,
+            digest: KDF_DIGEST,
+            keyLength: KEY_LENGTH
+        },
+        encryptionAlgorithm: ALGORITHM,
+        version: 2 // Version of the encryption format
     };
 }
 
@@ -133,10 +179,25 @@ function encrypt(data, password) {
  */
 function decrypt(encryptedData, password) {
     try {
-        const { encrypted, iv, authTag, salt } = encryptedData;
+        const { encrypted, iv, authTag, salt, kdfParams = null, version = 1 } = encryptedData;
 
-        // Derive the key from the password and salt
-        const key = crypto.scryptSync(password, Buffer.from(salt, 'hex'), 32);
+        let key;
+
+        // Handle different versions of the encryption format
+        if (version >= 2 && kdfParams) {
+            // Use provided KDF parameters
+            const { iterations, digest, keyLength } = kdfParams;
+            key = crypto.pbkdf2Sync(
+                password,
+                Buffer.from(salt, 'hex'),
+                iterations,
+                keyLength || KEY_LENGTH,
+                digest || KDF_DIGEST
+            );
+        } else {
+            // Legacy format - original implementation
+            key = deriveKey(password, salt).key;
+        }
 
         // Create decipher
         const decipher = crypto.createDecipheriv(
@@ -169,13 +230,32 @@ async function saveKeys() {
     console.log('The keys will be stored in a secure encrypted file (not on any remote servers).');
     console.log('You will need this password to view your keys later.\n');
 
-    const password = await promptPassword('Enter a strong password to encrypt your keys: ');
-    const confirmPassword = await promptPassword('Confirm password: ');
+    // Password validation
+    let password;
+    let passwordValid = false;
 
-    if (password !== confirmPassword) {
-        console.error('\n❌ Passwords do not match. Please try again.');
-        rl.close();
-        return;
+    while (!passwordValid) {
+        console.log('Password requirements:');
+        console.log(' - At least 12 characters');
+        console.log(' - Must include uppercase and lowercase letters');
+        console.log(' - Must include at least one number');
+        console.log(' - Must include at least one special character\n');
+
+        password = await promptPassword('Enter a strong password to encrypt your keys: ');
+
+        if (!isStrongPassword(password)) {
+            console.log('\n❌ Password does not meet the strength requirements. Please try again.\n');
+            continue;
+        }
+
+        const confirmPassword = await promptPassword('Confirm password: ');
+
+        if (password !== confirmPassword) {
+            console.error('\n❌ Passwords do not match. Please try again.\n');
+            continue;
+        }
+
+        passwordValid = true;
     }
 
     console.log('\nEnter your API keys (leave blank if not using):');
@@ -198,6 +278,13 @@ async function saveKeys() {
     const encryptedData = encrypt(apiKeys, password);
 
     fs.writeFileSync(KEYS_FILE, JSON.stringify(encryptedData, null, 2));
+
+    // Set secure file permissions (readable only by owner)
+    try {
+        fs.chmodSync(KEYS_FILE, 0o600);
+    } catch (error) {
+        console.warn('\n⚠️ Could not set secure file permissions. Your file might be readable by others.');
+    }
 
     console.log('\n✅ API keys encrypted and saved successfully!');
     console.log(`📁 Keys stored in: ${KEYS_FILE}`);
@@ -269,15 +356,93 @@ function maskKey(key) {
 }
 
 /**
+ * Rotate encryption - re-encrypt with new password
+ */
+async function rotateEncryption() {
+    if (!fs.existsSync(KEYS_FILE)) {
+        console.error('\n❌ No encrypted keys found. Run "node encrypt-keys.js save" first.');
+        rl.close();
+        return;
+    }
+
+    console.log('\n🔄 API Key Encryption Rotation');
+    console.log('------------------------------');
+    console.log('This will decrypt your keys with your old password and re-encrypt them with a new password.');
+    console.log('Your API keys themselves will not be changed, only the password protecting them.\n');
+
+    // Get the old password and decrypt the keys
+    const oldPassword = await promptPassword('Enter your current password: ');
+
+    try {
+        // Decrypt with old password
+        const encryptedData = JSON.parse(fs.readFileSync(KEYS_FILE, 'utf8'));
+        const decryptedKeys = decrypt(encryptedData, oldPassword);
+
+        console.log('\n✅ Decryption successful.');
+
+        // Get and validate new password
+        let newPassword;
+        let passwordValid = false;
+
+        while (!passwordValid) {
+            console.log('\nNew password requirements:');
+            console.log(' - At least 12 characters');
+            console.log(' - Must include uppercase and lowercase letters');
+            console.log(' - Must include at least one number');
+            console.log(' - Must include at least one special character\n');
+
+            newPassword = await promptPassword('Enter a new strong password: ');
+
+            if (!isStrongPassword(newPassword)) {
+                console.log('\n❌ Password does not meet the strength requirements. Please try again.');
+                continue;
+            }
+
+            const confirmPassword = await promptPassword('Confirm new password: ');
+
+            if (newPassword !== confirmPassword) {
+                console.error('\n❌ Passwords do not match. Please try again.');
+                continue;
+            }
+
+            passwordValid = true;
+        }
+
+        // Create backup before re-encrypting
+        const backupFile = `${KEYS_FILE}.backup.${Date.now()}`;
+        fs.copyFileSync(KEYS_FILE, backupFile);
+        console.log(`\n✅ Backup created at: ${backupFile}`);
+
+        // Re-encrypt with new password
+        const newEncryptedData = encrypt(decryptedKeys, newPassword);
+        fs.writeFileSync(KEYS_FILE, JSON.stringify(newEncryptedData, null, 2));
+
+        // Set secure file permissions
+        try {
+            fs.chmodSync(KEYS_FILE, 0o600);
+        } catch (error) {
+            console.warn('\n⚠️ Could not set secure file permissions. Your file might be readable by others.');
+        }
+
+        console.log('\n✅ Keys successfully re-encrypted with new password!');
+    } catch (error) {
+        console.error(`\n❌ Error: ${error.message}`);
+    }
+
+    rl.close();
+}
+
+/**
  * Print help information
  */
 function printHelp() {
     console.log('\n🔐 API Key Encryption Tool');
     console.log('-------------------------');
     console.log('Usage:');
-    console.log('  node encrypt-keys.js save   - Store and encrypt API keys');
-    console.log('  node encrypt-keys.js view   - View stored API keys');
-    console.log('  node encrypt-keys.js help   - Show this help message\n');
+    console.log('  node encrypt-keys.js save     - Store and encrypt API keys');
+    console.log('  node encrypt-keys.js view     - View stored API keys');
+    console.log('  node encrypt-keys.js rotate   - Change the encryption password');
+    console.log('  node encrypt-keys.js help     - Show this help message\n');
     rl.close();
 }
 
@@ -292,6 +457,9 @@ function main() {
             break;
         case 'view':
             viewKeys();
+            break;
+        case 'rotate':
+            rotateEncryption();
             break;
         case 'help':
         default:
