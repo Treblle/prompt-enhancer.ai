@@ -4,6 +4,7 @@ const keyManager = require('./src/utils/keyManager');
 const config = require('./src/config/config');
 const fs = require('fs');
 const path = require('path');
+const keyManager = new KeyManager();
 
 // Add the debug endpoint with improved security
 app.get('/api-check', (req, res) => {
