@@ -6,9 +6,6 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-// Fixed API key for production environment - NEVER CHANGE THIS VALUE
-const PRODUCTION_API_KEY = '071ab274d796058af0f2c1c205b78009670fc774bd574960';
-
 class KeyManager {
     constructor() {
         this.keys = {};
@@ -22,10 +19,8 @@ class KeyManager {
      */
     initialize() {
         try {
-            // Use fixed API key in production, environment variable otherwise
-            const apiKey = process.env.NODE_ENV === 'production'
-                ? PRODUCTION_API_KEY
-                : process.env.API_KEY;
+            // Use API key from environment variables
+            const apiKey = process.env.API_KEY;
 
             // Initialize application API key
             this._initializeKey('api', apiKey, {
@@ -61,19 +56,6 @@ class KeyManager {
      */
     _initializeKey(name, value, options = {}) {
         const { required = false, minLength = 8, prefix = null } = options;
-
-        // Special case for production API key - always prioritize this
-        if (name === 'api' && process.env.NODE_ENV === 'production') {
-            this.keys[name] = PRODUCTION_API_KEY;
-            this.keyInfo[name] = {
-                available: true,
-                masked: this._maskKey(PRODUCTION_API_KEY),
-                hash: this._hashKey(PRODUCTION_API_KEY),
-                placeholder: false,
-                isProduction: true
-            };
-            return;
-        }
 
         // Check if key is required but not provided or is a placeholder
         if (required && (!value || value.includes('your_') || value.includes('_here'))) {
@@ -122,7 +104,7 @@ class KeyManager {
             masked: this._maskKey(value),
             hash: this._hashKey(value),
             placeholder: false,
-            isProduction: name === 'api' && value === PRODUCTION_API_KEY
+            isProduction: name === 'api' && process.env.NODE_ENV === 'production'
         };
     }
 
@@ -134,11 +116,6 @@ class KeyManager {
     getKey(name) {
         if (!this.initialized) {
             this.initialize();
-        }
-
-        // Production environment always returns production API key
-        if (name === 'api' && process.env.NODE_ENV === 'production') {
-            return PRODUCTION_API_KEY;
         }
 
         return this.keys[name] || null;
@@ -154,11 +131,6 @@ class KeyManager {
             this.initialize();
         }
 
-        // Production environment always has API key available
-        if (name === 'api' && process.env.NODE_ENV === 'production') {
-            return true;
-        }
-
         return this.keyInfo[name]?.available || false;
     }
 
@@ -170,11 +142,6 @@ class KeyManager {
     getMaskedKey(name) {
         if (!this.initialized) {
             this.initialize();
-        }
-
-        // Production environment always returns masked production API key
-        if (name === 'api' && process.env.NODE_ENV === 'production') {
-            return this._maskKey(PRODUCTION_API_KEY);
         }
 
         return this.keyInfo[name]?.masked || null;
@@ -189,11 +156,6 @@ class KeyManager {
     verifyKey(name, keyToVerify) {
         if (!this.initialized) {
             this.initialize();
-        }
-
-        // Special case for production API key
-        if (name === 'api' && process.env.NODE_ENV === 'production') {
-            return this._safeCompare(PRODUCTION_API_KEY, keyToVerify);
         }
 
         if (!this.keys[name] || !keyToVerify) {
@@ -296,16 +258,6 @@ class KeyManager {
             };
         }
 
-        // Always include production API key status for 'api'
-        if (process.env.NODE_ENV === 'production' && !status.api?.isProduction) {
-            status.api = {
-                available: true,
-                masked: this._maskKey(PRODUCTION_API_KEY),
-                placeholder: false,
-                isProduction: true
-            };
-        }
-
         return status;
     }
 
@@ -323,8 +275,7 @@ class KeyManager {
         const warnings = [];
         const aiProvider = process.env.AI_PROVIDER || 'openai';
 
-        // Skip API key check in production as we use the hardcoded one
-        if (process.env.NODE_ENV !== 'production' && !this.isKeyAvailable('api')) {
+        if (!this.isKeyAvailable('api')) {
             errors.push('API authentication key is missing or invalid');
         }
 
@@ -337,13 +288,6 @@ class KeyManager {
             errors.push('Mistral API key is required when using Mistral provider');
         }
 
-        // Add warnings about API keys in production
-        if (process.env.NODE_ENV === 'production') {
-            warnings.push('Using fixed hardcoded API key in production environment');
-        } else if (this.keys.api === PRODUCTION_API_KEY) {
-            warnings.push('Using production API key in non-production environment');
-        }
-
         // Return validation results
         return {
             valid: errors.length === 0,
@@ -354,6 +298,3 @@ class KeyManager {
         };
     }
 }
-
-// Export singleton instance
-module.exports = new KeyManager();

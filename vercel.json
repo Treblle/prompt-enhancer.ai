@@ -20,7 +20,15 @@
   "routes": [
     {
       "src": "/api-check",
-      "dest": "server.js"
+      "dest": "server.js",
+      "headers": {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        "Content-Security-Policy": "default-src 'self'; script-src 'self'; img-src 'self' data:; style-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
+        "Referrer-Policy": "strict-origin-when-cross-origin"
+      }
     },
     {
       "src": "/v1/(.*)",
@@ -33,7 +41,13 @@
         "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
         "Pragma": "no-cache",
         "Expires": "0",
-        "Surrogate-Control": "no-store"
+        "Surrogate-Control": "no-store",
+        "Content-Security-Policy": "default-src 'self'; script-src 'self'; img-src 'self' data:; style-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Strict-Transport-Security": "max-age=15552000; includeSubDomains; preload"
       }
     },
     {
@@ -44,23 +58,34 @@
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "DENY",
         "X-XSS-Protection": "1; mode=block",
-        "Referrer-Policy": "strict-origin-when-cross-origin"
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'",
+        "Strict-Transport-Security": "max-age=15552000; includeSubDomains"
       }
     },
     {
       "src": "/docs-json",
-      "dest": "server.js"
+      "dest": "server.js",
+      "headers": {
+        "Cache-Control": "public, max-age=3600",
+        "X-Content-Type-Options": "nosniff"
+      }
     },
     {
       "src": "/test-server",
-      "dest": "server.js"
+      "dest": "server.js",
+      "headers": {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
     },
     {
       "src": "/static/(.*)",
       "dest": "frontend/static/$1",
       "headers": {
         "Cache-Control": "public, max-age=31536000, immutable",
-        "X-Content-Type-Options": "nosniff"
+        "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": "default-src 'self'; script-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
       }
     },
     {
@@ -81,7 +106,9 @@
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "DENY",
         "X-XSS-Protection": "1; mode=block",
-        "Referrer-Policy": "strict-origin-when-cross-origin"
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: https://cdn.prod.website-files.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; connect-src 'self' https://*.prompt-enhancer.ai; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+        "Strict-Transport-Security": "max-age=15552000; includeSubDomains"
       }
     },
     {
@@ -91,12 +118,13 @@
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "DENY",
         "X-XSS-Protection": "1; mode=block",
-        "Referrer-Policy": "strict-origin-when-cross-origin"
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: https://cdn.prod.website-files.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; connect-src 'self' https://*.prompt-enhancer.ai; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+        "Strict-Transport-Security": "max-age=15552000; includeSubDomains"
       }
     }
   ],
   "env": {
-    "NODE_ENV": "production",
-    "API_KEY": "071ab274d796058af0f2c1c205b78009670fc774bd574960"
+    "NODE_ENV": "production"
   }
 }

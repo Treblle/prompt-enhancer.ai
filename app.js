@@ -14,25 +14,43 @@ const promptRoutes = require('./src/routes/prompts');
 
 const app = express();
 
-// Security middleware
+// Enhanced security middleware with improved CSP
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
             imgSrc: ["'self'", "data:", "https://cdn.prod.website-files.com"],
-            connectSrc: ["'self'", "http://localhost:3000", "http://localhost:5000"],
-            fontSrc: ["'self'"],
+            connectSrc: ["'self'", "http://localhost:3000", "http://localhost:5000", "https://*.prompt-enhancer.ai"],
+            fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
             objectSrc: ["'none'"],
             mediaSrc: ["'self'"],
             frameSrc: ["'none'"],
+            formAction: ["'self'"],
+            workerSrc: ["'self'"],
+            manifestSrc: ["'self'"],
+            baseUri: ["'self'"],
+            frameAncestors: ["'none'"],
         },
     },
     crossOriginEmbedderPolicy: true,
     crossOriginOpenerPolicy: true,
     crossOriginResourcePolicy: { policy: "cross-origin" },
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    hsts: {
+        maxAge: 15552000, // 180 days
+        includeSubDomains: true,
+        preload: true
+    },
+    noSniff: true,
+    xssFilter: true,
+    dnsPrefetchControl: { allow: false },
+    permittedCrossDomainPolicies: { permittedPolicies: "none" },
+    expectCt: {
+        enforce: true,
+        maxAge: 86400 // 1 day
+    }
 }));
 
 // Add compression middleware
@@ -80,14 +98,14 @@ if (process.env.NODE_ENV === 'production') {
     const treblleProjectId = process.env.TREBLLE_PROJECT_ID;
 
     console.log('Treblle Configuration:');
-    console.log(`API Key: ${treblleApiKey ? treblleApiKey.substring(0, 4) + '...' : 'Not Set'}`);
-    console.log(`Project ID: ${treblleProjectId || 'Not Set'}`);
+    console.log(`API Key configured: ${!!treblleApiKey}`);
+    console.log(`Project ID configured: ${!!treblleProjectId}`);
 
     // Added detailed environment variables check
     console.log('Environment Variables Check:');
     console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
-    console.log(`TREBLLE_API_KEY exists: ${!!process.env.TREBLLE_API_KEY}`);
-    console.log(`TREBLLE_PROJECT_ID exists: ${!!process.env.TREBLLE_PROJECT_ID}`);
+    console.log(`TREBLLE_API_KEY configured: ${!!process.env.TREBLLE_API_KEY}`);
+    console.log(`TREBLLE_PROJECT_ID configured: ${!!process.env.TREBLLE_PROJECT_ID}`);
 
     if (treblleApiKey && treblleProjectId) {
         try {
@@ -97,9 +115,8 @@ if (process.env.NODE_ENV === 'production') {
             }));
             console.log('🔍 Treblle API monitoring successfully enabled for production');
         } catch (error) {
-            console.error('❌ Failed to initialize Treblle:', error);
-            console.error('Error details:', error.message);
-            if (error.stack) console.error('Stack trace:', error.stack);
+            console.error('❌ Failed to initialize Treblle:', error.message);
+            // Removed stack trace logging for security
         }
     } else {
         console.warn('⚠️ Treblle not configured: Missing API Key or Project ID');
@@ -115,9 +132,11 @@ if (process.env.NODE_ENV === 'production') {
     }
 }
 
-// Logging middleware for debugging
+// Logging middleware for debugging - sanitized for production
 app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+    if (process.env.NODE_ENV !== 'production') {
+        console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+    }
     next();
 });
 
@@ -143,7 +162,8 @@ const corsOptions = {
     allowedHeaders: ['Content-Type', 'X-API-Key', 'Origin', 'Accept', 'Content-Encoding'],
     exposedHeaders: ['Content-Encoding', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
     credentials: true,
-    optionsSuccessStatus: 200
+    optionsSuccessStatus: 200,
+    maxAge: 86400 // 24 hours
 };
 
 // Enable CORS for all routes
@@ -244,23 +264,19 @@ app.get('/docs-json', (req, res) => {
     res.json(openApiSpec);
 });
 
+// Improved api-check with security in mind (minimal exposure)
 app.get('/api-check', (req, res) => {
-    // Enhanced api-check with more details for Treblle troubleshooting
     res.json({
         apiKeyConfigured: !!process.env.API_KEY,
-        apiKeyFirstFour: process.env.API_KEY ? process.env.API_KEY.substring(0, 4) : null,
         openAIConfigured: !!process.env.OPENAI_API_KEY,
         nodeEnv: process.env.NODE_ENV,
-        corsOrigins: process.env.CORS_ALLOWED_ORIGINS,
         compressionEnabled: true,
         cdnConfigured: true,
         swaggerUiEnabled: true,
         treblleConfigured: process.env.NODE_ENV === 'production'
             ? {
                 apiKeyConfigured: !!process.env.TREBLLE_API_KEY,
-                apiKeyFirstFour: process.env.TREBLLE_API_KEY ? process.env.TREBLLE_API_KEY.substring(0, 4) : 'Not Set',
-                projectIdConfigured: !!process.env.TREBLLE_PROJECT_ID,
-                projectIdFirstFour: process.env.TREBLLE_PROJECT_ID ? process.env.TREBLLE_PROJECT_ID.substring(0, 4) : 'Not Set'
+                projectIdConfigured: !!process.env.TREBLLE_PROJECT_ID
             }
             : 'Disabled in non-production'
     });
