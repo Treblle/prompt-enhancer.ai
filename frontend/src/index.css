@@ -2,44 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Theme Toggle Styles */
+/* Theme Toggle Styles - Updated to match footer style */
 .hidden-checkbox {
     display: none;
 }
 
-.container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.toggle-button {
-    background: #d1d5db;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.3s, transform 0.5s ease-in-out;
-}
-
-.toggle-button:hover {
-    background: #9ca3af;
-}
-
-body.dark .toggle-button {
-    background: #1f2937;
-}
-
-body.dark .toggle-button:hover {
-    background: #374151;
-}
-
 .icon-wrapper {
     position: relative;
-    width: 24px;
-    height: 24px;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .icon {
@@ -55,12 +29,12 @@ body.dark .toggle-button:hover {
     transform: rotate(-180deg);
 }
 
-.hidden-checkbox:checked+.toggle-button .sun {
+.hidden-checkbox:checked+label .sun {
     opacity: 0;
     transform: rotate(180deg);
 }
 
-.hidden-checkbox:checked+.toggle-button .moon {
+.hidden-checkbox:checked+label .moon {
     opacity: 1;
     transform: rotate(0deg);
 }
@@ -120,7 +94,48 @@ header {
     margin-bottom: 4px;
 }
 
-/* Improved Mobile Responsive Adjustments */
+/* --------------------- */
+/* Global Overflow Fixes */
+/* --------------------- */
+html,
+body {
+    max-width: 100%;
+    overflow-x: hidden;
+    /* Prevent horizontal scroll */
+    height: 100%;
+}
+
+/* Ensure the app container uses full height */
+#root {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Base card styles for consistent design across devices */
+.prompt-enhancer-card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 3xl;
+    height: auto;
+    min-height: 600px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+/* Result area should be scrollable but maintain minimum height */
+.result-area {
+    min-height: 150px;
+    max-height: 40vh;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+/* --------------------- */
+/* Mobile Responsive CSS */
+/* --------------------- */
 @media (max-width: 640px) {
 
     /* Prevent zoom on input focus in iOS */
@@ -132,14 +147,18 @@ header {
         /* Prevents zoom on iOS */
     }
 
-    /* Optimize card sizing and spacing for mobile */
+    /* Updated .prompt-enhancer-card for mobile */
     .prompt-enhancer-card {
-        height: calc(100vh - 80px) !important;
-        /* Account for header */
-        width: 95vw !important;
-        max-width: 100%;
-        margin: 5px auto;
-        border-radius: 12px;
+        width: 95% !important;
+        min-height: 75vh !important;
+        /* Reduced height to prevent overlap */
+        max-height: 80vh !important;
+        /* Added max-height constraint */
+        height: auto !important;
+        margin: 10px auto;
+        margin-bottom: 70px !important;
+        /* Added bottom margin to avoid footer overlap */
+        border-radius: 10px;
     }
 
     /* Make header more compact on mobile */
@@ -158,6 +177,13 @@ header {
         padding: 0 8px !important;
     }
 
+    /* Hide button text on very small screens */
+    @media (max-width: 400px) {
+        .button-text {
+            display: none;
+        }
+    }
+
     /* Theme toggle - make slightly smaller on mobile */
     .toggle-button {
         width: 32px !important;
@@ -167,7 +193,7 @@ header {
 
     /* App header styling */
     .prompt-header {
-        padding: 10px 12px !important;
+        padding: 12px !important;
     }
 
     .prompt-header h1 {
@@ -182,15 +208,18 @@ header {
 
     /* Adjust content padding for mobile */
     .prompt-content {
-        padding: 10px !important;
-        max-height: calc(100% - 50px);
-        /* Adjust to make room for footer */
+        padding: 12px !important;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     }
 
     /* Input and output areas */
     .prompt-textarea {
-        height: 80px !important;
-        padding: 8px !important;
+        min-height: 80px !important;
+        height: auto !important;
+        padding: 10px !important;
         font-size: 14px !important;
     }
 
@@ -198,16 +227,18 @@ header {
     .enhance-button {
         width: 100% !important;
         justify-content: center;
-        padding-top: 8px !important;
-        padding-bottom: 8px !important;
+        padding: 10px !important;
+        margin: 10px 0 !important;
         font-size: 14px !important;
     }
 
     /* Enhanced result area */
     .result-area {
-        max-height: 35vh !important;
-        padding: 8px !important;
+        padding: 10px !important;
         font-size: 14px !important;
+        flex: 1;
+        min-height: 120px !important;
+        max-height: none !important;
     }
 
     /* Fixed positioning for mobile devices */
@@ -221,16 +252,38 @@ header {
         /* Ensures buttons are tap-friendly */
     }
 
+    /* Action buttons container - improved for mobile */
+    .action-buttons {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    /* Ensure buttons stay on same line as label */
+    @media (max-width: 640px) {
+
+        /* Make header container wrap on very small screens only */
+        .result-header {
+            flex-wrap: wrap;
+        }
+
+        /* On small screens (like iPhone SE), make the header wrap */
+        @media (max-width: 400px) {
+            .result-header label {
+                margin-bottom: 8px;
+            }
+
+            .action-buttons {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+    }
+
     /* Fix bottom spacing issues */
     .mt-auto {
         margin-top: auto !important;
-    }
-
-    /* Prevent overflow issues */
-    html,
-    body {
-        max-width: 100%;
-        overflow-x: hidden;
     }
 
     /* Footer adjustments */
@@ -248,20 +301,25 @@ header {
 
     /* Adjust the footer height and typewriter display on mobile */
     .prompt-enhancer-card>div:last-child {
-        padding: 8px 10px;
-        min-height: 36px;
+        padding: 6px 8px;
+        min-height: 30px;
+        max-height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+        background-color: rgba(245, 245, 245, 0.9);
     }
 
     /* Ensure the typewriter text has enough space */
     .prompt-enhancer-card>div:last-child p {
         margin: 0;
         line-height: 1.2;
+        font-size: 11px !important;
         height: auto !important;
-        min-height: 20px;
-        padding: 4px 0;
+        min-height: 16px;
+        max-height: 32px;
+        padding: 2px 0;
         overflow: visible;
     }
 }
@@ -277,8 +335,12 @@ header {
     }
 
     .prompt-enhancer-card {
-        margin: 2px !important;
-        width: 98vw !important;
+        width: 98% !important;
+        margin: 5px auto !important;
+        margin-bottom: 60px !important;
+        /* Ensure enough space for footer */
+        min-height: 70vh !important;
+        /* Reduced height further for tiny screens */
     }
 
     .prompt-content {
@@ -288,16 +350,39 @@ header {
     /* Even smaller controls for tiny screens */
     header a span {
         display: none;
-        /* Hide "Star on GitHub" text, show only icon */
+        /* Hide 'Star on GitHub' text, show only icon */
     }
 
     /* Smaller typewriter area on very small screens */
     .prompt-enhancer-card>div:last-child {
-        padding: 6px 8px;
+        padding: 4px 6px;
+        min-height: 24px;
+        max-height: 30px;
     }
 
     .prompt-enhancer-card>div:last-child p {
-        font-size: 10px !important;
+        font-size: 9px !important;
+        min-height: 12px;
+        max-height: 24px;
+    }
+
+    /* Custom footer handling for very small screens */
+    [class*="fixed bottom-4"] {
+        bottom: 2px !important;
+    }
+
+    [class*="fixed bottom-4"] div {
+        padding: 3px 5px !important;
+        max-width: 92% !important;
+    }
+
+    [class*="fixed bottom-4"] span,
+    [class*="fixed bottom-4"] a {
+        font-size: 9px !important;
+    }
+
+    [class*="fixed bottom-4"] img {
+        height: 14px !important;
     }
 }
 
