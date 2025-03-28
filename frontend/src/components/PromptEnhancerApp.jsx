@@ -49,7 +49,6 @@ const PromptEnhancerApp = () => {
             "Most AIs can process multiple languages, but emoji combinations still confuse us.",
 
             // AI Jokes
-            "I'm not saying I need coffee, but my neural networks would appreciate it.",
             "I was going to tell you an AI joke, but I'm still processing...",
             "Why don't AIs ever get lost? They always follow the algorithmic directions.",
             "How many AI models does it take to change a lightbulb? None, they just redefine darkness as the preferred state.",
@@ -258,14 +257,14 @@ const PromptEnhancerApp = () => {
 
                     {/* Enhanced Prompt Result */}
                     <div className="flex-1 flex flex-col overflow-hidden">
-                        <div className="flex justify-between items-center mb-1 sm:mb-2 gap-1">
-                            <div className="flex items-center">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Enhanced Prompt
-                                </label>
-                            </div>
+                        {/* Fixed: Enhanced Prompt Label + Action Buttons on same line */}
+                        <div className="flex flex-row justify-between items-center mb-1 sm:mb-2 result-header">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Enhanced Prompt
+                            </label>
+
                             {enhancedPrompt && (
-                                <div className="flex items-center space-x-1 sm:space-x-2 action-buttons">
+                                <div className="flex items-center space-x-2 action-buttons">
                                     <button
                                         onClick={copyToClipboard}
                                         className="text-xs sm:text-sm flex items-center px-2 py-1 rounded transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
