@@ -97,12 +97,12 @@ const AppLayout = ({ children }) => {
                 </div>
             </header>
 
-            <main className="flex-1 flex flex-col overflow-hidden">
+            <main className="flex-1 flex flex-col overflow-hidden py-6 md:py-10">
                 {children}
 
                 {/* Footer - Original fixed position footer with mobile adjustments */}
-                <div className="fixed bottom-4 sm:bottom-8 left-0 right-0 flex justify-center pointer-events-none">
-                    <div className="bg-gray-50 dark:bg-gray-800 px-3 sm:px-8 py-1.5 sm:py-3 rounded-lg shadow-md inline-flex items-center space-x-2 sm:space-x-3 pointer-events-auto border border-neutral-200 dark:border-neutral-700 max-w-[95%] sm:max-w-none">
+                <div className="fixed bottom-8 sm:bottom-12 md:bottom-16 left-0 right-0 flex justify-center pointer-events-none">
+                    <div className="bg-white dark:bg-gray-800 px-3 sm:px-8 py-1.5 sm:py-3 rounded-lg shadow-md inline-flex items-center space-x-2 sm:space-x-3 pointer-events-auto border border-neutral-200 dark:border-neutral-700 max-w-[95%] sm:max-w-none">
                         <div className="flex items-center space-x-1 sm:space-x-3">
                             <span className="text-black dark:text-gray-200 text-[10px] sm:text-base font-bold">Powered by</span>
                             <a

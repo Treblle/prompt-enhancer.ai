@@ -52,7 +52,7 @@ body {
 }
 
 body.light {
-    background: #f3f4f6;
+    background: #ffffff;
     color: #111827;
 }
 
@@ -120,41 +120,52 @@ body {
     width: 100%;
     max-width: 3xl;
     height: auto;
-    min-height: 600px;
+    min-height: 550px;
+    max-height: 650px !important;
+    /* Fixed maximum height */
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     overflow: hidden;
     position: relative;
     padding-bottom: 30px !important;
-    /* Further reduced padding */
-    margin-bottom: 45px !important;
-    /* Good spacing from footer */
-    max-height: 87vh !important;
-    /* Slightly increased for more content space */
+    /* Increase margin-bottom for more space between card and footer */
+    margin-bottom: 100px !important;
 }
 
 /* OPTIMIZE SPACE ALLOCATION - KEY CHANGES */
 /* Original prompt input - make it more compact */
 .prompt-textarea {
-    min-height: 70px !important;
-    max-height: 100px !important;
-    /* Limit max height */
+    min-height: 60px !important;
+    /* Reduced from 70px */
+    max-height: 80px !important;
+    /* Reduced from 100px */
 }
 
 /* Enhanced prompt result area - give it more space */
 .result-area {
-    min-height: 250px !important;
-    /* Increased minimum height for more visibility */
-    flex: 2 !important;
-    /* Give it twice the flex space */
+    flex: 1 !important;
     overflow-y: auto;
     white-space: pre-wrap;
+    max-height: calc(45vh - 40px) !important;
+    /* Add strict maximum height */
+    background-color: #f9fafb !important;
+    /* Light grey in light mode */
+}
+
+.dark .result-area {
+    background-color: #1f2937 !important;
+    /* Dark grey in dark mode */
 }
 
 /* Make the footer absolutely positioned at the bottom of the viewport */
-.fixed.bottom-4 {
+.fixed.bottom-5,
+.fixed.bottom-8,
+.fixed.bottom-10,
+.fixed.bottom-12,
+.fixed.bottom-16 {
     z-index: 50 !important;
-    bottom: 5px !important;
+    bottom: 20px !important;
+    /* Increased from 5px */
     pointer-events: auto !important;
     position: fixed !important;
 }
@@ -170,7 +181,6 @@ body {
     background-color: inherit;
     padding: 5px 10px !important;
     /* Less padding */
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
     margin-top: auto;
     /* Push to bottom of card */
 }
@@ -181,7 +191,8 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    /* Increase space for result area */
+    max-height: calc(100% - 60px);
+    /* Prevent content from pushing layout */
 }
 
 /* Enhance button - make it more compact */
@@ -209,15 +220,16 @@ body {
     /* Updated .prompt-enhancer-card for mobile */
     .prompt-enhancer-card {
         width: 95% !important;
-        min-height: 70vh !important;
-        max-height: 85vh !important;
+        min-height: 60vh !important;
+        /* Reduced from 70vh */
+        max-height: 70vh !important;
+        /* Reduced from 85vh */
         height: auto !important;
         margin: 10px auto;
-        margin-bottom: 50px !important;
-        /* Better margin for mobile */
+        margin-bottom: 80px !important;
+        /* More space at bottom */
         border-radius: 10px;
-        padding-bottom: 25px !important;
-        /* Less bottom padding */
+        padding-bottom: 20px !important;
     }
 
     /* Make header more compact on mobile */
@@ -298,10 +310,12 @@ body {
     .result-area {
         padding: 10px !important;
         font-size: 14px !important;
-        flex: 2 !important;
-        /* Double flex space */
-        min-height: 200px !important;
-        /* Good minimum on mobile */
+        flex: 1 !important;
+        /* Changed from flex: 2 */
+        min-height: 150px !important;
+        /* Reduced from 200px */
+        max-height: 25vh !important;
+        /* Add maximum height */
     }
 
     /* Fixed positioning for mobile devices */
@@ -311,7 +325,7 @@ body {
 
     /* Ensure footer sits lower on mobile */
     .fixed.bottom-4 {
-        bottom: 2px !important;
+        bottom: 10px !important;
     }
 
     /* Improved button sizes on mobile */
@@ -375,8 +389,7 @@ body {
         display: flex;
         align-items: center;
         justify-content: center;
-        border-top: 1px solid rgba(0, 0, 0, 0.1);
-        background-color: rgba(245, 245, 245, 0.9);
+        background-color: white;
         position: relative;
         z-index: 10;
     }
@@ -399,6 +412,40 @@ body {
         background-color: inherit;
         z-index: 20;
         position: relative;
+        font-size: 12px !important;
+    }
+}
+
+@media screen and (min-width: 1280px) {
+    .fixed.bottom-8 {
+        bottom: 20px !important;
+    }
+
+    .typewriter-container {
+        padding: 10px 20px !important;
+    }
+
+    .typewriter-text {
+        font-size: 12px !important;
+    }
+}
+
+@media screen and (min-width: 1280px) {
+    .prompt-header {
+        padding: 20px 30px !important;
+    }
+
+    .prompt-header h1 {
+        font-size: 2rem !important;
+    }
+
+    .prompt-header p {
+        font-size: 1.1rem !important;
+        margin-top: 8px !important;
+    }
+
+    .prompt-content {
+        padding: 30px !important;
     }
 }
 
@@ -415,7 +462,7 @@ body {
     .prompt-enhancer-card {
         width: 98% !important;
         margin: 5px auto !important;
-        margin-bottom: 50px !important;
+        margin-bottom: 70px !important;
         min-height: 70vh !important;
     }
 
@@ -442,7 +489,7 @@ body {
 
     /* Custom footer handling for very small screens */
     [class*="fixed bottom-4"] {
-        bottom: 1px !important;
+        bottom: 10px !important;
     }
 
     [class*="fixed bottom-4"] div {
@@ -481,19 +528,60 @@ body {
 @media screen and (min-height: 700px) {
     .prompt-enhancer-card {
         height: auto !important;
-        max-height: 85vh !important;
-        margin-bottom: 45px !important;
+        max-height: 75vh !important;
+        margin-bottom: 100px !important;
     }
 
     .result-area {
-        min-height: 300px !important;
-        /* Even larger on big screens */
-        flex: 2 !important;
+        min-height: 150px !important;
+        max-height: 350px !important;
+        /* Fixed max height for large screens */
+        flex: 1 !important;
+        overflow-y: auto;
+        white-space: pre-wrap;
     }
 
     /* Keep the typewriter visible but minimal on large screens */
     .prompt-enhancer-card>div:last-child {
         min-height: 22px !important;
         max-height: 28px !important;
+    }
+}
+
+/* For MacBook specifically */
+@media screen and (min-width: 1280px) and (min-height: 700px) {
+    .prompt-enhancer-card {
+        max-width: 900px !important;
+        /* Wider on large screens */
+        min-height: 550px !important;
+        max-height: 650px !important;
+        margin-bottom: 100px !important;
+    }
+
+    @media screen and (min-width: 1280px) and (min-height: 700px) {
+        .placeholder-container p {
+            font-size: 14px;
+            line-height: 1.5;
+            max-width: 80%;
+            text-align: center;
+        }
+
+        .result-area {
+            background-color: #f9fafb !important;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dark .result-area {
+            background-color: #1f2937 !important;
+        }
+    }
+
+    /* Increase font size slightly on larger screens */
+    .result-area,
+    .prompt-textarea {
+        font-size: 16px !important;
     }
 }

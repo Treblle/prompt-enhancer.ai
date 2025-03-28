@@ -182,8 +182,10 @@ const PromptEnhancerApp = () => {
     const renderEnhancedPrompt = () => {
         if (!enhancedPrompt) {
             return (
-                <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-600">
-                    Enhanced prompt will appear here after clicking the "Enhance Prompt" button
+                <div className="h-full w-full flex items-center justify-center text-gray-400 dark:text-gray-600">
+                    <p className="text-center px-4">
+                        Enhanced prompt will appear here after clicking the "Enhance Prompt" button
+                    </p>
                 </div>
             );
         }
@@ -193,8 +195,8 @@ const PromptEnhancerApp = () => {
     };
 
     return (
-        <div className="flex justify-center items-center min-h-[calc(100vh-40px)] bg-gray-50 dark:bg-gray-950 p-2 sm:p-4">
-            <div className="w-full max-w-3xl bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden h-[calc(90vh-40px)] sm:h-[700px] flex flex-col prompt-enhancer-card">
+        <div className="flex justify-center items-center bg-white dark:bg-gray-950 p-2 sm:p-4">
+            <div className="w-full max-w-4xl bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden h-[calc(75vh-40px)] sm:h-[700px] md:h-[750px] flex flex-col prompt-enhancer-card">
                 {/* Header */}
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-800 px-4 sm:px-8 py-3 sm:py-6 relative prompt-header">
                     <div className="flex items-center justify-between">
@@ -258,10 +260,7 @@ const PromptEnhancerApp = () => {
                     {/* Enhanced Prompt Result */}
                     <div className="flex-1 flex flex-col overflow-hidden">
                         {/* Fixed: Enhanced Prompt Label + Action Buttons on same line */}
-                        <div className="flex flex-row justify-between items-center mb-1 sm:mb-2 result-header">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Enhanced Prompt
-                            </label>
+                        <div className="flex flex-row justify-end items-center mb-1 sm:mb-2 result-header">
 
                             {enhancedPrompt && (
                                 <div className="flex items-center space-x-2 action-buttons">
@@ -292,14 +291,14 @@ const PromptEnhancerApp = () => {
                                 </div>
                             )}
                         </div>
-                        <div className="flex-1 p-2 sm:p-4 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg whitespace-pre-wrap overflow-y-auto text-gray-800 dark:text-gray-200 result-area text-sm sm:text-base">
+                        <div className="flex-1 p-2 sm:p-4 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg whitespace-pre-wrap overflow-y-auto text-gray-800 dark:text-gray-200 result-area text-sm sm:text-base relative">
                             {renderEnhancedPrompt()}
                         </div>
                     </div>
                 </div>
 
                 {/* Footer with Typewriter Effect - Updated Structure */}
-                <div className="bg-gray-50 dark:bg-gray-800 px-3 sm:px-6 py-2 sm:py-3 border-t border-gray-200 dark:border-gray-700 typewriter-container">
+                <div className="bg-white dark:bg-gray-800 px-3 sm:px-6 py-2 sm:py-3 0 dark:border-gray-700 typewriter-container">
                     <div className="typewriter-wrapper relative z-10">
                         <TypewriterText />
                     </div>
