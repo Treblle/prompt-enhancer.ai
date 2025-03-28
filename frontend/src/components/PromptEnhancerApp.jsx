@@ -298,9 +298,11 @@ const PromptEnhancerApp = () => {
                     </div>
                 </div>
 
-                {/* Footer with Typewriter Effect */}
-                <div className="bg-gray-50 dark:bg-gray-800 px-3 sm:px-6 py-2 sm:py-3 border-t border-gray-200 dark:border-gray-700">
-                    <TypewriterText />
+                {/* Footer with Typewriter Effect - Updated Structure */}
+                <div className="bg-gray-50 dark:bg-gray-800 px-3 sm:px-6 py-2 sm:py-3 border-t border-gray-200 dark:border-gray-700 typewriter-container">
+                    <div className="typewriter-wrapper relative z-10">
+                        <TypewriterText />
+                    </div>
                 </div>
             </div>
         </div>
