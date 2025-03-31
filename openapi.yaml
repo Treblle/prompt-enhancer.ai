@@ -14,7 +14,7 @@ info:
     url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: https://prompt-enhancer.ai/v1
+  - url: https://prompt-enhancer.ai/v1/prompts
     description: Production server
   - url: https://cdn.prompt-enhancer.ai/v1
     description: CDN-backed production server
