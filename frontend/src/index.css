@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Theme Toggle Styles - Updated to match footer style */
+/* Theme Toggle Styles */
 .hidden-checkbox {
     display: none;
 }
@@ -39,8 +39,13 @@
     transform: rotate(0deg);
 }
 
+/* Global Layout - Set to prevent scrolling */
+html,
 body {
+    height: 100%;
     margin: 0;
+    padding: 0;
+    overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
         'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
         sans-serif;
@@ -66,13 +71,241 @@ code {
         monospace;
 }
 
-/* Logo Zoom Hover Effect */
-.logo-zoom {
-    transition: transform 0.3s ease-in-out;
+/* Root container styles - Force full height */
+#root {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-.logo-zoom:hover {
-    transform: scale(1.1);
+/* App container layout */
+.app-container {
+    min-height: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding-top: 1rem;
+    padding-bottom: 4rem;
+}
+
+/* Main prompt enhancer card - Fixed height to prevent scrolling */
+.prompt-enhancer-card {
+    width: 100%;
+    max-width: 4xl;
+    display: flex;
+    flex-direction: column;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin-bottom: 3rem;
+    height: auto;
+    position: relative;
+    z-index: 10;
+}
+
+/* Original prompt textarea */
+.prompt-textarea {
+    min-height: 60px;
+    max-height: 80px;
+    resize: none;
+}
+
+/* Result area - Fixed height but with scrolling if needed */
+.result-area {
+    overflow-y: auto;
+    white-space: pre-wrap;
+    background-color: #f9fafb !important;
+    height: 200px;
+    max-height: 200px;
+}
+
+.dark .result-area {
+    background-color: #1f2937 !important;
+}
+
+/* Header and content area */
+.prompt-header {
+    padding: 0.75rem 1rem;
+    flex-shrink: 0;
+}
+
+.prompt-content {
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Enhance button */
+.enhance-button {
+    margin: 0.5rem 0;
+    padding: 0.5rem 1rem;
+}
+
+/* Typewriter text */
+.typewriter-text {
+    font-size: 0.75rem;
+    text-align: center;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.dark .typewriter-text {
+    color: #9ca3af;
+}
+
+/* Modal Styles */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
+    backdrop-filter: blur(2px);
+}
+
+.modal-content {
+    position: relative;
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    width: 90%;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.dark .modal-content {
+    background-color: #1f2937;
+    color: #f3f4f6;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.dark .modal-header {
+    border-color: #374151;
+}
+
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem 0;
+}
+
+.modal-footer {
+    padding-top: 0.75rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.dark .modal-footer {
+    border-color: #374151;
+}
+
+/* Animations for modal */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-backdrop {
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+    animation: slideIn 0.2s ease-out;
+}
+
+/* Added styles to ensure modal content is visible and scrollable */
+.modal-textarea {
+    min-height: 300px !important;
+    height: 50vh !important;
+    max-height: 60vh !important;
+}
+
+.modal-result {
+    min-height: 300px !important;
+    max-height: 60vh !important;
+    overflow-y: auto !important;
+}
+
+/* Responsive styles */
+@media (min-width: 640px) {
+    .prompt-header {
+        padding: 1rem 1.5rem;
+    }
+
+    .prompt-content {
+        padding: 1rem 1.5rem;
+    }
+
+    .prompt-textarea {
+        min-height: 80px;
+        max-height: 100px;
+    }
+
+    .typewriter-text {
+        font-size: 0.875rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .prompt-enhancer-card {
+        max-width: 4xl;
+    }
+}
+
+/* Specific adjustments for small screens */
+@media (max-width: 640px) {
+    .result-area {
+        height: 180px;
+    }
+}
+
+/* Fix for very small screens */
+@media (max-height: 680px) {
+    .prompt-textarea {
+        max-height: 60px;
+    }
+
+    .result-area {
+        height: 150px;
+    }
 }
 
 /* Header Controls Styling */
@@ -81,506 +314,23 @@ header {
     top: 0;
     left: 0;
     right: 0;
-    z-index: 50;
+    z-index: 30;
 }
 
-/* Typewriter text styles */
-.typewriter-text {
-    overflow: visible !important;
-    height: auto !important;
-    word-wrap: break-word;
-    margin: 0;
+/* Main Content */
+main {
+    display: flex;
+    flex-direction: column;
     position: relative;
-    z-index: 10;
-    font-size: 10px !important;
-}
-
-/* --------------------- */
-/* Global Overflow Fixes */
-/* --------------------- */
-html,
-body {
-    max-width: 100%;
-    overflow-x: hidden;
-    /* Prevent horizontal scroll */
-    height: 100%;
-}
-
-/* Ensure the app container uses full height */
-#root {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Base card styles for consistent design across devices */
-.prompt-enhancer-card {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: 3xl;
-    height: auto;
-    min-height: 550px;
-    max-height: 650px !important;
-    /* Fixed maximum height */
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    height: calc(100% - 40px);
     overflow: hidden;
-    position: relative;
-    padding-bottom: 30px !important;
-    /* Increase margin-bottom for more space between card and footer */
-    margin-bottom: 100px !important;
 }
 
-/* OPTIMIZE SPACE ALLOCATION - KEY CHANGES */
-/* Original prompt input - make it more compact */
-.prompt-textarea {
-    min-height: 60px !important;
-    /* Reduced from 70px */
-    max-height: 80px !important;
-    /* Reduced from 100px */
-}
-
-/* Enhanced prompt result area - give it more space */
-.result-area {
-    flex: 1 !important;
-    overflow-y: auto;
-    white-space: pre-wrap;
-    max-height: calc(45vh - 40px) !important;
-    /* Add strict maximum height */
-    background-color: #f9fafb !important;
-    /* Light grey in light mode */
-}
-
-.dark .result-area {
-    background-color: #1f2937 !important;
-    /* Dark grey in dark mode */
-}
-
-/* Make the footer absolutely positioned at the bottom of the viewport */
-.fixed.bottom-5,
-.fixed.bottom-8,
-.fixed.bottom-10,
-.fixed.bottom-12,
-.fixed.bottom-16 {
-    z-index: 50 !important;
-    bottom: 20px !important;
-    /* Increased from 5px */
-    pointer-events: auto !important;
-    position: fixed !important;
-}
-
-/* Make typewriter area minimal but visible */
-.prompt-enhancer-card>div:last-child {
-    position: relative !important;
-    z-index: 10;
-    min-height: 22px !important;
-    /* Reduced height */
-    max-height: 28px !important;
-    /* Constrained max height */
-    background-color: inherit;
-    padding: 5px 10px !important;
-    /* Less padding */
-    margin-top: auto;
-    /* Push to bottom of card */
-}
-
-/* Content container - optimize spacing */
-.prompt-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    max-height: calc(100% - 60px);
-    /* Prevent content from pushing layout */
-}
-
-/* Enhance button - make it more compact */
-.enhance-button {
-    margin: 6px 0 8px 0 !important;
-    /* Less margin around button */
-    padding: 8px 16px !important;
-    /* Less padding in button */
-}
-
-/* --------------------- */
-/* Mobile Responsive CSS */
-/* --------------------- */
-@media (max-width: 640px) {
-
-    /* Prevent zoom on input focus in iOS */
-    input,
-    textarea,
-    select,
-    button {
-        font-size: 16px;
-        /* Prevents zoom on iOS */
-    }
-
-    /* Updated .prompt-enhancer-card for mobile */
-    .prompt-enhancer-card {
-        width: 95% !important;
-        min-height: 60vh !important;
-        /* Reduced from 70vh */
-        max-height: 70vh !important;
-        /* Reduced from 85vh */
-        height: auto !important;
-        margin: 10px auto;
-        margin-bottom: 80px !important;
-        /* More space at bottom */
-        border-radius: 10px;
-        padding-bottom: 20px !important;
-    }
-
-    /* Make header more compact on mobile */
-    header {
-        padding: 0.5rem;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 8px;
-    }
-
-    /* GitHub button mobile styling */
-    header a {
-        height: 32px !important;
-        padding: 0 8px !important;
-    }
-
-    /* Hide button text on very small screens */
-    @media (max-width: 400px) {
-        .button-text {
-            display: none;
-        }
-    }
-
-    /* Theme toggle - make slightly smaller on mobile */
-    .toggle-button {
-        width: 32px !important;
-        height: 32px !important;
-        padding: 0.25rem !important;
-    }
-
-    /* App header styling */
-    .prompt-header {
-        padding: 10px !important;
-        /* Less padding */
-    }
-
-    .prompt-header h1 {
-        font-size: 1.25rem !important;
-        line-height: 1.3;
-    }
-
-    .prompt-header p {
-        font-size: 0.75rem !important;
-        margin-top: 0.25rem !important;
-    }
-
-    /* Adjust content padding for mobile */
-    .prompt-content {
-        padding: 10px !important;
-        /* Less padding */
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    }
-
-    /* Input and output areas */
-    .prompt-textarea {
-        min-height: 60px !important;
-        /* Shorter on mobile */
-        max-height: 80px !important;
-        padding: 8px !important;
-        font-size: 14px !important;
-    }
-
-    /* Enhance button */
-    .enhance-button {
-        width: 100% !important;
-        justify-content: center;
-        padding: 8px !important;
-        margin: 6px 0 !important;
-        font-size: 14px !important;
-    }
-
-    /* Enhanced result area - prioritize this on mobile too */
-    .result-area {
-        padding: 10px !important;
-        font-size: 14px !important;
-        flex: 1 !important;
-        /* Changed from flex: 2 */
-        min-height: 150px !important;
-        /* Reduced from 200px */
-        max-height: 25vh !important;
-        /* Add maximum height */
-    }
-
-    /* Fixed positioning for mobile devices */
-    .fixed {
-        position: fixed !important;
-    }
-
-    /* Ensure footer sits lower on mobile */
-    .fixed.bottom-4 {
-        bottom: 10px !important;
-    }
-
-    /* Improved button sizes on mobile */
-    button {
-        min-height: 36px;
-        /* Ensures buttons are tap-friendly */
-    }
-
-    /* Action buttons container - improved for mobile */
-    .action-buttons {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-shrink: 0;
-    }
-
-    /* Ensure buttons stay on same line as label */
-    @media (max-width: 640px) {
-
-        /* Make header container wrap on very small screens only */
-        .result-header {
-            flex-wrap: wrap;
-        }
-
-        /* On small screens (like iPhone SE), make the header wrap */
-        @media (max-width: 400px) {
-            .result-header label {
-                margin-bottom: 6px;
-            }
-
-            .action-buttons {
-                width: 100%;
-                justify-content: flex-end;
-            }
-        }
-    }
-
-    /* Fix bottom spacing issues */
-    .mt-auto {
-        margin-top: auto !important;
-    }
-
-    /* Footer adjustments */
-    footer {
-        padding: 8px 0 !important;
-    }
-
-    footer p {
-        font-size: 0.7rem !important;
-    }
-
-    footer img {
-        height: 16px !important;
-    }
-
-    /* Adjust the footer height and typewriter display on mobile */
-    .prompt-enhancer-card>div:last-child {
-        padding: 4px 6px !important;
-        min-height: 20px !important;
-        max-height: 26px !important;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: white;
-        position: relative;
-        z-index: 10;
-    }
-
-    /* Ensure the typewriter text has enough space */
-    .prompt-enhancer-card>div:last-child p {
-        margin: 0;
-        line-height: 1.2;
-        font-size: 10px !important;
-        height: auto !important;
-        padding: 0;
-        overflow: visible;
-        position: relative;
-        z-index: 10;
-    }
-
-    /* Make typewriter text more visible on mobile */
-    .typewriter-text {
-        line-height: 1.2;
-        background-color: inherit;
-        z-index: 20;
-        position: relative;
-        font-size: 12px !important;
-    }
-}
-
-@media screen and (min-width: 1280px) {
-    .fixed.bottom-8 {
-        bottom: 20px !important;
-    }
-
-    .typewriter-container {
-        padding: 10px 20px !important;
-    }
-
-    .typewriter-text {
-        font-size: 12px !important;
-    }
-}
-
-@media screen and (min-width: 1280px) {
-    .prompt-header {
-        padding: 20px 30px !important;
-    }
-
-    .prompt-header h1 {
-        font-size: 2rem !important;
-    }
-
-    .prompt-header p {
-        font-size: 1.1rem !important;
-        margin-top: 8px !important;
-    }
-
-    .prompt-content {
-        padding: 30px !important;
-    }
-}
-
-/* Media query for iPhone SE and other very small devices */
-@media (max-width: 375px) {
-    .prompt-header h1 {
-        font-size: 1.1rem !important;
-    }
-
-    .prompt-header p {
-        font-size: 0.7rem !important;
-    }
-
-    .prompt-enhancer-card {
-        width: 98% !important;
-        margin: 5px auto !important;
-        margin-bottom: 70px !important;
-        min-height: 70vh !important;
-    }
-
-    .prompt-content {
-        padding: 8px !important;
-    }
-
-    /* Even smaller controls for tiny screens */
-    header a span {
-        display: none;
-        /* Hide 'Star on GitHub' text, show only icon */
-    }
-
-    /* Smaller typewriter area on very small screens */
-    .prompt-enhancer-card>div:last-child {
-        padding: 3px 5px !important;
-        min-height: 18px !important;
-        max-height: 24px !important;
-    }
-
-    .prompt-enhancer-card>div:last-child p {
-        font-size: 9px !important;
-    }
-
-    /* Custom footer handling for very small screens */
-    [class*="fixed bottom-4"] {
-        bottom: 10px !important;
-    }
-
-    [class*="fixed bottom-4"] div {
-        padding: 3px 5px !important;
-        max-width: 92% !important;
-    }
-
-    [class*="fixed bottom-4"] span,
-    [class*="fixed bottom-4"] a {
-        font-size: 9px !important;
-    }
-
-    [class*="fixed bottom-4"] img {
-        height: 14px !important;
-    }
-}
-
-/* Fix for sticky hover on mobile devices */
-@media (hover: hover) {
-    .hover\:bg-gray-300:hover {
-        background-color: #d1d8e0;
-    }
-}
-
-/* Add safe area insets for modern iOS devices */
+/* Fix for safe area insets on iOS devices */
 @supports(padding: max(0px)) {
-    body {
-        padding-left: env(safe-area-inset-left);
-        padding-right: env(safe-area-inset-right);
-        padding-top: env(safe-area-inset-top);
-        padding-bottom: env(safe-area-inset-bottom);
-    }
-}
-
-/* Fix for Mac */
-@media screen and (min-height: 700px) {
-    .prompt-enhancer-card {
-        height: auto !important;
-        max-height: 75vh !important;
-        margin-bottom: 100px !important;
-    }
-
-    .result-area {
-        min-height: 150px !important;
-        max-height: 350px !important;
-        /* Fixed max height for large screens */
-        flex: 1 !important;
-        overflow-y: auto;
-        white-space: pre-wrap;
-    }
-
-    /* Keep the typewriter visible but minimal on large screens */
-    .prompt-enhancer-card>div:last-child {
-        min-height: 22px !important;
-        max-height: 28px !important;
-    }
-}
-
-/* For MacBook specifically */
-@media screen and (min-width: 1280px) and (min-height: 700px) {
-    .prompt-enhancer-card {
-        max-width: 900px !important;
-        /* Wider on large screens */
-        min-height: 550px !important;
-        max-height: 650px !important;
-        margin-bottom: 100px !important;
-    }
-
-    @media screen and (min-width: 1280px) and (min-height: 700px) {
-        .placeholder-container p {
-            font-size: 14px;
-            line-height: 1.5;
-            max-width: 80%;
-            text-align: center;
-        }
-
-        .result-area {
-            background-color: #f9fafb !important;
-            position: relative;
-            display: flex;
-            justify-content: center;
-        }
-
-        .dark .result-area {
-            background-color: #1f2937 !important;
-        }
-    }
-
-    /* Increase font size slightly on larger screens */
-    .result-area,
-    .prompt-textarea {
-        font-size: 16px !important;
+    .app-container {
+        padding-left: max(1rem, env(safe-area-inset-left));
+        padding-right: max(1rem, env(safe-area-inset-right));
+        padding-bottom: max(4rem, env(safe-area-inset-bottom) + 1rem);
     }
 }
