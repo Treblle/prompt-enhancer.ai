@@ -174,6 +174,12 @@ paths:
                 type: string
               description: Compression method used for the response
               example: "gzip"
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
         "400":
           description: Bad request - Invalid input
           content:
@@ -249,6 +255,12 @@ paths:
                 type: string
               description: Compression method used for the response
               example: "gzip"
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
         "401":
           description: Unauthorized - Authentication failed
           content:
@@ -289,6 +301,12 @@ paths:
                 type: string
               description: Compression method used for the response
               example: "gzip"
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
         "401":
           description: Unauthorized - Authentication failed
           content:
@@ -340,6 +358,12 @@ paths:
                 type: string
               description: Compression method used for the response
               example: "gzip"
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
         "400":
           description: Bad request - Invalid input
           content:
@@ -387,6 +411,13 @@ paths:
       responses:
         "204":
           description: Prompt successfully deleted
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
         "401":
           description: Unauthorized - Authentication failed
           content:
@@ -405,6 +436,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Simple endpoint to check if the API is running
+      operationId: healthCheck
+      tags:
+        - System
+      security: [] # No auth required for health check
+      responses:
+        "200":
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  timestamp:
+                    type: string
+                    format: date-time
 
 components:
   schemas:
