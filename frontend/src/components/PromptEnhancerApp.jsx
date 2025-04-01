@@ -30,12 +30,21 @@ const PromptEnhancerApp = () => {
             });
     };
 
-    // Try with Claude - Just open a new Claude window
-    const tryWithClaude = () => {
+    // Open Claude in new window
+    const openClaude = () => {
         try {
             window.open('https://claude.ai', '_blank');
         } catch (err) {
             console.error('Error opening Claude:', err);
+        }
+    };
+
+    // Open ChatGPT in new window
+    const openChatGPT = () => {
+        try {
+            window.open('https://chat.openai.com', '_blank');
+        } catch (err) {
+            console.error('Error opening ChatGPT:', err);
         }
     };
 
@@ -183,16 +192,17 @@ const PromptEnhancerApp = () => {
                                 </label>
                             </div>
                             <div className="flex items-center space-x-1 sm:space-x-2">
-                                <button
-                                    onClick={() => setResultModalOpen(true)}
-                                    className="text-xs flex items-center px-1.5 py-0.5 rounded transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-                                    aria-label="Maximize result"
-                                    title="Maximize"
-                                >
-                                    <Maximize2 className="h-3 w-3" />
-                                </button>
+                                {/* Only show buttons if enhancedPrompt exists */}
                                 {enhancedPrompt && (
                                     <>
+                                        <button
+                                            onClick={() => setResultModalOpen(true)}
+                                            className="text-xs flex items-center px-1.5 py-0.5 rounded transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                            aria-label="Maximize result"
+                                            title="Maximize"
+                                        >
+                                            <Maximize2 className="h-3 w-3" />
+                                        </button>
                                         <button
                                             onClick={copyToClipboard}
                                             className="text-xs flex items-center px-1.5 py-0.5 rounded transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
@@ -212,13 +222,22 @@ const PromptEnhancerApp = () => {
                                             )}
                                         </button>
                                         <button
-                                            onClick={tryWithClaude}
-                                            className="text-xs flex items-center px-1.5 py-0.5 rounded transition-colors bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700"
-                                            aria-label="Try with Claude"
-                                            title="Try with Claude"
+                                            onClick={openClaude}
+                                            className="text-xs flex items-center px-1.5 py-0.5 rounded transition-colors bg-gradient-to-r from-blue-600 to-indigo-800 text-white hover:from-blue-700 hover:to-indigo-900"
+                                            aria-label="Open in Claude"
+                                            title="Open in Claude"
                                         >
                                             <ExternalLink className="h-3 w-3 mr-1" />
-                                            <span>Try with Claude</span>
+                                            <span>Claude</span>
+                                        </button>
+                                        <button
+                                            onClick={openChatGPT}
+                                            className="text-xs flex items-center px-1.5 py-0.5 rounded transition-colors bg-gradient-to-r from-blue-600 to-indigo-800 text-white hover:from-blue-700 hover:to-indigo-900"
+                                            aria-label="Open in ChatGPT"
+                                            title="Open in ChatGPT"
+                                        >
+                                            <ExternalLink className="h-3 w-3 mr-1" />
+                                            <span>ChatGPT</span>
                                         </button>
                                     </>
                                 )}
@@ -329,12 +348,20 @@ const PromptEnhancerApp = () => {
                                     )}
                                 </button>
                                 <button
-                                    onClick={tryWithClaude}
-                                    className="text-sm flex items-center px-3 py-1.5 rounded transition-colors bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700"
-                                    title="Try with Claude"
+                                    onClick={openClaude}
+                                    className="text-sm flex items-center px-3 py-1.5 rounded transition-colors bg-gradient-to-r from-blue-600 to-indigo-800 text-white hover:from-blue-700 hover:to-indigo-900"
+                                    title="Open in Claude"
                                 >
                                     <ExternalLink className="h-4 w-4 mr-1.5" />
-                                    <span>Try with Claude</span>
+                                    <span>Claude</span>
+                                </button>
+                                <button
+                                    onClick={openChatGPT}
+                                    className="text-sm flex items-center px-3 py-1.5 rounded transition-colors bg-gradient-to-r from-blue-600 to-indigo-800 text-white hover:from-blue-700 hover:to-indigo-900"
+                                    title="Open in ChatGPT"
+                                >
+                                    <ExternalLink className="h-4 w-4 mr-1.5" />
+                                    <span>ChatGPT</span>
                                 </button>
                             </>
                         )}
