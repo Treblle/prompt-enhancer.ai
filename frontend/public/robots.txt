@@ -1,3 +1,12 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+Sitemap: https://www.prompt-enhancer.ai/sitemap.xml
+
+# Prevent indexing of unnecessary files
+Disallow: /node_modules/
+Disallow: /.git/
+Disallow: /.github/
+Disallow: /tools/
+Disallow: /test/
+Disallow: /api-check
+Disallow: /health

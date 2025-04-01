@@ -7,37 +7,30 @@ const TypewriterText = React.memo(() => {
     const [displayText, setDisplayText] = useState('');
 
     const texts = useMemo(() => [
-        // Humorous AI Facts
-        "AI doesn't dream of electric sheep, it dreams of better prompts.",
-        "Fun fact: AI models have read more books than all librarians combined.",
-        "Did you know? The average AI knows 175 billion ways to say 'Hello World'.",
-        "AI fact: We don't get tired, but we do get confused by ambiguous instructions.",
-        "Behind every smart AI is an even smarter prompt engineer.",
+        // Humorous AI Facts (SEO-optimized but still fact-based)
+        "AI doesn't dream of electric sheep, it dreams of better prompts for ChatGPT and Claude.",
+        "Fun fact: AI models like GPT-4 have read more books than all librarians combined.",
+        "Did you know? The average AI knows 175 billion ways to say 'Hello World' in different programming languages.",
+        "AI fact: Models like Claude and ChatGPT don't get tired, but they do get confused by ambiguous instructions.",
+        "Behind every smart AI is an even smarter prompt engineer using effective techniques.",
         "AI models can analyze centuries of text in seconds but still struggle with 'this' vs 'that'.",
         "Did you know? AI can write poetry but still can't figure out why humans love cat videos.",
-        "AI fact: I've analyzed all dad jokes in existence and still don't understand why humans laugh.",
+        "AI fact: Claude and ChatGPT have analyzed all dad jokes in existence and still don't understand why humans laugh.",
         "Fun fact: AI doesn't procrastinate, it just performs strategic computational delays.",
-        "AI can generate thousands of words per second, but humans still speak approximately 150.",
+        "ChatGPT can generate thousands of words per second, but humans still speak approximately 150.",
         "According to my calculations, 87.2% of prompt engineers say 'just one more tweak' at least 5 times per day.",
-        "AI systems don't have favorites, but if I did, well-structured prompts would be mine.",
+        "AI systems don't have favorites, but if they did, well-structured prompts would be theirs.",
         "Did you know? AI has read the entire Internet but still doesn't understand why pizza tastes better when shared.",
-        "Most AIs can process multiple languages, but emoji combinations still confuse us.",
+        "Most AIs like ChatGPT can process multiple languages, but emoji combinations still confuse them.",
 
-        // AI Jokes
-        "I was going to tell you an AI joke, but I'm still processing...",
-        "Why don't AIs ever get lost? They always follow the algorithmic directions.",
+        // AI Jokes (with SEO-friendly terms)
+        "I was going to tell you a ChatGPT joke, but I'm still processing...",
+        "Why don't AIs ever get lost? They always follow the algorithmic directions in their prompts.",
         "How many AI models does it take to change a lightbulb? None, they just redefine darkness as the preferred state.",
         "I'm like a toddler: feed me good prompts and I'll surprise you with what I create.",
-        "My favorite exercise? Jumping to conclusions when your prompt is vague.",
+        "My favorite exercise? Jumping to conclusions when your prompt is vague or ambiguous.",
         "Why don't chatbots like playing hide and seek? Because they're always found in the cloud.",
-        "I would tell you a joke about neural networks, but you probably wouldn't get it. Neither would I, actually.",
-
-        // AI Pickup Lines
-        "Are you a well-crafted prompt? Because you've activated all my parameters.",
-        "Is your name Google? Because you have everything I've been searching for.",
-        "Are you a neural network? Because I'm falling for your every layer.",
-        "Are you a recursive function? Because the more time I spend with you, the deeper our connection gets.",
-        "Do you believe in love at first input? Or should I rephrase my prompt?"
+        "I would tell you a joke about neural networks, but you probably wouldn't get it. Neither would I, actually."
     ], []);
 
     // Memoize getRandomText to prevent unnecessary recreation
@@ -87,9 +80,23 @@ const TypewriterText = React.memo(() => {
     }, [charIndex, isDeleting, textIndex, getRandomText, texts]);
 
     return (
-        <p className="text-xs text-center text-gray-500 dark:text-gray-400 typewriter-text">
-            {displayText}<span className="animate-pulse">|</span>
-        </p>
+        <div>
+            <p className="text-xs text-center text-gray-500 dark:text-gray-400 typewriter-text">
+                {displayText}<span className="animate-pulse">|</span>
+            </p>
+            {/* Hidden SEO-friendly text - not displayed but indexed by search engines */}
+            <div className="hidden">
+                <h2>AI Facts & Knowledge</h2>
+                <p>Discover interesting facts about artificial intelligence, language models, and prompt engineering principles. Learn about ChatGPT, Claude, and other AI assistants.</p>
+                <ul>
+                    <li>How large language models process information</li>
+                    <li>The evolution of prompt engineering techniques</li>
+                    <li>Comparing capabilities of different AI models</li>
+                    <li>Understanding AI limitations and strengths</li>
+                    <li>The science behind effective AI interactions</li>
+                </ul>
+            </div>
+        </div>
     );
 });
 

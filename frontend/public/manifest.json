@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Prompt Enhancer",
+  "name": "AI Prompt Enhancer",
+  "description": "Transform basic prompts into optimized, structured instructions for AI language models like ChatGPT, Claude, and Gemini.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +21,17 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#4f46e5",
+  "background_color": "#ffffff",
+  "categories": [
+    "productivity",
+    "ai",
+    "tools",
+    "utilities"
+  ],
+  "lang": "en-US",
+  "dir": "ltr",
+  "orientation": "portrait",
+  "scope": "/",
+  "prefer_related_applications": false
 }

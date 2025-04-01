@@ -111,9 +111,9 @@ const PromptEnhancerApp = () => {
                         <h1 className="text-xl sm:text-2xl font-bold text-white">AI Prompt Enhancer</h1>
                         <Sparkles className="text-yellow-300 h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
-                    <p className="text-blue-100 text-xs sm:text-sm mt-1">
+                    <h2 className="text-blue-100 text-xs sm:text-sm mt-1">
                         Transform basic prompts into optimized instructions for better AI responses
-                    </p>
+                    </h2>
                 </div>
 
                 {/* Main Content */}

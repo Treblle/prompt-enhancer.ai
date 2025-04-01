@@ -54,9 +54,9 @@ app.use(helmet({
     }
 }));
 
-// Add compression middleware
+// Add compression middleware - better configured for SEO
 app.use(compression({
-    // Compression filter: only compress responses with the following content types
+    // Compression filter: compress all responses
     filter: (req, res) => {
         if (req.headers['x-no-compression']) {
             // Don't compress responses if this request header is present
@@ -64,14 +64,14 @@ app.use(compression({
         }
         // Compress all JSON and text responses
         return (
-            /json|text|javascript|css|xml|svg/.test(res.getHeader('Content-Type'))
+            /json|text|javascript|css|xml|svg|html/.test(res.getHeader('Content-Type'))
         );
     },
-    // Compression level (0-9)
-    level: 6
+    // Higher compression level for better performance
+    level: 7
 }));
 
-// CDN Detection middleware
+// Advanced CDN Detection middleware with better caching
 app.use((req, res, next) => {
     // Check for CDN-specific headers
     const isCdnRequest = req.headers['x-cdn-request'] === 'true' ||
@@ -79,8 +79,9 @@ app.use((req, res, next) => {
 
     if (isCdnRequest) {
         // Add appropriate cache headers for CDN
-        res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minute cache
-        res.setHeader('CDN-Cache-Control', 'public, max-age=300');
+        const cacheTime = req.path === '/' ? 300 : 86400; // 5 mins for homepage, 24 hours for static
+        res.setHeader('Cache-Control', `public, max-age=${cacheTime}`);
+        res.setHeader('CDN-Cache-Control', `public, max-age=${cacheTime}`);
 
         // Add cache validation headers
         const now = new Date();
@@ -98,16 +99,6 @@ if (process.env.NODE_ENV === 'production') {
     const treblleApiKey = process.env.TREBLLE_API_KEY;
     const treblleProjectId = process.env.TREBLLE_PROJECT_ID;
 
-    console.log('Treblle Configuration:');
-    console.log(`API Key configured: ${!!treblleApiKey}`);
-    console.log(`Project ID configured: ${!!treblleProjectId}`);
-
-    // Added detailed environment variables check
-    console.log('Environment Variables Check:');
-    console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
-    console.log(`TREBLLE_API_KEY configured: ${!!process.env.TREBLLE_API_KEY}`);
-    console.log(`TREBLLE_PROJECT_ID configured: ${!!process.env.TREBLLE_PROJECT_ID}`);
-
     if (treblleApiKey && treblleProjectId) {
         try {
             app.use(treblle({
@@ -117,19 +108,9 @@ if (process.env.NODE_ENV === 'production') {
             console.log('🔍 Treblle API monitoring successfully enabled for production');
         } catch (error) {
             console.error('❌ Failed to initialize Treblle:', error.message);
-            // Removed stack trace logging for security
         }
     } else {
         console.warn('⚠️ Treblle not configured: Missing API Key or Project ID');
-
-        // Try alternative approach with direct initialization
-        console.log('Attempting alternative Treblle initialization approach...');
-        try {
-            app.use(treblle());
-            console.log('🔍 Alternative Treblle initialization approach attempted');
-        } catch (altError) {
-            console.error('❌ Alternative approach also failed:', altError.message);
-        }
     }
 }
 
@@ -141,8 +122,8 @@ app.use((req, res, next) => {
     next();
 });
 
-// Parse JSON bodies
-app.use(express.json({ limit: '50kb' })); // Limit payload size
+// Parse JSON bodies with increased limit for SEO payload
+app.use(express.json({ limit: '100kb' }));
 
 // CORS configuration with detailed logging
 const corsOptions = {
@@ -180,6 +161,15 @@ app.use(ddosProtection());
 const apiLimiter = rateLimit({
     maxRequests: 100, // 100 requests
     windowMs: 60 * 1000 // per minute
+});
+
+app.get('/robots.txt', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
+});
+
+app.get('/sitemap.xml', (req, res) => {
+    res.header('Content-Type', 'application/xml');
+    res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
 });
 
 // Load OpenAPI specification
@@ -221,12 +211,6 @@ try {
     };
 }
 
-// Log some info about the loaded spec
-if (openApiSpec && openApiSpec.paths) {
-    const pathCount = Object.keys(openApiSpec.paths).length;
-    console.log(`Loaded OpenAPI spec with ${pathCount} path(s)`);
-}
-
 // Swagger UI options
 const swaggerUiOptions = {
     explorer: true,
@@ -248,33 +232,47 @@ app.use('/v1/auth', apiLimiter, authRoutes);
 // API routes with JWT auth
 app.use('/v1/prompts', authenticateToken, apiLimiter, promptRoutes);
 
-// Landing page route
 app.get('/', (req, res) => {
     res.json({
         message: 'Welcome to the AI Prompt Enhancer API',
         version: '1.0.0',
-        documentation: '/docs'
+        documentation: '/docs',
+        description: 'Transform basic prompts into optimized, powerful instructions for AI models like ChatGPT, Claude, and Gemini.',
+        features: [
+            'Intelligent prompt enhancement',
+            'Multi-AI provider support',
+            'Open source and free to use',
+            'Security-focused with JWT authentication',
+            'Mobile-friendly responsive design'
+        ],
+        supportedModels: ['ChatGPT', 'Claude', 'Gemini', 'Mistral AI']
     });
 });
 
-// Add redirect from old /docs endpoint to the new Swagger UI
 app.get('/api-docs', (req, res) => {
     res.redirect('/docs');
 });
 
-// Keep the original /docs endpoint for backward compatibility
-// But also serve the full OpenAPI spec there
 app.get('/docs-json', (req, res) => {
+    // Set cache headers for better performance
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hour cache
     res.json(openApiSpec);
 });
 
 // Improved api-check with security in mind (minimal exposure)
 app.get('/api-check', (req, res) => {
+    // Don't expose actual keys, just confirmation
+    const apiKey = process.env.API_KEY;
+
+    // Only return minimal info needed for debugging
     res.json({
-        apiKeyConfigured: !!process.env.API_KEY,
+        apiKeyConfigured: !!apiKey,
+        apiKeyLength: apiKey ? apiKey.length : null,
         openAIConfigured: !!process.env.OPENAI_API_KEY,
-        jwtConfigured: !!process.env.JWT_SECRET,
         nodeEnv: process.env.NODE_ENV,
+        corsOrigins: Array.isArray(config.cors.origins) ?
+            config.cors.origins.map(origin => origin.replace(/^https?:\/\//, '')) :
+            'Not configured',
         compressionEnabled: true,
         cdnConfigured: true,
         swaggerUiEnabled: true,
@@ -287,9 +285,14 @@ app.get('/api-check', (req, res) => {
     });
 });
 
-// Health check endpoint
 app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+    res.status(200).json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        service: 'AI Prompt Enhancer API',
+        version: '1.0.0',
+        environment: process.env.NODE_ENV
+    });
 });
 
 // Global error handler
