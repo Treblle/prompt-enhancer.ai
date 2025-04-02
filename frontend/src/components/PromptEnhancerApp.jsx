@@ -266,7 +266,7 @@ const PromptEnhancerApp = () => {
                     <div className="flex items-center">
                         <span className="text-black dark:text-gray-200 text-xs sm:text-sm font-bold">Powered by</span>
                         <a
-                            href="https://treblle.com"
+                            href="https://treblle.com/?utm_source=referral&utm_medium=banner&utm_campaign=prompt_enhancer"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center ml-2 mr-4 dark:ml-1 dark:mr-3"
