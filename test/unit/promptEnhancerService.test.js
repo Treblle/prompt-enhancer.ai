@@ -1,7 +1,7 @@
 const { enhancePrompt } = require('../../src/services/promptEnhancerService');
 const assert = require('assert');
 
-describe('Prompt Enhancer Service', () => {
+describe('AI Prompt Enhancer Service', () => {
     it('should enhance a basic prompt', async () => {
         // Given
         const originalPrompt = "Write about quantum computing";
