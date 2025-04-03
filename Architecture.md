@@ -1,5 +1,8 @@
 ## System Architecture
 
+![AI Prompt Enhancer System Architecture](https://github.com/user-attachments/assets/ed6219c6-ab46-413b-be5a-1555609d79a8)
+
+
 ### 1. Overall Architecture
 
 **Q: What is the high-level architecture of the AI Prompt Enhancer system?**
