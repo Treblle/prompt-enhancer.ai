@@ -55,17 +55,28 @@ const PromptEnhancerApp = () => {
             return;
         }
 
+        if (originalPrompt.length > 5000) {
+            setError('Your prompt is too long. Please keep it under 5000 characters for better performance.');
+            return;
+        }
+
         setIsLoading(true);
         setError('');
 
         try {
             console.log('Sending request with data:', { text: originalPrompt, format: 'structured' });
 
-            // Call the API to enhance the prompt
+            // Add timeout handling
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 28000); // 28 second timeout
+
+            // Call the API to enhance the prompt with timeout
             const response = await apiService.enhancePrompt({
                 text: originalPrompt,
                 format: 'structured'
-            });
+            }, controller.signal);
+
+            clearTimeout(timeoutId);
 
             console.log('API Response:', response);
 
@@ -81,7 +92,6 @@ const PromptEnhancerApp = () => {
                     .replace(/&amp;/g, '&');
 
                 setEnhancedPrompt(decodedText);
-
             } else {
                 console.error('Unexpected API response format:', response);
                 setEnhancedPrompt('API returned an unexpected response format.');
@@ -89,7 +99,20 @@ const PromptEnhancerApp = () => {
             }
         } catch (err) {
             console.error('Error enhancing prompt:', err);
-            setError('Error enhancing prompt. Please try again.');
+
+            // Handle specific error cases
+            if (err.name === 'AbortError' || err.message?.includes('timeout')) {
+                setError('Request timed out. Please try with a shorter prompt or try again later.');
+            } else if (err.status === 413) {
+                setError('Your prompt is too long. Please use a shorter text.');
+            } else if (err.status === 503) {
+                setError('Enhancement service is temporarily unavailable. Please try again later.');
+            } else if (err.status === 429) {
+                setError('Too many requests. Please wait a moment before trying again.');
+            } else {
+                setError('Error enhancing prompt. Please try again.');
+            }
+
             setEnhancedPrompt('');
         } finally {
             setIsLoading(false);

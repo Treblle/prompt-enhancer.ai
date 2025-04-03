@@ -39,8 +39,11 @@ function createOpenAIClient() {
 
         return new OpenAI({
             apiKey: process.env.OPENAI_API_KEY,
-            timeout: 30000, // 30 seconds timeout
-            maxRetries: 2 // Built-in retry mechanism
+            timeout: 25000, // 25 second timeout (gives 5 seconds buffer before Vercel times out)
+            maxRetries: 2, // Built-in retry mechanism with reduced retry count
+            defaultQuery: {
+                model: process.env.NODE_ENV === 'production' ? 'gpt-3.5-turbo' : 'gpt-3.5-turbo'
+            }
         });
     } catch (error) {
         logError('OpenAI Client Initialization', error);
@@ -265,9 +268,14 @@ Please generate an outline that is:
 - Specific to the nuances of "${context.topic}"`;
 
     try {
-        // Use OpenAI to generate the detailed outline
-        const response = await openai.chat.completions.create({
-            model: "gpt-4-turbo", // Use a more advanced model for complex tasks
+        // Create a timeout promise
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Blog outline generation timed out after 20 seconds')), 20000);
+        });
+
+        // Use OpenAI to generate the detailed outline with timeout
+        const openaiPromise = openai.chat.completions.create({
+            model: "gpt-3.5-turbo", // Use a faster model for production
             messages: [
                 {
                     role: "system",
@@ -279,8 +287,11 @@ Please generate an outline that is:
                 }
             ],
             temperature: 0.7, // Allow some creativity while maintaining focus
-            max_tokens: 1500, // Generous token limit for detailed outline
+            max_tokens: 1200, // Slightly reduced token limit for faster response
         });
+
+        // Race the promises
+        const response = await Promise.race([openaiPromise, timeoutPromise]);
 
         // Return the generated outline
         return response.choices[0]?.message?.content ||
@@ -295,7 +306,7 @@ Note: This is a fallback outline due to generation failure.`;
     } catch (error) {
         console.error('Blog Outline Generation Error:', error);
 
-        // Fallback outline with basic structure
+        // Fallback outline with basic structure - simplified for faster response
         return `Detailed Blog Post Outline: ${context.topic}
 
 I. Introduction
@@ -311,7 +322,7 @@ III. Conclusion
      A. Synthesizing key learnings
      B. Implications and future outlook
 
-Note: This is a basic outline due to generation error.`;
+Note: This is a basic outline.`;
     }
 }
 
@@ -520,23 +531,37 @@ Please write a comprehensive piece that would be valuable for the target audienc
     // Generate the tailored system prompt
     const systemPrompt = generateTailoredSystemPrompt(context);
 
-    const response = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: [
-            {
-                role: "system",
-                content: systemPrompt
-            },
-            {
-                role: "user",
-                content: `Please enhance this basic prompt into a comprehensive, sophisticated instruction: "${originalPrompt}"`
-            }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
+    // Create timeout promise
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('OpenAI request timed out after 20 seconds')), 20000);
     });
 
-    return response.choices[0]?.message?.content || '';
+    try {
+        // Create the OpenAI completion promise
+        const openaiPromise = openai.chat.completions.create({
+            model: "gpt-3.5-turbo", // Using the faster model for better performance
+            messages: [
+                {
+                    role: "system",
+                    content: systemPrompt
+                },
+                {
+                    role: "user",
+                    content: `Please enhance this basic prompt into a comprehensive, sophisticated instruction: "${originalPrompt}"`
+                }
+            ],
+            temperature: 0.7,
+            max_tokens: 800, // Reduced for faster responses
+        });
+
+        // Race between the API call and the timeout
+        const response = await Promise.race([openaiPromise, timeoutPromise]);
+        return response.choices[0]?.message?.content || generateFallbackPrompt(context);
+    } catch (error) {
+        console.error(`OpenAI API Error: ${error.message}`);
+        // Return fallback if there's an error
+        return generateFallbackPrompt(context);
+    }
 }
 
 /**
@@ -585,23 +610,37 @@ Please write a comprehensive piece that would be valuable for the target audienc
     // Generate the tailored system prompt
     const systemPrompt = generateTailoredSystemPrompt(context);
 
-    const response = await mistralService.createChatCompletion({
-        model: "mistral-medium",
-        messages: [
-            {
-                role: "system",
-                content: systemPrompt
-            },
-            {
-                role: "user",
-                content: `Please enhance this basic prompt into a comprehensive, sophisticated instruction: "${originalPrompt}"`
-            }
-        ],
-        temperature: 0.7,
-        maxTokens: 1000
+    // Create timeout promise
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Mistral request timed out after 20 seconds')), 20000);
     });
 
-    return response.choices[0]?.message?.content || '';
+    try {
+        // Create the Mistral completion promise
+        const mistralPromise = mistralService.createChatCompletion({
+            model: "mistral-small", // Use the smaller, faster model in production
+            messages: [
+                {
+                    role: "system",
+                    content: systemPrompt
+                },
+                {
+                    role: "user",
+                    content: `Please enhance this basic prompt into a comprehensive, sophisticated instruction: "${originalPrompt}"`
+                }
+            ],
+            temperature: 0.7,
+            maxTokens: 800 // Reduced for faster responses
+        });
+
+        // Race between the API call and the timeout
+        const response = await Promise.race([mistralPromise, timeoutPromise]);
+        return response.choices[0]?.message?.content || generateFallbackPrompt(context);
+    } catch (error) {
+        console.error(`Mistral API Error: ${error.message}`);
+        // Return fallback if there's an error
+        return generateFallbackPrompt(context);
+    }
 }
 
 /**
@@ -632,77 +671,17 @@ function sanitizeInput(text) {
 }
 
 /**
-* Enhances a prompt using the configured AI provider
-* @param {Object} params - The parameters for enhancement
-* @param {string} params.originalPrompt - The original prompt text
-* @returns {Promise<string>} The enhanced prompt
-*/
-async function enhancePrompt(params) {
-    const { originalPrompt } = params;
-
-    // Validate input
-    if (!originalPrompt || typeof originalPrompt !== 'string') {
-        throw new Error('Invalid or missing original prompt');
-    }
-
-    // Check for excessive length (for API tests only)
-    const MAX_LENGTH = 10000;
-    if (process.env.NODE_ENV !== 'test' && originalPrompt.length > MAX_LENGTH) {
-        throw new Error(`Prompt is too long (maximum ${MAX_LENGTH} characters)`);
-    }
-
-    // Sanitize the input - but don't encode quotes
-    const sanitizedPrompt = sanitizeInput(originalPrompt);
-
-    try {
-        let enhancedPrompt = '';
-        const context = analyzePromptContext(sanitizedPrompt);
-
-        // If it's a blog post, generate a detailed outline
-        if (context.platform === 'blog') {
-            try {
-                const blogOutline = await generateBlogOutline(context);
-
-                // Enhance the original enhancement with the blog outline
-                enhancedPrompt = await _enhanceWithOpenAI({ originalPrompt: sanitizedPrompt });
-
-                return `${enhancedPrompt}
-
-COMPREHENSIVE BLOG POST OUTLINE:
-${blogOutline}`;
-            } catch (outlineError) {
-                console.error('Blog Outline Generation Failed:', outlineError);
-            }
-        }
-
-        // For tests, just return a simple enhancement
-        if (process.env.NODE_ENV === 'test') {
-            enhancedPrompt = await _enhanceWithOpenAI({ originalPrompt: sanitizedPrompt });
-        }
-        // For regular operation, use the configured AI provider
-        else {
-            const aiProvider = process.env.AI_PROVIDER || 'openai';
-
-            if (aiProvider === 'mistral' && mistralService) {
-                console.log('Using Mistral AI for prompt enhancement');
-                enhancedPrompt = await _enhanceWithMistral({ originalPrompt: sanitizedPrompt });
-            } else if (openai) {
-                console.log('Using OpenAI for prompt enhancement');
-                enhancedPrompt = await _enhanceWithOpenAI({ originalPrompt: sanitizedPrompt });
-            } else {
-                // Fallback to a direct prompt if no provider is available
-                if (context.usePreferredStyle) {
-                    // Use the preferred style for appropriate content types
-                    enhancedPrompt = generatePreferredStylePrompt(context);
-                } else {
-                    // Use a more general style for other content types
-                    enhancedPrompt = `You are an expert-level content strategist and professional writer with deep knowledge and experience in ${context.subject}.
+ * Generate a simple fallback prompt when timeout occurs
+ * @param {Object} context - Context from the prompt analysis
+ * @returns {string} - Simple fallback prompt
+ */
+function generateFallbackPrompt(context) {
+    // Simplified prompt that requires minimal processing
+    return `You are an expert-level content strategist and professional writer.
 
 I need you to create a comprehensive, engaging content piece on this topic: "${context.topic}"
 
 Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points. Your content should demonstrate genuine expertise and offer unique perspectives not commonly found in basic articles on this topic.
-
-Structure your content with clear sections for easy navigation. Use a professional but conversational tone, employ concrete specific language, and use active voice throughout.
 
 • I want to write a humanized blog. I also want you to use the storytelling approach and always use a real-world example to explain it. 
 • Please do not use any generic or utilized examples. 
@@ -722,73 +701,171 @@ Overly Casual – Avoid forced humor, unnecessary jokes, or slang that doesn't r
 Sales Pitch Tone – The goal is education, not selling a tool or service.
 AI-Sounding Tone – Avoid phrasing that feels overly structured or synthetic.
 
-Please write a comprehensive piece that would be valuable for the target audience. Be original, specific, and demonstrate genuine expertise on this topic.`;
+Structure your content with clear sections, each delivering specific value. Use professional but conversational tone, employ concrete specific language, and use active voice throughout.
+
+Be original, specific, and demonstrate genuine expertise on this topic.`;
+}
+
+/**
+ * Handle enhancement with the configured provider
+ * @param {string} sanitizedPrompt - Sanitized input prompt
+ * @returns {Promise<string>} - Enhanced prompt
+ */
+async function enhancePromptWithProvider(sanitizedPrompt) {
+    const context = analyzePromptContext(sanitizedPrompt);
+
+    // For tests, just return a simple enhancement
+    if (process.env.NODE_ENV === 'test') {
+        return await _enhanceWithOpenAI({ originalPrompt: sanitizedPrompt });
+    }
+
+    // For regular operation, use the configured AI provider
+    const aiProvider = process.env.AI_PROVIDER || 'openai';
+
+    if (aiProvider === 'mistral' && mistralService) {
+        console.log('Using Mistral AI for prompt enhancement');
+        return await _enhanceWithMistral({ originalPrompt: sanitizedPrompt });
+    } else if (openai) {
+        console.log('Using OpenAI for prompt enhancement');
+        return await _enhanceWithOpenAI({ originalPrompt: sanitizedPrompt });
+    } else {
+        // Fallback if no provider is available
+        return context.usePreferredStyle
+            ? generatePreferredStylePrompt(context)
+            : generateFallbackPrompt(context);
+    }
+}
+
+/**
+* Enhances a prompt using the configured AI provider
+* @param {Object} params - The parameters for enhancement
+* @param {string} params.originalPrompt - The original prompt text
+* @param {string} [params.format='structured'] - The desired format
+* @returns {Promise<string>} The enhanced prompt
+*/
+async function enhancePrompt(params) {
+    const startTime = Date.now();
+    const { originalPrompt, format = 'structured' } = params;
+
+    // Validate input
+    if (!originalPrompt || typeof originalPrompt !== 'string') {
+        throw new Error('Invalid or missing original prompt');
+    }
+
+    // Check for excessive length based on environment
+    const MAX_LENGTH = process.env.NODE_ENV === 'production' ? 5000 : 10000;
+    if (originalPrompt.length > MAX_LENGTH) {
+        console.warn(`Prompt exceeds recommended length: ${originalPrompt.length} chars`);
+        throw new Error(`Prompt is too long (maximum ${MAX_LENGTH} characters)`);
+    }
+
+    // Sanitize the input - but don't encode quotes
+    const sanitizedPrompt = sanitizeInput(originalPrompt);
+
+    try {
+        // Create a timeout promise for the entire process
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => {
+                console.warn(`Prompt enhancement timed out after 25 seconds for prompt: ${sanitizedPrompt.substring(0, 50)}...`);
+                reject(new Error('Request timed out after 25 seconds'));
+            }, 25000);
+        });
+
+        // Create the enhancement promise
+        const enhancementPromise = async () => {
+            let enhancedPrompt = '';
+            const context = analyzePromptContext(sanitizedPrompt);
+
+            // If it's a blog post and time allows, generate a detailed outline
+            if (context.platform === 'blog' && sanitizedPrompt.length < 1000) {
+                try {
+                    const blogOutline = await generateBlogOutline(context);
+
+                    // Get the basic enhancement
+                    const baseEnhancement = await enhancePromptWithProvider(sanitizedPrompt);
+
+                    // Return combined enhancement with outline
+                    return `${baseEnhancement}
+
+COMPREHENSIVE BLOG POST OUTLINE:
+${blogOutline}`;
+                } catch (outlineError) {
+                    console.error('Blog Outline Generation Failed:', outlineError);
+                    // Continue with regular enhancement if outline fails
+                    return await enhancePromptWithProvider(sanitizedPrompt);
                 }
+            } else {
+                // Just do regular enhancement for non-blog content
+                return await enhancePromptWithProvider(sanitizedPrompt);
             }
-        }
+        };
 
-        // Decode any HTML entities in the response
+        // Race between the enhancement process and timeout
+        let enhancedPrompt = await Promise.race([enhancementPromise(), timeoutPromise]);
+
+        // Process the enhanced prompt
         enhancedPrompt = decodeHtmlEntities(enhancedPrompt);
-
-        // Sanitize the output, but don't encode quotes
         enhancedPrompt = sanitizeInput(enhancedPrompt);
-
-        // Clean the enhanced prompt of markdown formatting
         enhancedPrompt = cleanMarkdownFormatting(enhancedPrompt);
 
-        // Perform a final pass to replace any remaining encoded quotes
+        // Final pass to replace any remaining encoded quotes
         enhancedPrompt = enhancedPrompt
             .replace(/&quot;/g, '"')
             .replace(/&#039;/g, "'")
             .replace(/&apos;/g, "'");
 
+        // Log performance data
+        const duration = Date.now() - startTime;
+        console.log(`Prompt enhanced in ${duration}ms. Input length: ${originalPrompt.length}, Output length: ${enhancedPrompt.length}`);
+
         return enhancedPrompt;
 
     } catch (error) {
+        // Log the error
         logError('Prompt Enhancement Error', error);
 
-        // If there's an error, fall back to a simple enhancement
+        // Check for timeout error
+        if (error.message && error.message.includes('timed out')) {
+            console.log('Enhancement timed out, returning fallback response');
+            const context = analyzePromptContext(sanitizedPrompt);
+            return generateFallbackPrompt(context);
+        }
+
+        // If there's a different error, fall back to a simple enhancement
         try {
             const context = analyzePromptContext(sanitizedPrompt);
 
             if (context.usePreferredStyle) {
                 return generatePreferredStylePrompt(context);
             } else {
-                return `You are an expert-level content strategist and professional writer with deep knowledge of ${context.subject}.
-
-I need you to create a comprehensive, engaging content piece on this topic: "${sanitizedPrompt}"
-
-Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points. Your content should demonstrate genuine expertise and offer unique perspectives not commonly found in basic articles on this topic.
-
-Structure your content with clear sections, each delivering specific value. Use professional but conversational tone, employ concrete specific language, and use active voice throughout.
-
-- I want to write a humanized blog. I also want you to use the storytelling approach and always use a real-world example to explain it. 
-- Please do not use any generic or utilized examples. 
-- We need uniqueness, which is not available on the internet now. 
-- Please write it in a good format and structure. 
-- Cover all the important things that should be in this blog. 
-- Please continue the blog if the text limit is reachedhed, but please write it in very detail and explain exactly the same. 
-- Please do not use "—" between words to add fillers.
-- Please do not use AI, marketing, flashy, sales pitch type tone, keywords, sentences, or anything that sounds AI-generated. Please also keep it technical-focused for developers.  Please do not use vague or unused sentences that make it an off-moment for the developers. Please write the whole blog in ACTIVE VOICE. 
-
-AI-Generated & Marketing Jargon to Avoid
-- These words feel robotic, exaggerated, or like they belong in a sales pitch rather than a technical blog.
-
-Tones & Writing Styles to Avoid
-- Overly Formal – It feels like a whitepaper rather than an engaging read.
-- Overly Casual – Avoid forced humor, unnecessary jokes, or slang that doesn't resonate with developers.
-- Sales Pitch Tone – The goal is education, not selling a tool or service.
-- AI-Sounding Tone – Avoid phrasing that feels overly structured or synthetic.
-
-Please write a comprehensive piece that would be valuable for the target audience. Be original, specific, and demonstrate genuine expertise on this topic.`;
+                return generateFallbackPrompt(context);
             }
         } catch (fallbackError) {
-            // If all else fails, provide a meaningful fallback
+            // If all else fails, provide a minimal fallback
+            console.error('Even fallback generation failed:', fallbackError);
             return `You are an expert-level content strategist and professional writer.
 
 I need you to create a comprehensive, engaging content piece on this topic: "${sanitizedPrompt}"
 
 Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points. Your content should demonstrate genuine expertise and offer unique perspectives not commonly found in basic articles on this topic.
+
+• I want to write a humanized blog. I also want you to use the storytelling approach and always use a real-world example to explain it. 
+• Please do not use any generic or utilized examples. 
+• We need uniqueness, which is not available on the internet now. 
+• Please write it in a good format and structure. 
+• Cover all the important things that should be in this blog. 
+• Please continue the blog if the text limit is reachedhed, but please write it in very detail and explain exactly the same. 
+• Please do not use "—" between words to add fillers.
+• Please do not use AI, marketing, flashy, sales pitch type tone, keywords, sentences, or anything that sounds AI-generated. Please also keep it technical-focused for developers.  Please do not use vague or unused sentences that make it an off-moment for the developers. Please write the whole blog in ACTIVE VOICE. 
+
+AI-Generated & Marketing Jargon to Avoid
+These words feel robotic, exaggerated, or like they belong in a sales pitch rather than a technical blog.
+
+Tones & Writing Styles to Avoid
+Overly Formal – It feels like a whitepaper rather than an engaging read.
+Overly Casual – Avoid forced humor, unnecessary jokes, or slang that doesn't resonate with developers.
+Sales Pitch Tone – The goal is education, not selling a tool or service.
+AI-Sounding Tone – Avoid phrasing that feels overly structured or synthetic.
 
 Structure your content with clear headings, logical progression, and smooth transitions. Use a professional but conversational tone and employ concrete, specific language rather than vague generalizations.
 
