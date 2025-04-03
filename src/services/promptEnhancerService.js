@@ -350,6 +350,24 @@ Please write a comprehensive piece of approximately ${wordCount} words.
 
 Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points. Your content should demonstrate genuine expertise and offer unique perspectives not commonly found in basic articles on this topic.
 
+• I want to write a humanized blog. I also want you to use the storytelling approach and always use a real-world example to explain it. 
+• Please do not use any generic or utilized examples. 
+• We need uniqueness, which is not available on the internet now. 
+• Please write it in a good format and structure. 
+• Cover all the important things that should be in this blog. 
+• Please continue the blog if the text limit is reachedhed, but please write it in very detail and explain exactly the same. 
+• Please do not use "—" between words to add fillers.
+• Please do not use AI, marketing, flashy, sales pitch type tone, keywords, sentences, or anything that sounds AI-generated. Please also keep it technical-focused for developers.  Please do not use vague or unused sentences that make it an off-moment for the developers. Please write the whole blog in ACTIVE VOICE. 
+
+AI-Generated & Marketing Jargon to Avoid
+These words feel robotic, exaggerated, or like they belong in a sales pitch rather than a technical blog.
+
+Tones & Writing Styles to Avoid
+Overly Formal – It feels like a whitepaper rather than an engaging read.
+Overly Casual – Avoid forced humor, unnecessary jokes, or slang that doesn't resonate with developers.
+Sales Pitch Tone – The goal is education, not selling a tool or service.
+AI-Sounding Tone – Avoid phrasing that feels overly structured or synthetic.
+
 Structure your content with:
 • Begin with an attention-grabbing hook that challenges assumptions
 • Focus on a single core insight rather than multiple points
@@ -415,6 +433,24 @@ Create a prompt that is:
 3. Optimized for the specific medium or platform (${context.platform})
 4. Structured to elicit the most sophisticated and valuable response
 
+• I want to write a humanized blog. I also want you to use the storytelling approach and always use a real-world example to explain it. 
+• Please do not use any generic or utilized examples. 
+• We need uniqueness, which is not available on the internet now. 
+• Please write it in a good format and structure. 
+• Cover all the important things that should be in this blog. 
+• Please continue the blog if the text limit is reachedhed, but please write it in very detail and explain exactly the same. 
+• Please do not use "—" between words to add fillers.
+• Please do not use AI, marketing, flashy, sales pitch type tone, keywords, sentences, or anything that sounds AI-generated. Please also keep it technical-focused for developers.  Please do not use vague or unused sentences that make it an off-moment for the developers. Please write the whole blog in ACTIVE VOICE. 
+
+AI-Generated & Marketing Jargon to Avoid
+These words feel robotic, exaggerated, or like they belong in a sales pitch rather than a technical blog.
+
+Tones & Writing Styles to Avoid
+Overly Formal – It feels like a whitepaper rather than an engaging read.
+Overly Casual – Avoid forced humor, unnecessary jokes, or slang that doesn't resonate with developers.
+Sales Pitch Tone – The goal is education, not selling a tool or service.
+AI-Sounding Tone – Avoid phrasing that feels overly structured or synthetic.
+
 Your enhanced prompt should:
 - Begin with a clear role assignment for the AI
 - Define a precise content goal that expands intelligently on the user's request
@@ -456,6 +492,24 @@ I need you to create a comprehensive, engaging content piece on: "${originalProm
 Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points. Your content should demonstrate genuine expertise and offer unique perspectives not commonly found in basic articles on this topic.
 
 Structure your content with clear sections, each delivering specific value. Use professional but conversational tone, employ concrete specific language, and use active voice throughout.
+
+- I want to write a humanized blog. I also want you to use the storytelling approach and always use a real-world example to explain it. 
+- Please do not use any generic or utilized examples. 
+- We need uniqueness, which is not available on the internet now. 
+- Please write it in a good format and structure. 
+- Cover all the important things that should be in this blog. 
+- Please continue the blog if the text limit is reachedhed, but please write it in very detail and explain exactly the same. 
+- Please do not use "—" between words to add fillers.
+- Please do not use AI, marketing, flashy, sales pitch type tone, keywords, sentences, or anything that sounds AI-generated. Please also keep it technical-focused for developers.  Please do not use vague or unused sentences that make it an off-moment for the developers. Please write the whole blog in ACTIVE VOICE. 
+
+AI-Generated & Marketing Jargon to Avoid
+- These words feel robotic, exaggerated, or like they belong in a sales pitch rather than a technical blog.
+
+Tones & Writing Styles to Avoid
+- Overly Formal – It feels like a whitepaper rather than an engaging read.
+- Overly Casual – Avoid forced humor, unnecessary jokes, or slang that doesn't resonate with developers.
+- Sales Pitch Tone – The goal is education, not selling a tool or service.
+- AI-Sounding Tone – Avoid phrasing that feels overly structured or synthetic.
 
 Please write a comprehensive piece that would be valuable for the target audience. Be original, specific, and demonstrate genuine expertise on this topic.`;
     }
@@ -503,6 +557,24 @@ I need you to create a comprehensive, engaging content piece on: "${originalProm
 Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points. Your content should demonstrate genuine expertise and offer unique perspectives not commonly found in basic articles on this topic.
 
 Structure your content with clear sections, each delivering specific value. Use professional but conversational tone, employ concrete specific language, and use active voice throughout.
+
+- I want to write a humanized blog. I also want you to use the storytelling approach and always use a real-world example to explain it. 
+- Please do not use any generic or utilized examples. 
+- We need uniqueness, which is not available on the internet now. 
+- Please write it in a good format and structure. 
+- Cover all the important things that should be in this blog. 
+- Please continue the blog if the text limit is reachedhed, but please write it in very detail and explain exactly the same. 
+- Please do not use "—" between words to add fillers.
+- Please do not use AI, marketing, flashy, sales pitch type tone, keywords, sentences, or anything that sounds AI-generated. Please also keep it technical-focused for developers.  Please do not use vague or unused sentences that make it an off-moment for the developers. Please write the whole blog in ACTIVE VOICE. 
+
+AI-Generated & Marketing Jargon to Avoid
+- These words feel robotic, exaggerated, or like they belong in a sales pitch rather than a technical blog.
+
+Tones & Writing Styles to Avoid
+- Overly Formal – It feels like a whitepaper rather than an engaging read.
+- Overly Casual – Avoid forced humor, unnecessary jokes, or slang that doesn't resonate with developers.
+- Sales Pitch Tone – The goal is education, not selling a tool or service.
+- AI-Sounding Tone – Avoid phrasing that feels overly structured or synthetic.
 
 Please write a comprehensive piece that would be valuable for the target audience. Be original, specific, and demonstrate genuine expertise on this topic.`;
     }
@@ -632,6 +704,24 @@ Focus on providing in-depth analysis and industry insights rather than basic inf
 
 Structure your content with clear sections for easy navigation. Use a professional but conversational tone, employ concrete specific language, and use active voice throughout.
 
+• I want to write a humanized blog. I also want you to use the storytelling approach and always use a real-world example to explain it. 
+• Please do not use any generic or utilized examples. 
+• We need uniqueness, which is not available on the internet now. 
+• Please write it in a good format and structure. 
+• Cover all the important things that should be in this blog. 
+• Please continue the blog if the text limit is reachedhed, but please write it in very detail and explain exactly the same. 
+• Please do not use "—" between words to add fillers.
+• Please do not use AI, marketing, flashy, sales pitch type tone, keywords, sentences, or anything that sounds AI-generated. Please also keep it technical-focused for developers.  Please do not use vague or unused sentences that make it an off-moment for the developers. Please write the whole blog in ACTIVE VOICE. 
+
+AI-Generated & Marketing Jargon to Avoid
+These words feel robotic, exaggerated, or like they belong in a sales pitch rather than a technical blog.
+
+Tones & Writing Styles to Avoid
+Overly Formal – It feels like a whitepaper rather than an engaging read.
+Overly Casual – Avoid forced humor, unnecessary jokes, or slang that doesn't resonate with developers.
+Sales Pitch Tone – The goal is education, not selling a tool or service.
+AI-Sounding Tone – Avoid phrasing that feels overly structured or synthetic.
+
 Please write a comprehensive piece that would be valuable for the target audience. Be original, specific, and demonstrate genuine expertise on this topic.`;
                 }
             }
@@ -671,6 +761,24 @@ I need you to create a comprehensive, engaging content piece on this topic: "${s
 Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points. Your content should demonstrate genuine expertise and offer unique perspectives not commonly found in basic articles on this topic.
 
 Structure your content with clear sections, each delivering specific value. Use professional but conversational tone, employ concrete specific language, and use active voice throughout.
+
+- I want to write a humanized blog. I also want you to use the storytelling approach and always use a real-world example to explain it. 
+- Please do not use any generic or utilized examples. 
+- We need uniqueness, which is not available on the internet now. 
+- Please write it in a good format and structure. 
+- Cover all the important things that should be in this blog. 
+- Please continue the blog if the text limit is reachedhed, but please write it in very detail and explain exactly the same. 
+- Please do not use "—" between words to add fillers.
+- Please do not use AI, marketing, flashy, sales pitch type tone, keywords, sentences, or anything that sounds AI-generated. Please also keep it technical-focused for developers.  Please do not use vague or unused sentences that make it an off-moment for the developers. Please write the whole blog in ACTIVE VOICE. 
+
+AI-Generated & Marketing Jargon to Avoid
+- These words feel robotic, exaggerated, or like they belong in a sales pitch rather than a technical blog.
+
+Tones & Writing Styles to Avoid
+- Overly Formal – It feels like a whitepaper rather than an engaging read.
+- Overly Casual – Avoid forced humor, unnecessary jokes, or slang that doesn't resonate with developers.
+- Sales Pitch Tone – The goal is education, not selling a tool or service.
+- AI-Sounding Tone – Avoid phrasing that feels overly structured or synthetic.
 
 Please write a comprehensive piece that would be valuable for the target audience. Be original, specific, and demonstrate genuine expertise on this topic.`;
             }
