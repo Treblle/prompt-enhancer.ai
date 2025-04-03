@@ -108,6 +108,21 @@ function decodeHtmlEntities(text) {
 function analyzePromptContext(promptText) {
     const lowerPrompt = promptText.toLowerCase();
 
+    // Extract word count if specified
+    const wordCountRegexes = [
+        /\b(\d+)\s*(?:words?)\b/i,  // "500 words"
+        /keep\s*(?:it\s*)?(?:under|max(?:imum)?)\s*(\d+)\s*(?:words?)/i  // "keep it under 500 words"
+    ];
+
+    let userSpecifiedWordCount = null;
+    for (const regex of wordCountRegexes) {
+        const match = promptText.match(regex);
+        if (match) {
+            userSpecifiedWordCount = parseInt(match[1]);
+            break;
+        }
+    }
+
     // Detect medium/platform
     const platforms = {
         linkedin: lowerPrompt.includes('linkedin') ||
@@ -183,8 +198,121 @@ function analyzePromptContext(promptText) {
         keywords: promptWords.slice(0, 5), // Top 5 keywords
         usePreferredStyle: shouldUsePreferredStyle,
         topic: topic,
+        userSpecifiedWordCount,
         original: promptText
     };
+}
+
+/**
+ * Generate a comprehensive, tailored blog post outline
+ * @param {Object} context - Context information from the original prompt
+ * @returns {Promise<string>} - Detailed blog post outline
+ */
+async function generateBlogOutline(context) {
+    // In test mode, return a predictable outline
+    if (process.env.NODE_ENV === 'test') {
+        return `Detailed Blog Post Outline: ${context.topic}
+
+I. Introduction
+   A. Hook or compelling opening statement
+   B. Brief context of the topic
+   C. Thesis statement
+
+II. Main Content Sections
+    A. First key insight or argument
+    B. Second key insight or argument
+    C. Third key insight or argument
+
+III. Conclusion
+     A. Summary of key points
+     B. Forward-looking statement or call to action
+
+Note: This is a placeholder outline. A real outline would be highly customized to the specific prompt.`;
+    }
+
+    // Prepare context for AI prompt generation
+    const outlinePrompt = `You are an expert content strategist specializing in creating highly detailed, research-backed blog post outlines. 
+
+The topic is: "${context.topic}"
+
+Key contextual details:
+- Primary subject: ${context.subject}
+- Intended platform: ${context.platform}
+- Main intent: ${context.intent}
+
+I need you to create an EXTREMELY DETAILED blog post outline that:
+1. Goes far beyond surface-level insights
+2. Incorporates deep research and nuanced perspectives
+3. Provides a comprehensive roadmap for exploring the topic
+4. Includes potential research references, data points, and specific examples
+5. Breaks down complex ideas into digestible, interconnected sections
+6. Demonstrates genuine expertise and unique insights
+
+Requirements for the outline:
+- Minimum 5-7 main sections with 3-4 subsections each
+- Include potential research sources or case studies
+- Highlight unique angles or counterintuitive insights
+- Ensure a logical flow that builds complexity and understanding
+- Avoid generic or templated approaches
+- Make each section substantive and thought-provoking
+
+The outline should be so detailed that a writer could use it to create an in-depth, authoritative piece without needing additional research.
+
+Please generate an outline that is:
+- Deeply analytical
+- Backed by potential research and real-world examples
+- Structured to challenge conventional wisdom
+- Specific to the nuances of "${context.topic}"`;
+
+    try {
+        // Use OpenAI to generate the detailed outline
+        const response = await openai.chat.completions.create({
+            model: "gpt-4-turbo", // Use a more advanced model for complex tasks
+            messages: [
+                {
+                    role: "system",
+                    content: "You are an expert content strategist creating highly detailed, research-backed blog post outlines."
+                },
+                {
+                    role: "user",
+                    content: outlinePrompt
+                }
+            ],
+            temperature: 0.7, // Allow some creativity while maintaining focus
+            max_tokens: 1500, // Generous token limit for detailed outline
+        });
+
+        // Return the generated outline
+        return response.choices[0]?.message?.content ||
+            `Detailed Blog Post Outline: ${context.topic}
+
+I. Unable to generate a specific outline
+   A. The AI encountered an unexpected issue
+   B. Please try regenerating the outline
+
+Note: This is a fallback outline due to generation failure.`;
+
+    } catch (error) {
+        console.error('Blog Outline Generation Error:', error);
+
+        // Fallback outline with basic structure
+        return `Detailed Blog Post Outline: ${context.topic}
+
+I. Introduction
+   A. Context and significance of "${context.topic}"
+   B. Key challenges or opportunities
+
+II. Core Insights
+    A. First fundamental perspective
+    B. Second critical analysis
+    C. Third unique approach
+
+III. Conclusion
+     A. Synthesizing key learnings
+     B. Implications and future outlook
+
+Note: This is a basic outline due to generation error.`;
+    }
 }
 
 /**
@@ -194,12 +322,17 @@ function analyzePromptContext(promptText) {
  */
 function generatePreferredStylePrompt(context) {
     // Determine appropriate word count based on platform
-    let wordCount = "800-1200";
-    if (context.platform === 'linkedin' || context.platform === 'social') {
-        wordCount = "250-350";
+    let wordCount = "800-1000";
+    if (context.userSpecifiedWordCount) {
+        // If user specified a word count, use that
+        wordCount = `under ${context.userSpecifiedWordCount}`;
+    } else if (context.platform === 'linkedin' || context.platform === 'social') {
+        wordCount = "200-400";
     } else if (context.platform === 'email') {
-        wordCount = "400-600";
-    } else if (context.platform === 'technical') {
+        wordCount = "300-450";
+    } else if (context.platform === 'twitter') {
+        wordCount = "40-50";
+    } else if (context.platform === 'blog') {
         wordCount = "1000-1500";
     }
 
@@ -212,6 +345,8 @@ function generatePreferredStylePrompt(context) {
     return `You are an expert-level content strategist and professional writer with deep knowledge and professional experience in ${field}.
 
 I need you to create a comprehensive, engaging content piece on this topic: "${context.topic}"
+
+Please write a comprehensive piece of approximately ${wordCount} words.
 
 Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points. Your content should demonstrate genuine expertise and offer unique perspectives not commonly found in basic articles on this topic.
 
@@ -238,12 +373,12 @@ IMPORTANT - Avoid these AI-typical patterns:
 • Avoid overused terms like cutting-edge, seamless, revolutionary, transformative, game-changing
 
 Formatting guidance:
-• Use bold text to emphasize 2-3 key concepts or phrases
-• Create clear paragraph breaks between different thoughts
-• Keep paragraphs short (2-4 sentences) for mobile reading
-• Use occasional italics for subtle emphasis or contrasting ideas
-
-Please write a comprehensive piece of approximately ${wordCount} words.
+• Be flexible with formatting based on the specific user request
+• If no specific format is mentioned, consider:
+    - Using bold text to emphasize 2-3 key concepts or phrases
+    - Creating clear paragraph breaks between different thoughts
+    - Keeping paragraphs short (2-4 sentences) for mobile reading
+    - Using occasional italics for subtle emphasis or contrasting ideas
 
 Content-specific guidance:
 • Share a specific observation from your professional experience that challenges conventional wisdom
@@ -312,7 +447,6 @@ I want the enhanced prompt to be something the user could copy and paste directl
 async function _enhanceWithOpenAI(params) {
     const { originalPrompt } = params;
 
-    // In test mode, just return a predictable enhancement
     // In test mode, just return a predictable enhancement
     if (process.env.NODE_ENV === 'test') {
         return `You are an expert-level content strategist and professional writer with deep knowledge in this field.
@@ -450,6 +584,24 @@ async function enhancePrompt(params) {
 
     try {
         let enhancedPrompt = '';
+        const context = analyzePromptContext(sanitizedPrompt);
+
+        // If it's a blog post, generate a detailed outline
+        if (context.platform === 'blog') {
+            try {
+                const blogOutline = await generateBlogOutline(context);
+
+                // Enhance the original enhancement with the blog outline
+                enhancedPrompt = await _enhanceWithOpenAI({ originalPrompt: sanitizedPrompt });
+
+                return `${enhancedPrompt}
+
+COMPREHENSIVE BLOG POST OUTLINE:
+${blogOutline}`;
+            } catch (outlineError) {
+                console.error('Blog Outline Generation Failed:', outlineError);
+            }
+        }
 
         // For tests, just return a simple enhancement
         if (process.env.NODE_ENV === 'test') {
@@ -467,8 +619,6 @@ async function enhancePrompt(params) {
                 enhancedPrompt = await _enhanceWithOpenAI({ originalPrompt: sanitizedPrompt });
             } else {
                 // Fallback to a direct prompt if no provider is available
-                const context = analyzePromptContext(sanitizedPrompt);
-
                 if (context.usePreferredStyle) {
                     // Use the preferred style for appropriate content types
                     enhancedPrompt = generatePreferredStylePrompt(context);
@@ -541,6 +691,7 @@ Be original, specific, and demonstrate genuine expertise on this topic.`;
 
 module.exports = {
     enhancePrompt,
+    generateBlogOutline, // Expose for testing
     // Export these for testing
     analyzePromptContext,
     generatePreferredStylePrompt
