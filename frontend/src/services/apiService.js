@@ -137,9 +137,10 @@ const apiService = {
      * @param {Object} data - Request data
      * @param {string} data.text - Original prompt text
      * @param {string} [data.format='structured'] - Desired format
+     * @param {AbortSignal} [signal] - AbortController signal for timeout
      * @returns {Promise<Object>} Enhanced prompt response
      */
-    enhancePrompt: async (data) => {
+    enhancePrompt: async (data, signal) => {
         // Validate input
         if (!data.text || typeof data.text !== 'string') {
             throw new APIError('Invalid or missing original prompt', 400);
@@ -156,7 +157,8 @@ const apiService = {
 
             const response = await apiFetch(`${API_BASE_URL}/prompts`, {
                 method: 'POST',
-                body: JSON.stringify(requestData)
+                body: JSON.stringify(requestData),
+                signal // Pass the AbortController signal
             });
 
             console.log('Prompt enhancement response:', response);

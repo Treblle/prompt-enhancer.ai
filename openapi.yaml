@@ -6,7 +6,7 @@ info:
     Works with both Mistral and OpenAI to enhance prompts and generate better AI responses.
   version: 1.0.0
   contact:
-    name: Prompt Enhancer Team
+    name: AI Prompt Enhancer Team
     email: rahul@treblle.com
     url: https://prompt-enhancer.ai
   license:

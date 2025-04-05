@@ -1,5 +1,3 @@
-// src/services/promptEnhancerService.js
-
 /**
  * Prompt Enhancer Service
  * Transforms basic prompts into optimized, high-quality instructions
