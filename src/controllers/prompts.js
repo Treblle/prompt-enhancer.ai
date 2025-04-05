@@ -9,6 +9,9 @@ exports.enhancePrompt = async (req, res, next) => {
     try {
         console.log('Received request body:', req.body);
 
+        // Start timer for performance logging
+        const startTime = Date.now();
+
         const { text, format = 'structured' } = req.body;
 
         // Validate required fields
@@ -17,8 +20,8 @@ exports.enhancePrompt = async (req, res, next) => {
             return res.status(400).json({ error: textError });
         }
 
-        // Validate max length - UPDATED TO STRICTLY ENFORCE THE LIMIT IN TESTS
-        const MAX_TEXT_LENGTH = 8000; // Reduced limit for testing
+        // Validate max length - enforce a stricter limit for production
+        const MAX_TEXT_LENGTH = process.env.NODE_ENV === 'production' ? 5000 : 8000;
         if (text && text.length > MAX_TEXT_LENGTH) {
             return res.status(413).json({
                 error: {
@@ -48,11 +51,33 @@ exports.enhancePrompt = async (req, res, next) => {
             // Store the prompt (in a real app, this would be saved to a database)
             promptsStorage.push(promptObject);
 
+            // Log performance information
+            const duration = Date.now() - startTime;
+            console.log(`Prompt enhancement completed in ${duration}ms. Length: ${text.length} chars.`);
+
             // Return the enhanced prompt
-            console.log('Sending response:', promptObject);
+            console.log('Sending response:', {
+                id: promptObject.id,
+                format: promptObject.format,
+                originalLength: promptObject.originalText.length,
+                enhancedLength: promptObject.enhancedText.length
+            });
+
             return res.status(200).json(promptObject);
         } catch (serviceError) {
             console.error('Error in prompt service:', serviceError);
+
+            // If it's a timeout error, send a helpful client response
+            if (serviceError.message && serviceError.message.includes('timed out')) {
+                return res.status(503).json({
+                    error: {
+                        code: 'enhancement_timeout',
+                        message: 'The enhancement service is currently overloaded. Please try with a shorter prompt or try again later.',
+                        details: 'This usually happens when the AI service takes too long to respond.'
+                    }
+                });
+            }
+
             return res.status(500).json({
                 error: {
                     code: 'service_error',
