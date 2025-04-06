@@ -16,8 +16,12 @@
   },
   "servers": [
     {
-      "url": "https://prompt-enhancer.ai/v1/prompts",
+      "url": "https://prompt-enhancer.ai/v1",
       "description": "Production server"
+    },
+    {
+      "url": "https://api.prompt-enhancer.cloudflare.dev/v1",
+      "description": "Cloudflare CDN"
     },
     {
       "url": "https://cdn.prompt-enhancer.ai/v1",
@@ -41,13 +45,10 @@
   "security": [
     {
       "BearerAuth": []
-    },
-    {
-      "ApiKeyAuth": []
     }
   ],
   "paths": {
-    "/auth/token": {
+    "/auth/tokens": {
       "post": {
         "summary": "Generate authentication token",
         "description": "Generates a JWT token for API authentication",
@@ -77,6 +78,38 @@
         "responses": {
           "200": {
             "description": "Successfully generated token",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "Content-Encoding": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Compression method used for the response",
+                "example": "gzip"
+              },
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -87,6 +120,22 @@
           },
           "400": {
             "description": "Bad request - Invalid input",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -97,6 +146,22 @@
           },
           "401": {
             "description": "Unauthorized - Invalid credentials",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -107,6 +172,22 @@
           },
           "429": {
             "description": "Too many requests - Rate limit exceeded",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -117,6 +198,22 @@
           },
           "500": {
             "description": "Internal server error",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -128,7 +225,7 @@
         }
       }
     },
-    "/auth/validate": {
+    "/auth/validations": {
       "post": {
         "summary": "Validate authentication token",
         "description": "Validates a JWT token and returns its information",
@@ -152,6 +249,13 @@
                     "description": "JWT token to validate"
                   }
                 }
+              },
+              "examples": {
+                "tokenValidation": {
+                  "value": {
+                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                }
               }
             }
           }
@@ -159,6 +263,38 @@
         "responses": {
           "200": {
             "description": "Token validation successful",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "Content-Encoding": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Compression method used for the response",
+                "example": "gzip"
+              },
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -182,12 +318,38 @@
                       "description": "Token expiration time"
                     }
                   }
+                },
+                "examples": {
+                  "validToken": {
+                    "value": {
+                      "valid": true,
+                      "clientId": "frontend-client",
+                      "scope": "api:access",
+                      "expires": "2023-07-16T14:30:00Z"
+                    }
+                  }
                 }
               }
             }
           },
           "400": {
             "description": "Bad request - Invalid input",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -198,6 +360,22 @@
           },
           "401": {
             "description": "Unauthorized - Invalid token",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -208,6 +386,22 @@
           },
           "500": {
             "description": "Internal server error",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -221,11 +415,16 @@
     },
     "/prompts": {
       "post": {
-        "summary": "Enhance a prompt",
+        "summary": "Create an enhanced prompt",
         "description": "Takes a basic prompt and returns an optimized, context-rich version",
-        "operationId": "enhancePrompt",
+        "operationId": "createEnhancedPrompt",
         "tags": [
           "Prompts"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
         ],
         "requestBody": {
           "required": true,
@@ -248,14 +447,14 @@
         "responses": {
           "200": {
             "description": "Successfully enhanced prompt",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PromptResponse"
-                }
-              }
-            },
             "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
               "Content-Encoding": {
                 "schema": {
                   "type": "string"
@@ -271,11 +470,52 @@
               },
               "X-RateLimit-Reset": {
                 "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptResponse"
+                },
+                "examples": {
+                  "successResponse": {
+                    "value": {
+                      "id": "prompt_abc123",
+                      "originalText": "Write about quantum computing",
+                      "enhancedText": "You are an expert physicist with deep knowledge in quantum mechanics and quantum computing. Provide a comprehensive explanation of quantum computing covering: the fundamental principles (superposition, entanglement, quantum bits or qubits), how quantum computing differs from classical computing, current developments in the field, major challenges (decoherence, error correction), potential applications (cryptography, optimization problems, simulation of quantum systems), and the future outlook. Include specific examples and analogies to help understand complex concepts. Structure your response with clear sections and use technical terminology while making the content accessible to someone with a basic understanding of physics and computing.",
+                      "format": "structured",
+                      "createdAt": "2023-07-15T14:30:00Z"
+                    }
+                  }
+                }
               }
             }
           },
           "400": {
             "description": "Bad request - Invalid input",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -286,6 +526,22 @@
           },
           "401": {
             "description": "Unauthorized - Authentication failed",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -296,6 +552,22 @@
           },
           "413": {
             "description": "Payload Too Large - Input text exceeds maximum allowed size",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -306,6 +578,31 @@
           },
           "429": {
             "description": "Too many requests - Rate limit exceeded",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -316,6 +613,22 @@
           },
           "500": {
             "description": "Internal server error",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -332,6 +645,11 @@
         "operationId": "listPrompts",
         "tags": [
           "Prompts"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
         ],
         "parameters": [
           {
@@ -359,6 +677,38 @@
         "responses": {
           "200": {
             "description": "List of prompts",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "Content-Encoding": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Compression method used for the response",
+                "example": "gzip"
+              },
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -376,30 +726,51 @@
                       "description": "Total number of prompts available"
                     }
                   }
-                }
-              }
-            },
-            "headers": {
-              "Content-Encoding": {
-                "schema": {
-                  "type": "string"
                 },
-                "description": "Compression method used for the response",
-                "example": "gzip"
-              },
-              "X-RateLimit-Limit": {
-                "$ref": "#/components/headers/X-RateLimit-Limit"
-              },
-              "X-RateLimit-Remaining": {
-                "$ref": "#/components/headers/X-RateLimit-Remaining"
-              },
-              "X-RateLimit-Reset": {
-                "$ref": "#/components/headers/X-RateLimit-Reset"
+                "examples": {
+                  "successResponse": {
+                    "value": {
+                      "prompts": [
+                        {
+                          "id": "prompt_abc123",
+                          "originalText": "Write about quantum computing",
+                          "enhancedText": "You are an expert physicist with deep knowledge in quantum mechanics...",
+                          "format": "structured",
+                          "createdAt": "2023-07-15T14:30:00Z"
+                        },
+                        {
+                          "id": "prompt_def456",
+                          "originalText": "Explain machine learning",
+                          "enhancedText": "As an AI researcher and data scientist with expertise in machine learning...",
+                          "format": "structured",
+                          "createdAt": "2023-07-15T15:30:00Z"
+                        }
+                      ],
+                      "total": 2
+                    }
+                  }
+                }
               }
             }
           },
           "401": {
             "description": "Unauthorized - Authentication failed",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -410,6 +781,22 @@
           },
           "500": {
             "description": "Internal server error",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -421,36 +808,44 @@
         }
       }
     },
-    "/prompts/{id}": {
+    "/prompts/{promptId}": {
       "get": {
-        "summary": "Get a specific prompt",
+        "summary": "Get specific prompt",
         "description": "Retrieves details of a single enhanced prompt",
         "operationId": "getPrompt",
         "tags": [
           "Prompts"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
-            "name": "id",
+            "name": "promptId",
             "in": "path",
             "required": true,
             "description": "Unique identifier of the prompt to retrieve",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "string",
+              "example": "prompt_abc123",
+              "pattern": "^prompt_[a-zA-Z0-9]{6,32}$"
             }
           }
         ],
         "responses": {
           "200": {
             "description": "Prompt details retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PromptResponse"
-                }
-              }
-            },
             "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
               "Content-Encoding": {
                 "schema": {
                   "type": "string"
@@ -466,11 +861,52 @@
               },
               "X-RateLimit-Reset": {
                 "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptResponse"
+                },
+                "examples": {
+                  "successResponse": {
+                    "value": {
+                      "id": "prompt_abc123",
+                      "originalText": "Write about quantum computing",
+                      "enhancedText": "You are an expert physicist with deep knowledge in quantum mechanics...",
+                      "format": "structured",
+                      "createdAt": "2023-07-15T14:30:00Z"
+                    }
+                  }
+                }
               }
             }
           },
           "401": {
             "description": "Unauthorized - Authentication failed",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -481,6 +917,22 @@
           },
           "404": {
             "description": "Prompt not found",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -491,6 +943,22 @@
           },
           "500": {
             "description": "Internal server error",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -502,20 +970,28 @@
         }
       },
       "put": {
-        "summary": "Update a prompt",
+        "summary": "Update prompt",
         "description": "Updates and re-enhances a previously created prompt",
         "operationId": "updatePrompt",
         "tags": [
           "Prompts"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
-            "name": "id",
+            "name": "promptId",
             "in": "path",
             "required": true,
             "description": "Unique identifier of the prompt to update",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "string",
+              "example": "prompt_abc123",
+              "pattern": "^prompt_[a-zA-Z0-9]{6,32}$"
             }
           }
         ],
@@ -525,6 +1001,14 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PromptRequest"
+              },
+              "examples": {
+                "updatePrompt": {
+                  "value": {
+                    "text": "Write about advanced quantum computing",
+                    "format": "structured"
+                  }
+                }
               }
             }
           }
@@ -532,14 +1016,14 @@
         "responses": {
           "200": {
             "description": "Prompt successfully updated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PromptResponse"
-                }
-              }
-            },
             "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
               "Content-Encoding": {
                 "schema": {
                   "type": "string"
@@ -555,11 +1039,53 @@
               },
               "X-RateLimit-Reset": {
                 "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptResponse"
+                },
+                "examples": {
+                  "successResponse": {
+                    "value": {
+                      "id": "prompt_abc123",
+                      "originalText": "Write about advanced quantum computing",
+                      "enhancedText": "You are a leading quantum physicist specializing in quantum computing...",
+                      "format": "structured",
+                      "createdAt": "2023-07-15T14:30:00Z",
+                      "updatedAt": "2023-07-15T16:45:00Z"
+                    }
+                  }
+                }
               }
             }
           },
           "400": {
             "description": "Bad request - Invalid input",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -570,6 +1096,22 @@
           },
           "401": {
             "description": "Unauthorized - Authentication failed",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -580,6 +1122,22 @@
           },
           "404": {
             "description": "Prompt not found",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -590,6 +1148,22 @@
           },
           "413": {
             "description": "Payload Too Large - Input text exceeds maximum allowed size",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -600,6 +1174,22 @@
           },
           "500": {
             "description": "Internal server error",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -611,20 +1201,28 @@
         }
       },
       "delete": {
-        "summary": "Delete a prompt",
+        "summary": "Delete prompt",
         "description": "Removes a prompt from history",
         "operationId": "deletePrompt",
         "tags": [
           "Prompts"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
-            "name": "id",
+            "name": "promptId",
             "in": "path",
             "required": true,
             "description": "Unique identifier of the prompt to delete",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "string",
+              "example": "prompt_abc123",
+              "pattern": "^prompt_[a-zA-Z0-9]{6,32}$"
             }
           }
         ],
@@ -640,11 +1238,34 @@
               },
               "X-RateLimit-Reset": {
                 "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
               }
             }
           },
           "401": {
             "description": "Unauthorized - Authentication failed",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -655,6 +1276,22 @@
           },
           "404": {
             "description": "Prompt not found",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -665,6 +1302,22 @@
           },
           "500": {
             "description": "Internal server error",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -688,6 +1341,38 @@
         "responses": {
           "200": {
             "description": "API is healthy",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content type of the response",
+                "example": "application/json"
+              },
+              "Content-Encoding": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Compression method used for the response",
+                "example": "gzip"
+              },
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Prevents clickjacking attacks",
+                "example": "DENY"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -700,6 +1385,16 @@
                     "timestamp": {
                       "type": "string",
                       "format": "date-time"
+                    }
+                  }
+                },
+                "examples": {
+                  "healthResponse": {
+                    "value": {
+                      "status": "ok",
+                      "timestamp": "2023-07-15T14:30:00Z",
+                      "version": "1.0.0",
+                      "environment": "production"
                     }
                   }
                 }
@@ -865,13 +1560,7 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "JWT token obtained from the /auth/token endpoint"
-      },
-      "ApiKeyAuth": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "X-API-Key",
-        "description": "Legacy API key authentication method (to be deprecated)"
+        "description": "JWT token obtained from the /auth/tokens endpoint"
       }
     },
     "headers": {
