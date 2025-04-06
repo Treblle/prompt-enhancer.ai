@@ -228,14 +228,17 @@ const PromptEnhancerApp = () => {
                                         </button>
                                         <button
                                             onClick={copyToClipboard}
-                                            className="text-xs flex items-center px-1.5 py-0.5 rounded transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                            className={`copy-btn action-btn action-btn-ripple text-xs flex items-center px-1.5 py-0.5 rounded transition-all duration-300 ${copied
+                                                ? "copied bg-green-500 text-white"
+                                                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                                }`}
                                             aria-label="Copy to clipboard"
                                             title="Copy to clipboard"
                                         >
                                             {copied ? (
                                                 <>
                                                     <Check className="h-3 w-3 mr-1" />
-                                                    <span>Copied</span>
+                                                    <span>Copied!</span>
                                                 </>
                                             ) : (
                                                 <>
@@ -246,7 +249,7 @@ const PromptEnhancerApp = () => {
                                         </button>
                                         <button
                                             onClick={openClaude}
-                                            className="text-xs flex items-center px-1.5 py-0.5 rounded transition-colors bg-gradient-to-r from-blue-600 to-indigo-800 text-white hover:from-blue-700 hover:to-indigo-900"
+                                            className="provider-btn action-btn text-xs flex items-center px-1.5 py-0.5 rounded transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-800 text-white hover:from-blue-700 hover:to-indigo-900"
                                             aria-label="Open in Claude"
                                             title="Open in Claude"
                                         >
@@ -255,7 +258,7 @@ const PromptEnhancerApp = () => {
                                         </button>
                                         <button
                                             onClick={openChatGPT}
-                                            className="text-xs flex items-center px-1.5 py-0.5 rounded transition-colors bg-gradient-to-r from-blue-600 to-indigo-800 text-white hover:from-blue-700 hover:to-indigo-900"
+                                            className="provider-btn action-btn text-xs flex items-center px-1.5 py-0.5 rounded transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-800 text-white hover:from-blue-700 hover:to-indigo-900"
                                             aria-label="Open in ChatGPT"
                                             title="Open in ChatGPT"
                                         >
@@ -355,13 +358,16 @@ const PromptEnhancerApp = () => {
                             <>
                                 <button
                                     onClick={copyToClipboard}
-                                    className="text-sm flex items-center px-3 py-1.5 rounded transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                    className={`copy-btn action-btn action-btn-ripple text-sm flex items-center px-3 py-1.5 rounded transition-all duration-300 ${copied
+                                        ? "copied bg-green-500 text-white"
+                                        : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                        }`}
                                     title="Copy to clipboard"
                                 >
                                     {copied ? (
                                         <>
                                             <Check className="h-4 w-4 mr-1.5" />
-                                            <span>Copied</span>
+                                            <span>Copied!</span>
                                         </>
                                     ) : (
                                         <>
@@ -372,20 +378,22 @@ const PromptEnhancerApp = () => {
                                 </button>
                                 <button
                                     onClick={openClaude}
-                                    className="text-sm flex items-center px-3 py-1.5 rounded transition-colors bg-gradient-to-r from-blue-600 to-indigo-800 text-white hover:from-blue-700 hover:to-indigo-900"
+                                    className="provider-btn action-btn text-sm flex items-center px-3 py-1.5 rounded transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-800 text-white hover:from-blue-700 hover:to-indigo-900"
                                     title="Open in Claude"
                                 >
                                     <ExternalLink className="h-4 w-4 mr-1.5" />
                                     <span>Claude</span>
                                 </button>
+
                                 <button
                                     onClick={openChatGPT}
-                                    className="text-sm flex items-center px-3 py-1.5 rounded transition-colors bg-gradient-to-r from-blue-600 to-indigo-800 text-white hover:from-blue-700 hover:to-indigo-900"
+                                    className="provider-btn action-btn text-sm flex items-center px-3 py-1.5 rounded transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-800 text-white hover:from-blue-700 hover:to-indigo-900"
                                     title="Open in ChatGPT"
                                 >
                                     <ExternalLink className="h-4 w-4 mr-1.5" />
                                     <span>ChatGPT</span>
                                 </button>
+
                             </>
                         )}
                     </div>

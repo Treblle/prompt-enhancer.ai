@@ -5,20 +5,29 @@ import ApiInsightsTooltip from './ApiInsightsTooltip';
 const ApiInsightsBanner = () => {
     const [showTooltip, setShowTooltip] = useState(false);
     const timeoutRef = useRef(null);
+    const containerRef = useRef(null);
+
+    // Longer delay before hiding the tooltip (1 second instead of 300ms)
+    const HOVER_DELAY = 1000;
 
     const handleMouseEnter = () => {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         setShowTooltip(true);
     };
 
-    const handleMouseLeave = () => {
-        timeoutRef.current = setTimeout(() => {
-            setShowTooltip(false);
-        }, 300);
+    const handleMouseLeave = (e) => {
+        // Check if we're leaving the entire container (banner + tooltip)
+        // or just moving between banner and tooltip
+        if (containerRef.current && !containerRef.current.contains(e.relatedTarget)) {
+            timeoutRef.current = setTimeout(() => {
+                setShowTooltip(false);
+            }, HOVER_DELAY);
+        }
     };
 
     return (
         <div
+            ref={containerRef}
             className="hover-card relative inline-block"
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
