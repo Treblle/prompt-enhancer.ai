@@ -334,3 +334,52 @@ main {
         padding-bottom: max(4rem, env(safe-area-inset-bottom) + 1rem);
     }
 }
+
+/* API Insights Hover Card Effect */
+.hover-card {
+    box-sizing: border-box;
+    overflow: visible;
+    transition: transform 0.3s ease;
+    padding: 2px;
+}
+
+.hover-card:hover {
+    transform: translateY(-2px);
+}
+
+.hover-card__top {
+    z-index: 20;
+    position: relative;
+    transition: all 0.4s ease;
+}
+
+.hover-card__bottom {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+    transition: all 0.4s ease, opacity 0.3s ease, max-height 0.6s ease, transform 0.4s ease;
+}
+
+.hover-card:hover .hover-card__bottom {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Gradient animation keyframes */
+@keyframes gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
