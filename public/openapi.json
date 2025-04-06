@@ -1,0 +1,901 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AI Prompt Enhancer API",
+    "description": "An API that transforms basic prompts into optimized, context-rich instructions for AI language models.\nWorks with both Mistral and OpenAI to enhance prompts and generate better AI responses.\n",
+    "version": "1.0.0",
+    "contact": {
+      "name": "AI Prompt Enhancer Team",
+      "email": "rahul@treblle.com",
+      "url": "https://prompt-enhancer.ai"
+    },
+    "license": {
+      "name": "MIT License",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://prompt-enhancer.ai/v1/prompts",
+      "description": "Production server"
+    },
+    {
+      "url": "https://cdn.prompt-enhancer.ai/v1",
+      "description": "CDN-backed production server"
+    },
+    {
+      "url": "http://localhost:5000/v1",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Authentication endpoints for token management"
+    },
+    {
+      "name": "Prompts",
+      "description": "Prompt enhancement and management operations"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    },
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/auth/token": {
+      "post": {
+        "summary": "Generate authentication token",
+        "description": "Generates a JWT token for API authentication",
+        "operationId": "generateToken",
+        "tags": [
+          "Authentication"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenRequest"
+              },
+              "examples": {
+                "basicAuth": {
+                  "value": {
+                    "clientId": "frontend-client",
+                    "clientSecret": "your-api-key-here"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully generated token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests - Rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/validate": {
+      "post": {
+        "summary": "Validate authentication token",
+        "description": "Validates a JWT token and returns its information",
+        "operationId": "validateToken",
+        "tags": [
+          "Authentication"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "description": "JWT token to validate"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token validation successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "valid": {
+                      "type": "boolean",
+                      "description": "Whether the token is valid"
+                    },
+                    "clientId": {
+                      "type": "string",
+                      "description": "Client ID from the token"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "description": "Token scope"
+                    },
+                    "expires": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Token expiration time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/prompts": {
+      "post": {
+        "summary": "Enhance a prompt",
+        "description": "Takes a basic prompt and returns an optimized, context-rich version",
+        "operationId": "enhancePrompt",
+        "tags": [
+          "Prompts"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromptRequest"
+              },
+              "examples": {
+                "basicPrompt": {
+                  "value": {
+                    "text": "Write about quantum computing",
+                    "format": "structured"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully enhanced prompt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptResponse"
+                }
+              }
+            },
+            "headers": {
+              "Content-Encoding": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Compression method used for the response",
+                "example": "gzip"
+              },
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large - Input text exceeds maximum allowed size",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests - Rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List enhanced prompts",
+        "description": "Returns a paginated list of previously enhanced prompts",
+        "operationId": "listPrompts",
+        "tags": [
+          "Prompts"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of prompts to return per page",
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of prompts to skip for pagination",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of prompts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "prompts": {
+                      "type": "array",
+                      "description": "Array of enhanced prompts",
+                      "items": {
+                        "$ref": "#/components/schemas/PromptResponse"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Total number of prompts available"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Content-Encoding": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Compression method used for the response",
+                "example": "gzip"
+              },
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/prompts/{id}": {
+      "get": {
+        "summary": "Get a specific prompt",
+        "description": "Retrieves details of a single enhanced prompt",
+        "operationId": "getPrompt",
+        "tags": [
+          "Prompts"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Unique identifier of the prompt to retrieve",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Prompt details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptResponse"
+                }
+              }
+            },
+            "headers": {
+              "Content-Encoding": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Compression method used for the response",
+                "example": "gzip"
+              },
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Prompt not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update a prompt",
+        "description": "Updates and re-enhances a previously created prompt",
+        "operationId": "updatePrompt",
+        "tags": [
+          "Prompts"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Unique identifier of the prompt to update",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromptRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Prompt successfully updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptResponse"
+                }
+              }
+            },
+            "headers": {
+              "Content-Encoding": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Compression method used for the response",
+                "example": "gzip"
+              },
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Prompt not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large - Input text exceeds maximum allowed size",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a prompt",
+        "description": "Removes a prompt from history",
+        "operationId": "deletePrompt",
+        "tags": [
+          "Prompts"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Unique identifier of the prompt to delete",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Prompt successfully deleted",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Prompt not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check endpoint",
+        "description": "Simple endpoint to check if the API is running",
+        "operationId": "healthCheck",
+        "tags": [
+          "System"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "TokenRequest": {
+        "type": "object",
+        "description": "Request to generate an authentication token",
+        "required": [
+          "clientSecret"
+        ],
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "description": "Client identifier",
+            "example": "frontend-client"
+          },
+          "clientSecret": {
+            "type": "string",
+            "description": "Client secret (API key)",
+            "example": "your-api-key-here"
+          }
+        }
+      },
+      "TokenResponse": {
+        "type": "object",
+        "description": "Authentication token response",
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "description": "JWT access token",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "token_type": {
+            "type": "string",
+            "description": "Token type",
+            "example": "Bearer"
+          },
+          "expires_in": {
+            "type": "integer",
+            "description": "Token expiration time in seconds",
+            "example": 86400
+          },
+          "scope": {
+            "type": "string",
+            "description": "Token scope",
+            "example": "api:access"
+          }
+        }
+      },
+      "PromptRequest": {
+        "type": "object",
+        "description": "Request body for creating or updating a prompt enhancement",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The original prompt text to be enhanced",
+            "minLength": 1,
+            "maxLength": 8000,
+            "example": "Write about quantum computing"
+          },
+          "format": {
+            "type": "string",
+            "description": "The desired format for the enhanced prompt",
+            "enum": [
+              "structured",
+              "paragraph",
+              "bullet",
+              "conversational"
+            ],
+            "default": "structured",
+            "example": "structured"
+          }
+        }
+      },
+      "PromptResponse": {
+        "type": "object",
+        "description": "Response containing the enhanced prompt information",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the enhanced prompt",
+            "example": "prompt_abc123"
+          },
+          "originalText": {
+            "type": "string",
+            "description": "The original prompt text provided by the user",
+            "example": "Write about quantum computing"
+          },
+          "enhancedText": {
+            "type": "string",
+            "description": "The enhanced, more detailed prompt text",
+            "example": "As a professional expert in quantum computing, provide a comprehensive overview..."
+          },
+          "format": {
+            "type": "string",
+            "description": "The format used for enhancing the prompt",
+            "enum": [
+              "structured",
+              "paragraph",
+              "bullet",
+              "conversational"
+            ],
+            "example": "structured"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of prompt creation",
+            "example": "2023-07-15T14:30:00Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of the last prompt update (if applicable)",
+            "example": "2023-07-15T15:45:00Z"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "description": "Standard error response format",
+        "properties": {
+          "error": {
+            "type": "object",
+            "description": "Error details",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Machine-readable error code",
+                "example": "validation_error"
+              },
+              "message": {
+                "type": "string",
+                "description": "Human-readable error message",
+                "example": "The 'text' field is required"
+              },
+              "details": {
+                "type": "object",
+                "description": "Additional error details (when available)",
+                "example": {
+                  "param": "text",
+                  "reason": "missing_required_field"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token obtained from the /auth/token endpoint"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Legacy API key authentication method (to be deprecated)"
+      }
+    },
+    "headers": {
+      "X-RateLimit-Limit": {
+        "description": "Request limit per minute",
+        "schema": {
+          "type": "integer"
+        },
+        "example": 100
+      },
+      "X-RateLimit-Remaining": {
+        "description": "Remaining requests allowed in the current period",
+        "schema": {
+          "type": "integer"
+        },
+        "example": 95
+      },
+      "X-RateLimit-Reset": {
+        "description": "The time at which the current rate limit window resets (Unix timestamp)",
+        "schema": {
+          "type": "integer"
+        },
+        "example": 1626369250
+      }
+    }
+  }
+}
