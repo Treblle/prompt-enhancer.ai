@@ -1,4 +1,3 @@
-/** @type {import('tailwindcss').Config} */
 module.exports = {
     darkMode: 'class', // Enable class-based dark mode
     content: [
@@ -32,13 +31,22 @@ module.exports = {
                     dark: '#374151'
                 }
             },
-            backgroundColor: {
-                DEFAULT: 'var(--background)',
-                dark: 'var(--background-dark)'
+            backgroundImage: {
+                'gradient-border': 'linear-gradient(to right, #3b82f6, #10b981, #6366f1)',
+                'conic-gradient': 'conic-gradient(from 90deg at 50% 50%, #0058ff 0%, #22263c50%, #0058ff 100%)'
             },
-            textColor: {
-                DEFAULT: 'var(--text)',
-                dark: 'var(--text-dark)'
+            animation: {
+                'spin-slow': 'spin 10s linear infinite',
+                'gradient': 'gradient 10s ease-in-out infinite'
+            },
+            keyframes: {
+                gradient: {
+                    '0%, 100%': { backgroundPosition: '0% 50%' },
+                    '50%': { backgroundPosition: '100% 50%' },
+                }
+            },
+            transitionProperty: {
+                'background': 'background'
             }
         },
     },

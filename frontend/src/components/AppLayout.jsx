@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Github } from 'lucide-react';
+import ApiInsightsBanner from './ApiInsightsBanner';
 
 const GithubStarButton = () => {
     const REPO_URL = 'https://github.com/Treblle/prompt-enhancer.ai';
@@ -89,8 +90,17 @@ const ThemeToggle = () => {
 const AppLayout = ({ children }) => {
     return (
         <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-            <header className="bg-gray-100 dark:bg-gray-800 py-2 px-4 flex justify-end items-center gap-2 shadow-sm z-30">
-                <div className="flex gap-3">
+            <header className="bg-gray-100 dark:bg-gray-800 py-1 px-4 flex items-center shadow-sm z-30 relative">
+                {/* Left empty space to balance the right buttons */}
+                <div className="flex-1"></div>
+
+                {/* Center banner */}
+                <div className="flex-1 flex justify-center items-center px-4 py-0.5">
+                    <ApiInsightsBanner />
+                </div>
+
+                {/* Right buttons */}
+                <div className="flex-1 flex justify-end gap-3">
                     <GithubStarButton />
                     <ThemeToggle />
                 </div>
