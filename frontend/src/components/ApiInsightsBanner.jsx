@@ -32,7 +32,7 @@ const ApiInsightsBanner = () => {
                 >
                     <div className="flex items-center">
                         <img
-                            src="https://apiinsights.io/logo.svg"
+                            src="/api-insights.svg"
                             alt="API Insights"
                             className="w-6 mr-1"
                         />

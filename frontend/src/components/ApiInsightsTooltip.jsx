@@ -14,7 +14,7 @@ const ApiInsightsTooltip = ({ visible, onMouseEnter, onMouseLeave }) => {
                 <div className="flex justify-between items-center mb-2">
                     <div className="flex items-center">
                         <img
-                            src="https://apiinsights.io/logo.svg"
+                            src="/api-insights.svg"
                             alt="API Insights"
                             className="h-5 w-5 mr-1"
                         />
