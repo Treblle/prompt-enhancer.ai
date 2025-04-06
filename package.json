@@ -8,7 +8,7 @@
     "start": "node server.js",
     "server": "nodemon server.js",
     "client": "cd frontend && npm start",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "dev": "npm run generate-docs && concurrently \"npm run server\" \"npm run client\"",
     "test": "jest",
     "test:unit": "jest test/unit",
     "test:integration": "jest test/integration",
