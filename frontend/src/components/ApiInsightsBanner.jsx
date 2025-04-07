@@ -16,9 +16,11 @@ const ApiInsightsBanner = () => {
     };
 
     const handleMouseLeave = (e) => {
-        // Check if we're leaving the entire container (banner + tooltip)
-        // or just moving between banner and tooltip
-        if (containerRef.current && !containerRef.current.contains(e.relatedTarget)) {
+        // Safely check if we're leaving the entire container
+        const relatedTarget = e.relatedTarget;
+        const isSafeNode = relatedTarget instanceof Node;
+
+        if (containerRef.current && (!isSafeNode || !containerRef.current.contains(relatedTarget))) {
             timeoutRef.current = setTimeout(() => {
                 setShowTooltip(false);
             }, HOVER_DELAY);
