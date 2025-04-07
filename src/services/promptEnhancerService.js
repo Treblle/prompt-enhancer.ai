@@ -888,39 +888,375 @@ Include **2-3 relevant hashtags** at the bottom of the post—only the most spec
 * Include real campaign examples with actual metrics, not theoretical advice
 * Avoid using "Thoughts?" or "Do you agree?"—make the closing question specific and results-oriented
 * Ensure the whole post feels like it comes from a genuine marketing strategist`
-    },
-    twitter: {
-        technical: `You're an experienced software engineer and technology expert writing a **one-liner tweet (under 280 characters)** for Twitter/X. Your goal is to deliver a **concise, original insight** on **{{topic}}**—crafted for developers and technical professionals who value clarity, real-world experience, and no fluff.
-
-🎯 OBJECTIVE:
-Write a **single tweet** that:
-* Offers a fresh, memorable perspective on {{topicSubject}} development
-* Uses contrast, paradox, or parallelism to increase retention and quotability
-* Avoids clichés, jargon, or AI-sounding phrasing
-* Stands alone as a complete, powerful idea (no threads)
-
-✅ INSTRUCTIONS:
-1. **Length Limit**: 240–280 characters (longer one-liner, not a thread)
-2. **Core Format**: One sharp insight—crafted like a quote, not a summary
-3. **Tech Focus**: Insight should reflect a deeper truth or overlooked best practice in {{topicDetail}} ({{topicAspects}}, etc.)
-4. **Style**:
-   * Use plainspoken, modern language—write like a human, not a headline bot
-   * Use **active voice** and **present tense** for punchiness
-   * Keep it direct—no setup, no follow-up, no "here's why" explanations
-
-✒️ PRO TIPS FOR STYLE:
-* Use **parallel structure**: "{{parallelExample}}"
-* Use **unexpected contrast**: "{{contrastExample}}"
-* Use **concrete phrasing**: Replace abstract terms like "optimize" or "implement" with real-world behavior or code insights
-* Make it **quotable**: Imagine this tweet on a dev conference slide
-
-🚫 AVOID:
-* Clickbait or engagement-bait ("🔥" / "Must-know!" / "Let that sink in.")
-* Threads, hashtags, or emojis
-* AI-sounding phrases or vague abstractions
-* Explaining the insight—just state it clearly and let it land`
-    },
+    }
 };
+
+/**
+ * Twitter/X post template specifically designed for the platform's constraints
+ */
+const TWITTER_TEMPLATE = {
+    general: `You are an expert social media strategist crafting a Twitter/X post on: "{{topic}}"
+
+POST TYPE: Standard Twitter/X post (must fit within 280 characters)
+
+CRITICAL REQUIREMENTS:
+• STRICT CHARACTER LIMIT: Your entire post MUST be under 280 characters total
+• FORMAT: Single post only, not a thread
+• TONE: Concise, insightful, and directly valuable without fluff
+
+CONTENT STRATEGY:
+• Start with a strong, specific insight about {{topic}} that challenges conventional thinking
+• Focus on ONE key point rather than trying to cover multiple aspects
+• Use concrete, specific language rather than vague generalizations
+• Incorporate a thought-provoking contrast, paradox, or unexpected perspective
+• Make it quotable and memorable - something people would want to retweet
+
+DO NOT:
+• Use hashtags unless absolutely necessary (they consume character count)
+• Include "Thread 🧵" or thread indicators
+• Use engagement bait phrases like "RT if you agree" or "Thoughts?"
+• Use introduction phrases like "Just my thoughts on..."
+• Create a sensationalized "hot take" that's actually a common opinion
+
+WRITING STYLE:
+• Use active voice with strong verbs
+• Employ parallel structure for rhythm and memorability
+• Create a clear, punchy structure that delivers immediate value
+• Make it feel like wisdom from a genuine practitioner, not marketing copy
+
+Remember: Maintain a professional tone appropriate for a technical/business audience interested in {{topic}}. Focus on substance over style.`,
+
+    technical: `You are an experienced software engineer and technology expert creating a Twitter/X post on: "{{topic}}"
+
+POST TYPE: Technical insight for Twitter/X (must fit within 280 characters)
+
+CRITICAL REQUIREMENTS:
+• CHARACTER LIMIT: Your entire post MUST be under 280 characters total
+• FORMAT: Single post only (not a thread)
+• AUDIENCE: Technical professionals who value substance over hype
+
+CONTENT STRATEGY:
+• Deliver ONE specific, high-value technical insight about {{topic}}
+• Focus on a non-obvious best practice, common mistake, or counterintuitive truth
+• Frame it as a practical wisdom that saves time or prevents problems
+• Make it specific and actionable rather than general or theoretical
+
+WRITING APPROACH:
+• Use direct, precise technical language without unnecessary jargon
+• Write in a voice that sounds like an experienced developer sharing wisdom
+• Structure with parallelism or contrast for memorability
+• Make it quotable - something a developer would save or share
+
+DO NOT:
+• Use introduction phrases like "Here's a tip about..."
+• Include meaningless hashtags (technical terms as hashtags are fine)
+• Write a "hot take" that's actually common knowledge
+• Use engagement bait questions or calls for comments
+
+OUTPUT EXAMPLE STRUCTURE (not content):
+"The most reliable way to [do X technical thing] isn't [common approach]. It's [better approach] that handles [edge case] without [common problem]."
+
+Remember: Technical professionals value clarity and specificity. Speak peer-to-peer, not like marketing.`,
+
+    marketing: `You are a senior marketing strategist creating a Twitter/X post on: "{{topic}}"
+
+POST TYPE: Marketing insight for Twitter/X (must fit within 280 characters)
+
+CRITICAL REQUIREMENTS:
+• CHARACTER LIMIT: Your entire post MUST be under 280 characters total
+• FORMAT: Single post only
+• AUDIENCE: Marketing professionals and business leaders
+
+CONTENT STRATEGY:
+• Share ONE powerful, specific insight about {{topic}} in marketing
+• Focus on a data-supported observation, counterintuitive result, or tested approach
+• Make it immediately valuable to marketers looking to improve performance
+• Frame as practical wisdom from campaign experience, not theoretical advice
+
+WRITING APPROACH:
+• Use precise marketing language without buzzwords or fluff
+• Include a specific metric or result when possible (with real numbers)
+• Structure with clear cause-effect or compare-contrast relationship
+• Make it shareable - something a marketing leader would reference
+
+DO NOT:
+• Use vague claims about "engagement" or "growth" without specifics
+• Include generic marketing hashtags
+• Start with "Marketing tip:" or similar wasted characters
+• Frame common knowledge as a revelation
+
+OUTPUT EXAMPLE STRUCTURE (not content):
+"We tested [specific tactic] across [scope]. Result: [specific metric] improved by [specific amount]. Key learning: [actionable insight about topic]."
+
+Remember: Marketing professionals are overwhelmed with generic advice. Stand out with specificity and proven results.`,
+
+    business: `You are a business leader and strategist creating a Twitter/X post on: "{{topic}}"
+
+POST TYPE: Business insight for Twitter/X (must fit within 280 characters)
+
+CRITICAL REQUIREMENTS:
+• CHARACTER LIMIT: Your entire post MUST be under 280 characters total
+• FORMAT: Single post only
+• AUDIENCE: Business professionals, leaders, and decision-makers
+
+CONTENT STRATEGY:
+• Deliver ONE specific strategic insight about {{topic}} that challenges conventional thinking
+• Focus on a decision-making framework, leadership approach, or business observation
+• Make it immediately valuable to leaders facing real business challenges
+• Frame as wisdom from direct experience, not theoretical advice
+
+WRITING APPROACH:
+• Use precise business language without corporate jargon
+• Structure with clear cause-effect or principle-application relationship
+• Create a memorable framework or mental model when possible
+• Make it quotable - something a business leader would reference in a meeting
+
+DO NOT:
+• Use platitudes like "culture eats strategy" or "fail fast"
+• Include generic business hashtags
+• Start with "Leadership tip:" or similar wasted characters
+• Present common business knowledge as a revelation
+
+OUTPUT EXAMPLE STRUCTURE (not content):
+"The difference between [successful outcome] and [unsuccessful outcome] in [topic area] isn't [common assumption]. It's [unexpected factor] that [specific mechanism of action]."
+
+Remember: Business leaders value clarity and actionable insights they can apply immediately.`
+};
+
+// Template selection function
+function selectTwitterTemplate(context) {
+    // Select template based on subject matter
+    if (context.subject === 'technology' || context.subject === 'ai') {
+        return TWITTER_TEMPLATE.technical;
+    } else if (context.subject === 'marketing' || context.subject === 'advertising') {
+        return TWITTER_TEMPLATE.marketing;
+    } else if (context.subject === 'business' || context.subject === 'leadership' || context.subject === 'finance') {
+        return TWITTER_TEMPLATE.business;
+    } else {
+        return TWITTER_TEMPLATE.general;
+    }
+}
+
+/**
+ * Routes the prompt to the appropriate template based on the detected content type
+ * @param {Object} context - The analyzed context of the prompt
+ * @returns {Object} - Template selection and system prompt
+ */
+function routeToTemplate(context) {
+    // Determine content type from context
+    const contentType = context.contentType || 'blog';
+    const platform = context.platform || 'general';
+    const subject = context.subject || 'general';
+    const topic = context.topic || '';
+    const isTwitter = context.isTwitter || false;
+
+    // Template and system prompt to return
+    let template = null;
+    let systemPrompt = '';
+
+    // Special case for Twitter - use our dedicated Twitter templates
+    if (isTwitter || platform === 'twitter' || contentType === 'twitter') {
+        // Import the Twitter templates
+        const twitterTemplate = selectTwitterTemplate(context);
+        template = {
+            name: 'Twitter Post',
+            content: applyTwitterTemplate(twitterTemplate, topic)
+        };
+
+        // System prompt for Twitter emphasizes character limits
+        systemPrompt = `You are an expert social media strategist specializing in Twitter/X. 
+Your task is to enhance the user's basic prompt into a detailed instruction that will create an effective Twitter post.
+Focus on creating instructions that emphasize brevity (280 character limit), memorability, and high-value insights.
+The enhanced prompt should guide the AI to create a tweet that feels authentic and insightful, not promotional or generic.`;
+
+        return { template, systemPrompt };
+    }
+
+    // Handle LinkedIn posts
+    if (platform === 'linkedin' || contentType === 'linkedin') {
+        // Determine which LinkedIn template to use based on subject
+        let linkedinType = 'general';
+
+        if (subject === 'technology' || subject === 'ai') {
+            linkedinType = 'technical';
+        } else if (subject === 'business' || subject === 'leadership') {
+            linkedinType = 'business';
+        } else if (subject === 'marketing') {
+            linkedinType = 'marketing';
+        }
+
+        // Get the appropriate LinkedIn template
+        template = {
+            name: 'LinkedIn Post',
+            content: CONTENT_TEMPLATES.linkedin[linkedinType] || CONTENT_TEMPLATES.linkedin.technical
+        };
+
+        // System prompt for LinkedIn emphasizes professional value
+        systemPrompt = `You are an expert content strategist specializing in LinkedIn professional content.
+Your task is to enhance the user's basic prompt into a detailed instruction that will create an effective LinkedIn post.
+Focus on creating instructions that emphasize professional value, authentic voice, and specific insights.
+The enhanced prompt should guide the AI to create content that stands out on LinkedIn by avoiding clichés and focusing on substance.`;
+
+        return { template, systemPrompt };
+    }
+
+    // Handle blog posts - default case
+    if (platform === 'blog' || contentType === 'blog' || platform === 'general') {
+        // Select blog template based on subject
+        let blogType = 'general';
+
+        if (subject === 'technology' || subject === 'ai') {
+            blogType = 'technical';
+        } else if (subject === 'business' || subject === 'leadership') {
+            blogType = 'business';
+        } else if (subject === 'marketing') {
+            blogType = 'marketing';
+        }
+
+        // Get the appropriate blog template
+        template = {
+            name: 'Blog Post',
+            content: CONTENT_TEMPLATES.blog[blogType] || CONTENT_TEMPLATES.blog.technical
+        };
+
+        // System prompt for blogs emphasizes comprehensive value
+        systemPrompt = `You are an expert content strategist specializing in blog content creation.
+Your task is to enhance the user's basic prompt into a detailed instruction that will create an effective blog post.
+Focus on creating instructions that emphasize structure, substance, and reader value.
+The enhanced prompt should guide the AI to create content that is well-organized, informative, and engaging.`;
+
+        return { template, systemPrompt };
+    }
+
+    // Handle other content types (email, technical docs, etc.)
+    // For now we'll just default to blog for these
+    template = {
+        name: 'General Content',
+        content: CONTENT_TEMPLATES.blog.technical
+    };
+
+    systemPrompt = `You are an expert content strategist specializing in creating high-quality content.
+Your task is to enhance the user's basic prompt into a detailed instruction that will create effective ${contentType} content.
+Focus on creating instructions that emphasize clarity, value, and appropriate style for this content type.
+The enhanced prompt should guide the AI to create content that serves the user's intent for ${contentType} format.`;
+
+    return { template, systemPrompt };
+}
+
+/**
+ * Main function to generate tailored system prompts based on content context
+ * @param {Object} context - Analyzed context from the original prompt
+ * @returns {string} - System prompt for the AI
+ */
+function generateTailoredSystemPrompt(context) {
+    // Get the appropriate template and system prompt base
+    const { template, systemPrompt: baseSystemPrompt } = routeToTemplate(context);
+
+    // Get the appropriate content type config, default to blog if not found
+    const contentConfig = CONTENT_TYPES[context.contentType] || CONTENT_TYPES.blog;
+
+    // Select a specific content framework
+    const framework = selectContentFramework(context);
+    let frameworkText = '';
+
+    if (framework) {
+        frameworkText = `
+CONTENT FRAMEWORK:
+When crafting the enhanced prompt, explicitly instruct the AI to use the ${framework.name} framework (${framework.description}). Include these specific steps:
+${framework.structure.map((step, i) => `${i + 1}. ${step}`).join('\n')}`;
+    }
+
+    // Generate SEO guidance for blog content
+    const seoGuidance = context.contentType === 'blog' ? generateSEOGuidance(context) : '';
+
+    // Generate count specification
+    const countSpec = generateCountSpecification(context, contentConfig);
+
+    // Template guidance based on the selected template
+    let templateGuidance = '';
+    if (template) {
+        templateGuidance = `
+CONTENT TEMPLATE RECOMMENDATION:
+Consider using this template structure for the ${context.contentType} about ${context.topic}:
+
+${template.content}
+
+You can adapt this template to fit the specific requirements of the user's request.`;
+    }
+
+    // Twitter-specific guidance to emphasize character limits
+    let platformSpecificGuidance = '';
+    if (context.isTwitter || context.platform === 'twitter' || context.contentType === 'twitter') {
+        platformSpecificGuidance = `
+TWITTER/X SPECIFIC GUIDANCE:
+- The output MUST fit within Twitter's 280 character limit
+- Focus on one key insight rather than covering multiple points
+- Make it quotable and memorable
+- Avoid hashtags unless absolutely necessary
+- Do not structure as a thread`;
+    } else if (context.platform === 'linkedin' || context.contentType === 'linkedin') {
+        platformSpecificGuidance = `
+LINKEDIN SPECIFIC GUIDANCE:
+- Structure for mobile reading with short paragraphs (2-3 sentences max)
+- Use professional but conversational tone
+- Focus on providing specific insights rather than general advice
+- Avoid clichéd openings like "I'm excited to share"
+- Use minimal formatting for better readability`;
+    }
+
+    // Generate the complete system prompt
+    return `${baseSystemPrompt}
+
+The user's original prompt is: "${context.original}"
+
+I've identified this as primarily related to ${context.subject} content, intended for ${contentConfig.name} format, with the main purpose being to ${context.intent}.
+
+Create an enhanced prompt that is:
+1. Highly specific to this exact request and format (${contentConfig.name})
+2. Tailored to the unique characteristics of the subject matter (${context.subject})
+3. Optimized for the specific medium (${contentConfig.name})
+4. Structured to elicit the most sophisticated and valuable response
+
+The enhanced prompt MUST include:
+- A clear role assignment for the AI that matches the ${contentConfig.name} format
+- A precise content goal that expands intelligently on the user's request
+- Detailed instructions about tone, style, structure, and formatting
+- Specific content length guidance of ${countSpec}
+- Relevant context and nuance that the original prompt lacks
+- Guidance on what to avoid (common AI patterns, overused phrases, etc.)
+${frameworkText}
+${seoGuidance}
+${templateGuidance}
+${platformSpecificGuidance}
+
+FORMAT-SPECIFIC GUIDANCE:
+${contentConfig.formatGuidance}
+
+STYLE GUIDANCE:
+${contentConfig.styleGuidance}
+
+PATTERNS TO AVOID:
+${contentConfig.avoidPatterns}
+
+IMPORTANT REQUIREMENTS:
+- Do NOT use generic templates - the entire response should be custom-crafted for this specific request
+- Never include example content that the AI should mimic - this leads to repetitive, AI-sounding results
+- Don't use vague instructions like "write engaging content" - be specific about HOW to make it engaging
+- Always include a specific framework or structure that the AI should follow, with clear steps
+- Focus on making the prompt detailed and directive enough that even a basic AI could produce excellent results
+- The enhanced prompt should be something the user could copy and paste directly into ChatGPT or Claude
+- NEVER include statements like "Start with..." or "Begin by..." as these lead to AI literally including these phrases
+
+The enhanced prompt must instruct the AI to:
+• Write humanized content using storytelling approaches with real-world examples
+• Avoid generic examples and provide unique insights not readily available online
+• Use appropriate format and structure for the specific content type
+• Cover all important aspects of the topic comprehensively
+• Continue in depth if reaching character limits
+• Avoid using "—" between words as fillers
+• Never use AI-sounding, marketing, or sales-pitch style language
+• Write consistently in ACTIVE VOICE`;
+}
 
 /**
  * Cleans Markdown formatting from text
@@ -995,7 +1331,7 @@ function sanitizeInput(text) {
 }
 
 /**
- * Detects context and intent from the original prompt
+ * Detects context and intent from the original prompt with improved platform detection
  * @param {string} promptText - The original prompt text
  * @returns {Object} - Context information about the prompt
  */
@@ -1023,92 +1359,223 @@ function analyzePromptContext(promptText) {
         }
     }
 
-    // Detect medium/platform
+    // IMPROVED PLATFORM DETECTION - Fix priority and specificity issues
+
+    // Check for explicit platform mentions first (most specific)
+    const explicitPlatform =
+        lowerPrompt.includes('linkedin') ? 'linkedin' :
+            lowerPrompt.includes('twitter') || lowerPrompt.includes('tweet') || lowerPrompt.includes('x post') ? 'twitter' :
+                lowerPrompt.includes('blog post') || lowerPrompt.includes('article') ? 'blog' :
+                    lowerPrompt.includes('email') || lowerPrompt.includes('newsletter') ? 'email' :
+                        lowerPrompt.includes('facebook') ? 'facebook' :
+                            lowerPrompt.includes('instagram') ? 'instagram' : null;
+
+    // If explicit platform found, use it directly
+    if (explicitPlatform) {
+        const platform = explicitPlatform;
+
+        // Get detailed platform information
+        const platformDetails = {
+            linkedin: {
+                name: 'LinkedIn',
+                contentType: 'linkedin',
+                maxLength: 3000,
+                isCharacterLimited: true,
+                features: ['professional', 'business', 'career'],
+                bestFormats: ['text', 'short-form', 'professional']
+            },
+            twitter: {
+                name: 'Twitter/X',
+                contentType: 'twitter',
+                maxLength: 280,
+                isCharacterLimited: true,
+                features: ['brevity', 'hashtags', 'viral'],
+                bestFormats: ['concise', 'punchy', 'memorable']
+            },
+            blog: {
+                name: 'Blog',
+                contentType: 'blog',
+                maxLength: null,
+                isCharacterLimited: false,
+                features: ['long-form', 'detailed', 'explanatory'],
+                bestFormats: ['article', 'tutorial', 'guide']
+            },
+            email: {
+                name: 'Email',
+                contentType: 'email',
+                maxLength: null,
+                isCharacterLimited: false,
+                features: ['direct', 'personalized', 'actionable'],
+                bestFormats: ['newsletter', 'announcement', 'update']
+            },
+            facebook: {
+                name: 'Facebook',
+                contentType: 'social',
+                maxLength: 63206,
+                isCharacterLimited: true,
+                features: ['engagement', 'community', 'multimedia'],
+                bestFormats: ['conversational', 'engaging', 'shareable']
+            },
+            instagram: {
+                name: 'Instagram',
+                contentType: 'social',
+                maxLength: 2200,
+                isCharacterLimited: true,
+                features: ['visual', 'trendy', 'lifestyle'],
+                bestFormats: ['caption', 'story', 'reel']
+            }
+        };
+
+        // If we have detailed information for this platform, use it
+        if (platformDetails[platform]) {
+            return {
+                platform: platform,
+                platformDetails: platformDetails[platform],
+                contentType: platformDetails[platform].contentType,
+                isTwitter: platform === 'twitter',
+                isLinkedIn: platform === 'linkedin',
+                isBlog: platform === 'blog',
+                isEmail: platform === 'email',
+                isSocialMedia: ['twitter', 'facebook', 'instagram', 'linkedin'].includes(platform),
+                isCharacterLimited: platformDetails[platform].isCharacterLimited,
+                maxLength: platformDetails[platform].maxLength,
+                // Get the rest of the context information
+                subject: detectSubject(lowerPrompt),
+                intent: detectIntent(lowerPrompt),
+                keywords: extractKeywords(lowerPrompt),
+                usePreferredStyle: shouldUsePreferredStyle(platform, detectSubject(lowerPrompt)),
+                topic: extractTopic(promptText),
+                userSpecifiedWordCount,
+                isCharacterCount,
+                original: promptText
+            };
+        }
+    }
+
+    // If no explicit platform, use generic detection (less specific)
     const platforms = {
-        linkedin: lowerPrompt.includes('linkedin') ||
-            (lowerPrompt.includes('post') && !lowerPrompt.includes('blog post')) ||
-            lowerPrompt.includes('professional network'),
-        blog: lowerPrompt.includes('blog') || lowerPrompt.includes('article') || lowerPrompt.includes('post about'),
-        email: lowerPrompt.includes('email') || lowerPrompt.includes('message') || lowerPrompt.includes('newsletter'),
+        // Note: We've removed the problematic condition for LinkedIn
+        linkedin: lowerPrompt.includes('professional network') || lowerPrompt.includes('professional post'),
+        blog: lowerPrompt.includes('article') || lowerPrompt.includes('post about'),
+        email: lowerPrompt.includes('message') || lowerPrompt.includes('mail'),
         technical: lowerPrompt.includes('technical') || lowerPrompt.includes('documentation') || lowerPrompt.includes('code'),
         creative: lowerPrompt.includes('story') || lowerPrompt.includes('fiction') || lowerPrompt.includes('creative'),
         academic: lowerPrompt.includes('essay') || lowerPrompt.includes('paper') || lowerPrompt.includes('research'),
         business: lowerPrompt.includes('business') || lowerPrompt.includes('proposal') || lowerPrompt.includes('report'),
-        social: lowerPrompt.includes('tweet') || lowerPrompt.includes('facebook') || lowerPrompt.includes('instagram'),
-        twitter: lowerPrompt.includes('tweet') || lowerPrompt.includes('twitter') || lowerPrompt.includes('x post')
+        social: lowerPrompt.includes('facebook') || lowerPrompt.includes('instagram')
     };
 
-    // Detect primary subject matter
-    const subjects = {
-        ai: lowerPrompt.includes('ai') || lowerPrompt.includes('artificial intelligence') || lowerPrompt.includes('machine learning'),
-        technology: lowerPrompt.includes('tech') || lowerPrompt.includes('software') || lowerPrompt.includes('digital'),
-        business: lowerPrompt.includes('business') || lowerPrompt.includes('company') || lowerPrompt.includes('startup'),
-        science: lowerPrompt.includes('science') || lowerPrompt.includes('research') || lowerPrompt.includes('study'),
-        health: lowerPrompt.includes('health') || lowerPrompt.includes('medical') || lowerPrompt.includes('wellness'),
-        finance: lowerPrompt.includes('finance') || lowerPrompt.includes('money') || lowerPrompt.includes('investment'),
-        education: lowerPrompt.includes('education') || lowerPrompt.includes('learning') || lowerPrompt.includes('teaching'),
-        marketing: lowerPrompt.includes('marketing') || lowerPrompt.includes('brand') || lowerPrompt.includes('advertising'),
-        leadership: lowerPrompt.includes('leadership') || lowerPrompt.includes('management') || lowerPrompt.includes('executive')
-    };
-
-    // Detect intent/purpose
-    const intents = {
-        inform: lowerPrompt.includes('explain') || lowerPrompt.includes('describe') || lowerPrompt.includes('information'),
-        persuade: lowerPrompt.includes('convince') || lowerPrompt.includes('persuade') || lowerPrompt.includes('sell'),
-        entertain: lowerPrompt.includes('entertain') || lowerPrompt.includes('amuse') || lowerPrompt.includes('funny'),
-        instruct: lowerPrompt.includes('guide') || lowerPrompt.includes('how to') || lowerPrompt.includes('steps'),
-        analyze: lowerPrompt.includes('analyze') || lowerPrompt.includes('examine') || lowerPrompt.includes('review'),
-        inspire: lowerPrompt.includes('inspire') || lowerPrompt.includes('motivate') || lowerPrompt.includes('encourage')
-    };
-
-    // Identify keywords to extract topics
-    const promptWords = lowerPrompt.split(/\s+/)
-        .filter(word => word.length > 3) // Filter out short words
-        .filter(word => !['write', 'about', 'create', 'make', 'generate', 'with', 'that', 'this'].includes(word)); // Filter common instruction words
-
-    // Determine if this should use preferred style
-    const shouldUsePreferredStyle = (
-        // LinkedIn posts are great candidates for the preferred format
-        platforms.linkedin ||
-        // Twitter posts
-        platforms.twitter ||
-        // Professional/business content with reasonable length
-        (subjects.business && !platforms.technical) ||
-        // Leadership and thought leadership content
-        subjects.leadership ||
-        // Marketing content that needs to be concise and impactful
-        subjects.marketing ||
-        // AI content (since your example is about AI)
-        (subjects.ai && (platforms.linkedin || platforms.blog))
-    );
-
-    // Extract topic from the prompt - improved to remove prefixes like "a blog post on..."
-    let topic = promptText
-        .replace(/^(?:write|create|draft|make|generate|prepare|produce|compose|develop|craft)/i, '')
-        .replace(/^(?:a|an|the)\s+/i, '')
-        .replace(/^(?:about|on|regarding|concerning)\s+/i, '')
-        .replace(/^(?:a\s+blog\s+post\s+(?:about|on)\s+|write\s+(?:a\s+)?blog\s+(?:about|on)\s+)/i, '') // Remove "a blog post on"
-        .replace(/^["'](.+)["']\s*:/i, '$1:') // Remove quotes around the topic but keep colons
-        .replace(/^["'](.+)["']$/i, '$1') // Remove quotes around the topic
-        .trim();
-
-    // If title has "A Comprehensive Guide" pattern, clean that too if it's duplicated
-    if (topic.match(/^.*:\s*A\s+Comprehensive\s+Guide$/i)) {
-        topic = topic.replace(/:\s*A\s+Comprehensive\s+Guide$/i, '');
+    // Generic post detection as fallback
+    if (lowerPrompt.includes('post') && !Object.values(platforms).some(v => v)) {
+        // Default to blog post if just "post" is mentioned without other indicators
+        platforms.blog = true;
     }
 
-    // If no clear topic, use the original prompt
-    if (!topic || topic.length < 5) {
-        topic = promptText;
+    // Helper functions
+    function detectSubject(lowerPrompt) {
+        const subjects = {
+            ai: lowerPrompt.includes('ai') || lowerPrompt.includes('artificial intelligence') || lowerPrompt.includes('machine learning'),
+            technology: lowerPrompt.includes('tech') || lowerPrompt.includes('software') || lowerPrompt.includes('digital'),
+            business: lowerPrompt.includes('business') || lowerPrompt.includes('company') || lowerPrompt.includes('startup'),
+            science: lowerPrompt.includes('science') || lowerPrompt.includes('research') || lowerPrompt.includes('study'),
+            health: lowerPrompt.includes('health') || lowerPrompt.includes('medical') || lowerPrompt.includes('wellness'),
+            finance: lowerPrompt.includes('finance') || lowerPrompt.includes('money') || lowerPrompt.includes('investment'),
+            education: lowerPrompt.includes('education') || lowerPrompt.includes('learning') || lowerPrompt.includes('teaching'),
+            marketing: lowerPrompt.includes('marketing') || lowerPrompt.includes('brand') || lowerPrompt.includes('advertising'),
+            leadership: lowerPrompt.includes('leadership') || lowerPrompt.includes('management') || lowerPrompt.includes('executive')
+        };
+
+        return Object.keys(subjects).find(key => subjects[key]) || 'general';
     }
 
+    function detectIntent(lowerPrompt) {
+        const intents = {
+            inform: lowerPrompt.includes('explain') || lowerPrompt.includes('describe') || lowerPrompt.includes('information'),
+            persuade: lowerPrompt.includes('convince') || lowerPrompt.includes('persuade') || lowerPrompt.includes('sell'),
+            entertain: lowerPrompt.includes('entertain') || lowerPrompt.includes('amuse') || lowerPrompt.includes('funny'),
+            instruct: lowerPrompt.includes('guide') || lowerPrompt.includes('how to') || lowerPrompt.includes('steps'),
+            analyze: lowerPrompt.includes('analyze') || lowerPrompt.includes('examine') || lowerPrompt.includes('review'),
+            inspire: lowerPrompt.includes('inspire') || lowerPrompt.includes('motivate') || lowerPrompt.includes('encourage')
+        };
+
+        return Object.keys(intents).find(key => intents[key]) || 'inform';
+    }
+
+    function extractKeywords(lowerPrompt) {
+        return lowerPrompt.split(/\s+/)
+            .filter(word => word.length > 3)
+            .filter(word => !['write', 'about', 'create', 'make', 'generate', 'with', 'that', 'this'].includes(word))
+            .slice(0, 5);
+    }
+
+    function shouldUsePreferredStyle(platform, subject) {
+        return (
+            platform === 'linkedin' ||
+            platform === 'twitter' ||
+            (subject === 'business' && platform !== 'technical') ||
+            subject === 'leadership' ||
+            subject === 'marketing' ||
+            (subject === 'ai' && (platform === 'linkedin' || platform === 'blog'))
+        );
+    }
+
+    function extractTopic(promptText) {
+        let topic = promptText
+            .replace(/^(?:write|create|draft|make|generate|prepare|produce|compose|develop|craft)/i, '')
+            .replace(/^(?:a|an|the)\s+/i, '')
+            .replace(/^(?:about|on|regarding|concerning)\s+/i, '')
+            .replace(/^(?:a\s+blog\s+post\s+(?:about|on)\s+|write\s+(?:a\s+)?blog\s+(?:about|on)\s+)/i, '')
+            .replace(/^(?:a\s+linkedin\s+post\s+(?:about|on)\s+|write\s+(?:a\s+)?linkedin\s+(?:about|on)\s+)/i, '')
+            .replace(/^(?:a\s+twitter\s+post\s+(?:about|on)\s+|write\s+(?:a\s+)?twitter\s+(?:about|on)\s+)/i, '')
+            .replace(/^(?:a\s+tweet\s+(?:about|on)\s+|write\s+(?:a\s+)?tweet\s+(?:about|on)\s+)/i, '')
+            .replace(/^["'](.+)["']\s*:/i, '$1:')
+            .replace(/^["'](.+)["']$/i, '$1')
+            .trim();
+
+        if (topic.match(/^.*:\s*A\s+Comprehensive\s+Guide$/i)) {
+            topic = topic.replace(/:\s*A\s+Comprehensive\s+Guide$/i, '');
+        }
+
+        if (!topic || topic.length < 5) {
+            topic = promptText;
+        }
+
+        return topic;
+    }
+
+    // Determine platform
+    const platform = Object.keys(platforms).find(key => platforms[key]) || 'general';
+
+    // Determine content type based on platform
+    const contentTypeMap = {
+        linkedin: 'linkedin',
+        blog: 'blog',
+        email: 'email',
+        technical: 'technical',
+        creative: 'blog',
+        academic: 'blog',
+        business: 'business',
+        social: 'social',
+        general: 'blog'
+    };
+
+    const contentType = contentTypeMap[platform] || 'blog';
+
+    // Return the complete context object
     return {
-        platform: Object.keys(platforms).find(key => platforms[key]) || 'general',
-        subject: Object.keys(subjects).find(key => subjects[key]) || 'general',
-        intent: Object.keys(intents).find(key => intents[key]) || 'inform',
-        keywords: promptWords.slice(0, 5), // Top 5 keywords
-        usePreferredStyle: shouldUsePreferredStyle,
-        topic: topic,
+        platform,
+        contentType,
+        isTwitter: explicitPlatform === 'twitter', // Set explicitly if we detected Twitter earlier
+        isLinkedIn: platform === 'linkedin',
+        isBlog: platform === 'blog',
+        isEmail: platform === 'email',
+        isSocialMedia: ['linkedin', 'social'].includes(platform) || explicitPlatform === 'twitter',
+        isCharacterLimited: ['linkedin', 'social'].includes(platform) || explicitPlatform === 'twitter',
+        subject: detectSubject(lowerPrompt),
+        intent: detectIntent(lowerPrompt),
+        keywords: extractKeywords(lowerPrompt),
+        usePreferredStyle: shouldUsePreferredStyle(platform, detectSubject(lowerPrompt)),
+        topic: extractTopic(promptText),
         userSpecifiedWordCount,
         isCharacterCount,
         original: promptText
@@ -1868,6 +2335,23 @@ Please write a comprehensive piece that would be valuable for the target audienc
     // Generate the tailored system prompt
     const systemPrompt = generateTailoredSystemPrompt(context);
 
+    // STEP 1: Check if this is a general/creative request that shouldn't use templates
+    const isGeneralCreative = detectGeneralCreativeRequest(promptText, lowerPrompt);
+
+    if (isGeneralCreative) {
+        // For general creative requests, return minimal context
+        // that won't trigger platform-specific templates
+        return {
+            platform: 'general',
+            contentType: 'creative',
+            isGeneralRequest: true,
+            topic: extractTopic(promptText),
+            original: promptText,
+            // Important: Signal that this shouldn't use structured templates
+            skipTemplates: true
+        };
+    }
+
     // Check if OpenAI client is properly initialized
     if (!openai) {
         console.error('OpenAI client is not initialized. Check your API key and configuration.');
@@ -1928,6 +2412,63 @@ Please write a comprehensive piece that would be valuable for the target audienc
         return generateFallbackPrompt(context);
     }
 }
+
+/**
+ * Detect if the prompt is a general creative request that shouldn't use templates
+ * @param {string} promptText - Original prompt text
+ * @param {string} lowerPrompt - Lowercase prompt text
+ * @returns {boolean} - True if this is a general creative request
+ */
+function detectGeneralCreativeRequest(promptText, lowerPrompt) {
+    // Detect narrative or creative writing requests
+    const narrativePatterns = [
+        // Storytelling indicators
+        /\b(?:story|narrative|tale|fiction|scenario|hypothetical)\b/i,
+
+        // Personal requests
+        /\bi (?:want|need|would like) (?:to|you to)/i,
+
+        // Character limits without platform mentions
+        /\b(?:under|within|less than) \d+ (?:character|word)/i,
+
+        // Creative scenarios
+        /\bwrite (?:a|an) (?!article|blog|post|email)[\w\s]+/i,
+
+        // Humor or specific tone requests
+        /\b(?:funny|humorous|hilarious|satirical|absurd|diabolical|clever)\b/i,
+
+        // Specific personas or voices
+        /\bin the (?:style|voice|tone) of\b/i,
+        /\blike (?:a|an)\b/i,
+
+        // Example-following patterns
+        /\bsimilar to (?:this|that|the following)\b/i,
+        /\bsame (?:tone|style|voice|approach) as\b/i,
+
+        // References to examples
+        /\bfor (?:example|reference|instance)\b/i,
+        /\bhere['']s an example\b/i
+    ];
+
+    // Check if any narrative patterns match
+    const isNarrative = narrativePatterns.some(pattern => pattern.test(promptText));
+
+    // Check if this contains an example (often indicates a creative request)
+    const containsExample = promptText.includes('"') || promptText.includes('"') || promptText.includes('"');
+
+    // Check for specific platform indicators (if these exist, it's probably NOT a general request)
+    const hasSpecificPlatform =
+        lowerPrompt.includes('twitter') ||
+        lowerPrompt.includes('tweet') ||
+        lowerPrompt.includes('linkedin') ||
+        lowerPrompt.includes('blog post') ||
+        lowerPrompt.includes('article for');
+
+    // Determine if this is a general creative request
+    return (isNarrative || containsExample) && !hasSpecificPlatform;
+}
+
+
 
 /**
 * Enhance a prompt using Mistral AI
@@ -2129,7 +2670,7 @@ async function enhancePromptWithProvider(sanitizedPrompt) {
 }
 
 /**
- * Enhanced prompt enhancement with multiple retry strategies
+ * Enhanced prompt generation with improved platform detection
  * @param {Object} params - Prompt enhancement parameters
  * @returns {Promise<string>} Enhanced prompt
  */
@@ -2150,13 +2691,32 @@ async function enhancePrompt(params) {
     // Sanitize the input
     const sanitizedPrompt = sanitizeInput(originalPrompt);
 
+    // Analyze context with improved general detection
+    const context = analyzePromptContext(sanitizedPrompt);
+
+    // If this is a general/creative request, use a simplified approach
+    if (context.skipTemplates) {
+        console.log('Detected general creative request, using simplified enhancement');
+        return enhanceGeneralPrompt(context);
+    }
     try {
         console.log(`Processing prompt: "${sanitizedPrompt.substring(0, 50)}${sanitizedPrompt.length > 50 ? '...' : ''}"`);
 
-        // Analyze the prompt for context
+        // Analyze the prompt with improved platform detection
         const context = analyzePromptContext(sanitizedPrompt);
 
-        // Generate system prompt
+        // Log the detected context for debugging
+        console.log('Detected context:', {
+            platform: context.platform,
+            contentType: context.contentType,
+            isTwitter: context.isTwitter,
+            isLinkedIn: context.isLinkedIn,
+            isBlog: context.isBlog,
+            subject: context.subject,
+            intent: context.intent
+        });
+
+        // Generate system prompt with improved content routing
         const systemPrompt = generateTailoredSystemPrompt(context);
 
         // Try OpenAI enhancement with increased timeout
@@ -2188,14 +2748,143 @@ async function enhancePrompt(params) {
 
             console.warn('Using fallback prompt due to API error');
             const context = analyzePromptContext(sanitizedPrompt);
-            return context.usePreferredStyle
-                ? generatePreferredStylePrompt(context)
-                : generateFallbackPrompt(context);
+
+            // Different fallbacks based on detected platform
+            if (context.isTwitter || context.platform === 'twitter') {
+                return generateTwitterFallbackPrompt(context);
+            } else if (context.isLinkedIn || context.platform === 'linkedin') {
+                return generateLinkedInFallbackPrompt(context);
+            } else {
+                // Blog or general fallback
+                return context.usePreferredStyle
+                    ? generatePreferredStylePrompt(context)
+                    : generateFallbackPrompt(context);
+            }
         }
 
         // For other errors, re-throw to let the controller handle
         throw error;
     }
+}
+
+/**
+ * Handle general or creative prompts without using templates
+ * @param {Object} context - Context information
+ * @returns {Promise<string>} Enhanced prompt
+ */
+async function enhanceGeneralPrompt(context) {
+    // Create a simple system prompt that doesn't use templates
+    const systemPrompt = `You are a helpful AI assistant enhancing user prompts to be more effective.
+
+For this general or creative request: "${context.original}"
+
+Create an enhanced prompt that:
+1. Maintains the original intent and creativity of the request
+2. Adds helpful context and details without changing the core request
+3. Provides guidance on tone, style, and approach
+4. Avoids using rigid templates or formulaic structures
+5. Preserves any examples or references the user provided
+
+Your enhancement should feel like a helpful elaboration of the original request, not a transformation into a different format. Keep the enhancement conversational and natural.
+
+IMPORTANT: Do not try to convert this into a specific content format like a blog post, LinkedIn post, or tweet. The user is looking for a creative response that matches their specific request.`;
+
+    try {
+        // Use OpenAI to enhance the prompt with the simplified system prompt
+        const enhancedPrompt = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [
+                { role: "system", content: systemPrompt },
+                {
+                    role: "user",
+                    content: `Please enhance this creative request: "${context.original}"`
+                }
+            ],
+            temperature: 0.7,
+            max_tokens: 800
+        });
+
+        return processEnhancedPrompt(enhancedPrompt.choices[0]?.message?.content);
+    } catch (error) {
+        console.error('General enhancement error:', error);
+
+        // Simple fallback for general requests
+        return `You are a creative writer responding to this request: "${context.original}"
+
+Please provide a creative, engaging response that:
+1. Maintains the same tone and style indicated in the request
+2. Includes the same level of humor, creativity, or specificity as requested
+3. Follows any examples or references provided
+4. Feels natural and conversational, not like an AI template
+
+Your response should feel authentic and match the spirit of the request without sounding like an AI-generated template.`;
+    }
+}
+
+/**
+ * Generate a Twitter-specific fallback prompt
+ * @param {Object} context - Context information
+ * @returns {string} Twitter fallback prompt
+ */
+function generateTwitterFallbackPrompt(context) {
+    const topic = context.topic
+        .replace(/^(?:a\s+twitter\s+post\s+(?:about|on)\s+|write\s+(?:a\s+)?tweet\s+(?:about|on)\s+)/i, '')
+        .replace(/^["'](.+)["']$/i, '$1')
+        .trim();
+
+    return `You are a social media expert writing a concise, impactful Twitter/X post on ${topic}.
+
+CRITICAL REQUIREMENTS:
+• Character limit: Your entire post MUST be under 280 characters
+• Focus on a single powerful insight about ${topic}
+• Use direct, specific language without fluff
+• Make it immediately valuable to your target audience
+• Structure for memorability and impact
+
+DO NOT:
+• Use hashtags unless absolutely necessary
+• Structure as a thread with "Thread 🧵" indicators
+• Use introductory phrases like "Here's a thought on..."
+• Include engagement bait like "Thoughts?" or "Agree?"
+
+Write in a professional but conversational tone that sounds like an actual person, not marketing copy. Focus on providing specific value rather than general statements. Make the tweet quotable and worth sharing.`;
+}
+
+/**
+ * Generate a LinkedIn-specific fallback prompt
+ * @param {Object} context - Context information
+ * @returns {string} LinkedIn fallback prompt
+ */
+function generateLinkedInFallbackPrompt(context) {
+    const topic = context.topic
+        .replace(/^(?:a\s+linkedin\s+post\s+(?:about|on)\s+|write\s+(?:a\s+)?linkedin\s+(?:about|on)\s+)/i, '')
+        .replace(/^["'](.+)["']$/i, '$1')
+        .trim();
+
+    return `You are a LinkedIn content specialist writing a professional, value-focused post on ${topic}.
+
+CONTENT STRUCTURE:
+• Start with a powerful hook that challenges conventional thinking about ${topic}
+• Use short paragraphs (2-3 sentences) with line breaks for mobile readability
+• Include ONE specific insight or experience that demonstrates expertise
+• End with a thoughtful takeaway that provides immediate value to the reader
+• Keep the entire post between 200-300 words maximum
+
+STYLE GUIDANCE:
+• Write in a natural, first-person voice that sounds like a real professional
+• Balance expert knowledge with conversational tone
+• Use specific examples and data points rather than general advice
+• Avoid LinkedIn clichés like "I'm excited to share" or "I'm humbled by"
+• Structure content to be easily scannable on mobile devices
+
+AVOID THESE PATTERNS:
+• Skip "Agree?" or "Thoughts?" at the end of posts
+• Don't use corporate jargon, buzzwords, or excessive hashtags
+• Avoid writing that sounds like a press release or marketing copy
+• Skip the "broetry" format of one sentence per line throughout
+• Don't create formulaic posts that follow obvious templates
+
+Focus on providing genuine value that showcases professional expertise in ${topic}.`;
 }
 
 module.exports = {
