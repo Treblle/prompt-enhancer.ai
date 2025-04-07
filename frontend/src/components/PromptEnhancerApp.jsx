@@ -5,6 +5,46 @@ import apiService from '../services/apiService';
 import Modal from './Modal';
 import TypewriterText from './TypewriterText';
 
+const MaximizeButton = ({ onClick, size = 'sm', label = 'Maximize', className = '' }) => {
+    const sizeClasses = {
+        sm: 'h-3 w-3',
+        md: 'h-4 w-4',
+        lg: 'h-5 w-5'
+    };
+
+    return (
+        <button
+            onClick={onClick}
+            className={`maximize-btn p-1 rounded-md transition-all duration-300 
+                bg-gray-200 dark:bg-gray-700 
+                text-gray-700 dark:text-gray-300 
+                hover:bg-indigo-500 hover:text-white 
+                hover:shadow-md active:shadow-inner group ${className}`}
+            aria-label={label}
+            title={label}
+        >
+            <Maximize2
+                className={`${sizeClasses[size]} transform transition-transform duration-300 group-hover:rotate-90`}
+            />
+        </button>
+    );
+};
+
+const ProviderButton = ({ onClick, icon: Icon, children, className = '' }) => {
+    return (
+        <button
+            onClick={onClick}
+            className={`provider-btn action-btn text-xs flex items-center px-1.5 py-0.5 rounded transition-all duration-300 
+                bg-gradient-to-r from-blue-600 to-indigo-800 text-white 
+                hover:from-blue-700 hover:to-indigo-900 
+                hover:scale-105 active:scale-95 group ${className}`}
+        >
+            <Icon className="h-3 w-3 mr-1.5 group-hover:rotate-6 transition-transform duration-300" />
+            <span>{children}</span>
+        </button>
+    );
+};
+
 const PromptEnhancerApp = () => {
     const [originalPrompt, setOriginalPrompt] = useState('');
     const [enhancedPrompt, setEnhancedPrompt] = useState('');
@@ -156,14 +196,10 @@ const PromptEnhancerApp = () => {
                             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Original Prompt
                             </label>
-                            <button
+                            <MaximizeButton
                                 onClick={() => setInputModalOpen(true)}
-                                className="p-1 rounded-md transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-                                aria-label="Maximize input"
-                                title="Maximize"
-                            >
-                                <Maximize2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                            </button>
+                                label="Maximize input"
+                            />
                         </div>
                         <textarea
                             value={originalPrompt}
@@ -178,7 +214,8 @@ const PromptEnhancerApp = () => {
                         <button
                             onClick={enhancePrompt}
                             disabled={isLoading}
-                            className="px-3 sm:px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-800 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-150 flex items-center disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                            className="px-3 sm:px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-800 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-150 flex items-center disabled:opacity-50 disabled:cursor-not-allowed text-sm 
+                                hover:scale-105 active:scale-95 group"
                         >
                             {isLoading ? (
                                 <>
@@ -190,7 +227,7 @@ const PromptEnhancerApp = () => {
                                 </>
                             ) : (
                                 <>
-                                    <Sparkles className="mr-1.5 h-3 w-3 sm:h-4 sm:w-4" />
+                                    <Sparkles className="mr-1.5 h-3 w-3 sm:h-4 sm:w-4 group-hover:rotate-6 transition-transform duration-300" />
                                     Enhance Prompt
                                 </>
                             )}
@@ -218,53 +255,44 @@ const PromptEnhancerApp = () => {
                                 {/* Only show buttons if enhancedPrompt exists */}
                                 {enhancedPrompt && (
                                     <>
-                                        <button
+                                        <MaximizeButton
                                             onClick={() => setResultModalOpen(true)}
-                                            className="text-xs flex items-center px-1.5 py-0.5 rounded transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-                                            aria-label="Maximize result"
-                                            title="Maximize"
-                                        >
-                                            <Maximize2 className="h-3 w-3" />
-                                        </button>
+                                            label="Maximize result"
+                                        />
                                         <button
                                             onClick={copyToClipboard}
-                                            className={`copy-btn action-btn action-btn-ripple text-xs flex items-center px-1.5 py-0.5 rounded transition-all duration-300 ${copied
-                                                ? "copied bg-green-500 text-white"
-                                                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                            className={`copy-btn action-btn action-btn-ripple text-xs flex items-center px-1.5 py-0.5 rounded transition-all duration-300 
+                                                hover:scale-105 active:scale-95 group ${copied
+                                                    ? "copied bg-green-500 text-white"
+                                                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
                                                 }`}
                                             aria-label="Copy to clipboard"
                                             title="Copy to clipboard"
                                         >
                                             {copied ? (
                                                 <>
-                                                    <Check className="h-3 w-3 mr-1" />
+                                                    <Check className="h-3 w-3 mr-1 group-hover:rotate-6 transition-transform duration-300" />
                                                     <span>Copied!</span>
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Copy className="h-3 w-3 mr-1" />
+                                                    <Copy className="h-3 w-3 mr-1 group-hover:rotate-6 transition-transform duration-300" />
                                                     <span>Copy</span>
                                                 </>
                                             )}
                                         </button>
-                                        <button
+                                        <ProviderButton
                                             onClick={openClaude}
-                                            className="provider-btn action-btn text-xs flex items-center px-1.5 py-0.5 rounded transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-800 text-white hover:from-blue-700 hover:to-indigo-900"
-                                            aria-label="Open in Claude"
-                                            title="Open in Claude"
+                                            icon={ExternalLink}
                                         >
-                                            <ExternalLink className="h-3 w-3 mr-1" />
-                                            <span>Claude</span>
-                                        </button>
-                                        <button
+                                            Claude
+                                        </ProviderButton>
+                                        <ProviderButton
                                             onClick={openChatGPT}
-                                            className="provider-btn action-btn text-xs flex items-center px-1.5 py-0.5 rounded transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-800 text-white hover:from-blue-700 hover:to-indigo-900"
-                                            aria-label="Open in ChatGPT"
-                                            title="Open in ChatGPT"
+                                            icon={ExternalLink}
                                         >
-                                            <ExternalLink className="h-3 w-3 mr-1" />
-                                            <span>ChatGPT</span>
-                                        </button>
+                                            ChatGPT
+                                        </ProviderButton>
                                     </>
                                 )}
                             </div>

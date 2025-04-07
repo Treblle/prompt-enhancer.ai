@@ -37,12 +37,24 @@ module.exports = {
             },
             animation: {
                 'spin-slow': 'spin 10s linear infinite',
-                'gradient': 'gradient 10s ease-in-out infinite'
+                'gradient': 'gradient 10s ease-in-out infinite',
+                'slide-up': 'slide-up 0.3s ease-out forwards',
+                'gradient-border': 'gradient 3s ease-in-out infinite'
             },
             keyframes: {
                 gradient: {
                     '0%, 100%': { backgroundPosition: '0% 50%' },
                     '50%': { backgroundPosition: '100% 50%' },
+                },
+                'slide-up': {
+                    '0%': {
+                        opacity: '0',
+                        transform: 'translateY(10px) translateX(-50%) scale(0.95)'
+                    },
+                    '100%': {
+                        opacity: '1',
+                        transform: 'translateY(0) translateX(-50%) scale(1)'
+                    },
                 }
             },
             transitionProperty: {
