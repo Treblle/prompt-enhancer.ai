@@ -1,8 +1,18 @@
 require('dotenv').config();
+require('events').EventEmitter.defaultMaxListeners = 20;
 const app = require('./app');
 const config = require('./src/config/config');
 const fs = require('fs');
 const path = require('path');
+
+// Set timeout for all requests (2 minutes)
+app.use((req, res, next) => {
+    res.setTimeout(120000, () => {
+        console.error('Request has timed out.');
+        res.status(408).send('Request Timeout');
+    });
+    next();
+});
 
 // Define the port
 const PORT = process.env.PORT || 5000;
@@ -120,7 +130,7 @@ if (!isValidConfig) {
 }
 
 // Start the server (only once)
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log('\n----------------------------------------');
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log('----------------------------------------');
@@ -129,5 +139,8 @@ app.listen(PORT, () => {
     console.log(`🔑 Environment: ${process.env.NODE_ENV}`);
     console.log('----------------------------------------\n');
 });
+
+server.timeout = 120000;
+server.keepAliveTimeout = 120000;
 
 module.exports = app;

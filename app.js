@@ -32,6 +32,12 @@ const app = express();
 // Apply security middleware with improved CSP and other protections
 applySecurityMiddleware(app);
 
+app.use((req, res, next) => {
+    req.setTimeout(120000);  // 2 minutes
+    res.setTimeout(120000);  // 2 minutes
+    next();
+});
+
 // Add CDN detection middleware with better caching
 app.use(cdnMiddleware());
 
@@ -72,11 +78,12 @@ app.use(express.json({ limit: '100kb' }));
 // CORS configuration with detailed logging
 const corsOptions = {
     origin: function (origin, callback) {
-        const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS
-            ? process.env.CORS_ALLOWED_ORIGINS.split(',')
-            : (process.env.NODE_ENV === 'development'
-                ? ['http://localhost:3000', 'http://127.0.0.1:3000']
-                : ['https://prompt-enhancer.ai', 'https://www.prompt-enhancer.ai', 'https://cdn.prompt-enhancer.ai']);
+        const allowedOrigins = [
+            'http://localhost:3000',   // Frontend development server
+            'http://127.0.0.1:3000',   // Alternative localhost
+            'http://localhost:5000',   // Backend server
+            'http://127.0.0.1:5000'    // Alternative backend localhost
+        ];
 
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
@@ -85,11 +92,9 @@ const corsOptions = {
         }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'Origin', 'Accept', 'Content-Encoding'],
-    exposedHeaders: ['Content-Encoding', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
     credentials: true,
-    optionsSuccessStatus: 200,
-    maxAge: 86400 // 24 hours
+    optionsSuccessStatus: 200
 };
 
 // Enable CORS for all routes

@@ -13,24 +13,33 @@ const router = express.Router();
  */
 router.post('/token', (req, res) => {
     try {
-        // In a real implementation, you would validate client credentials here
-        // For this simplified example, we're generating a token with minimal validation
+        console.log('Token request received', {
+            clientId: req.body.clientId || 'not-provided',
+            headers: {
+                contentType: req.headers['content-type'],
+                apiKey: req.headers['x-api-key'] ? 'Provided' : 'Not provided'
+            }
+        });
 
-        // For security, we should verify client credentials against a database
-        // Here's a simplified check using an API key from the environment
+        // For security, verify client credentials
         const { clientId, clientSecret } = req.body;
-        const apiKey = process.env.API_KEY;
 
-        // For backward compatibility, allow REACT_APP_API_KEY as fallback
+        // Get API key from env
         const validApiKey = process.env.API_KEY;
 
-        if (!clientSecret || authService.hashValue(clientSecret) !== authService.hashValue(validApiKey)) {
-            return res.status(401).json({
-                error: {
-                    code: 'invalid_credentials',
-                    message: 'Invalid client credentials'
-                }
-            });
+        if (!clientSecret) {
+            console.error('Token request missing client secret');
+            return res.status(400).json(
+                createAuthError('missing_credentials', 'Client secret is required')
+            );
+        }
+
+        // Verify API key
+        if (clientSecret !== validApiKey) {
+            console.error('Invalid client secret provided');
+            return res.status(401).json(
+                createAuthError('invalid_credentials', 'Invalid client credentials')
+            );
         }
 
         // Generate a token for the client
@@ -38,6 +47,8 @@ router.post('/token', (req, res) => {
             clientId: clientId || 'frontend-client',
             scope: 'api:access'
         });
+
+        console.log('Token generated successfully');
 
         // Return the token
         res.json({
@@ -48,14 +59,33 @@ router.post('/token', (req, res) => {
         });
     } catch (error) {
         console.error('Token generation error:', error);
-        res.status(500).json({
-            error: {
-                code: 'token_generation_failed',
-                message: 'Failed to generate token'
-            }
-        });
+        res.status(500).json(
+            createAuthError('token_generation_failed', 'Failed to generate token')
+        );
     }
 });
+
+/**
+ * Generate a standardized authentication error response
+ * @param {string} code - Error code 
+ * @param {string} message - User-friendly error message
+ * @param {Object} details - Optional additional details
+ * @returns {Object} Standardized error response object
+ */
+function createAuthError(code, message, details = null) {
+    const response = {
+        error: {
+            code,
+            message
+        }
+    };
+
+    if (details) {
+        response.error.details = details;
+    }
+
+    return response;
+}
 
 /**
  * Validate token endpoint
@@ -71,24 +101,18 @@ router.post('/validate', (req, res) => {
         const { token } = req.body;
 
         if (!token) {
-            return res.status(400).json({
-                error: {
-                    code: 'missing_token',
-                    message: 'Token is required'
-                }
-            });
+            return res.status(400).json(
+                createAuthError('missing_token', 'Token is required')
+            );
         }
 
         // Verify the token
         const payload = authService.verifyToken(token);
 
         if (!payload) {
-            return res.status(401).json({
-                error: {
-                    code: 'invalid_token',
-                    message: 'Invalid or expired token'
-                }
-            });
+            return res.status(401).json(
+                createAuthError('invalid_token', 'Invalid or expired token')
+            );
         }
 
         // Return token info
@@ -100,12 +124,9 @@ router.post('/validate', (req, res) => {
         });
     } catch (error) {
         console.error('Token validation error:', error);
-        res.status(500).json({
-            error: {
-                code: 'token_validation_failed',
-                message: 'Failed to validate token'
-            }
-        });
+        res.status(500).json(
+            createAuthError('token_validation_failed', 'Failed to validate token')
+        );
     }
 });
 

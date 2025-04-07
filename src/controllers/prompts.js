@@ -1,126 +1,273 @@
 const { v4: uuidv4 } = require('uuid');
 const promptEnhancerService = require('../services/promptEnhancerService');
-const { validateRequired, validateEnum, validateMaxLength } = require('../utils/validation');
+const { validateRequired, validateMaxLength } = require('../utils/validation');
 
-// In-memory storage for enhanced prompts (would be replaced with a database in production)
+// In-memory storage for prompts (replace with database in production)
 const promptsStorage = [];
+
+/**
+ * Validate incoming prompt request
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {boolean} - Whether validation passed
+ */
+function validatePromptRequest(req, res) {
+    const { text, format = 'structured' } = req.body;
+
+    // Check if text is provided
+    const textError = validateRequired(text, 'text');
+    if (textError) {
+        res.status(400).json({
+            error: {
+                code: 'validation_error',
+                message: textError
+            }
+        });
+        return false;
+    }
+
+    // Validate max length
+    const MAX_TEXT_LENGTH = process.env.NODE_ENV === 'production' ? 5000 : 8000;
+    const lengthError = validateMaxLength(text, MAX_TEXT_LENGTH, 'text');
+    if (lengthError) {
+        res.status(413).json({
+            error: {
+                code: 'payload_too_large',
+                message: lengthError
+            }
+        });
+        return false;
+    }
+
+    // Additional validation for format
+    const allowedFormats = ['structured', 'concise', 'detailed', 'creative'];
+    if (format && !allowedFormats.includes(format)) {
+        res.status(400).json({
+            error: {
+                code: 'invalid_format',
+                message: `Invalid format. Allowed formats are: ${allowedFormats.join(', ')}`
+            }
+        });
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Log request details for debugging
+ * @param {Object} req - Express request object
+ */
+function logRequestDetails(req) {
+    console.log('Prompt Enhancement Request Details:', {
+        timestamp: new Date().toISOString(),
+        body: {
+            // Mask the actual text to prevent logging sensitive information
+            textLength: req.body.text ? req.body.text.length : 0,
+            format: req.body.format
+        },
+        user: req.user ? {
+            id: req.user.id,
+            email: req.user.email
+        } : 'Unauthenticated',
+        ip: req.ip,
+        headers: {
+            userAgent: req.get('User-Agent'),
+            contentType: req.get('Content-Type')
+        }
+    });
+}
 
 exports.enhancePrompt = async (req, res, next) => {
     try {
-        console.log('Received request body:', req.body);
+        // Log request details
+        logRequestDetails(req);
 
-        // Start timer for performance logging
-        const startTime = Date.now();
+        // Validate the request
+        if (!validatePromptRequest(req, res)) {
+            return;
+        }
 
         const { text, format = 'structured' } = req.body;
 
-        // Validate required fields
-        const textError = validateRequired(text, 'text');
-        if (textError) {
-            return res.status(400).json({ error: textError });
-        }
+        try {
+            // Start timing the enhancement process
+            const startTime = Date.now();
+            console.log(`Starting prompt enhancement for text: ${text.substring(0, 50)}...`);
 
-        // Validate max length - enforce a stricter limit for production
-        const MAX_TEXT_LENGTH = process.env.NODE_ENV === 'production' ? 5000 : 8000;
-        if (text && text.length > MAX_TEXT_LENGTH) {
-            return res.status(413).json({
-                error: {
-                    code: 'payload_too_large',
-                    message: `The 'text' field must not exceed ${MAX_TEXT_LENGTH} characters`,
-                    param: 'text'
+            // Set a longer timeout for the response
+            res.setTimeout(120000, () => {
+                console.error('Request timed out at controller level after 120 seconds');
+                if (!res.headersSent) {
+                    res.status(408).json({
+                        error: {
+                            code: 'request_timeout',
+                            message: 'Request timed out. Your prompt might be too complex or the system is experiencing high load.',
+                            details: 'Try with a shorter or simpler prompt'
+                        }
+                    });
                 }
             });
-        }
 
-        try {
-            // Get enhanced prompt from service
+            // Enhance the prompt with improved error handling
             const enhancedText = await promptEnhancerService.enhancePrompt({
                 originalPrompt: text,
                 format
             });
 
-            // Create the prompt object with a unique ID
-            const promptObject = {
-                id: `prompt_${uuidv4()}`,
-                originalText: text,
-                enhancedText,
-                format,
-                createdAt: new Date().toISOString()
-            };
-
-            // Store the prompt (in a real app, this would be saved to a database)
-            promptsStorage.push(promptObject);
-
-            // Log performance information
+            // Calculate enhancement duration
             const duration = Date.now() - startTime;
-            console.log(`Prompt enhancement completed in ${duration}ms. Length: ${text.length} chars.`);
 
-            // Return the enhanced prompt
-            console.log('Sending response:', {
-                id: promptObject.id,
-                format: promptObject.format,
-                originalLength: promptObject.originalText.length,
-                enhancedLength: promptObject.enhancedText.length
+            // Check if we got a fallback response (usually much shorter or has telltale phrases)
+            const isFallbackResponse =
+                (enhancedText.length < 200 && text.length > 50) ||
+                enhancedText.includes('I need you to create') ||
+                (enhancedText.split('\n').length < 5 && text.length > 100);
+
+            // If it looks like a fallback when we shouldn't need one, try again with longer timeout
+            if (isFallbackResponse && text.length < 500 && duration < 30000) {
+                console.log('Detected potential fallback response, retrying with longer timeout...');
+
+                // Try one more time with longer timeout
+                const retryStartTime = Date.now();
+                const retryEnhancedText = await promptEnhancerService.enhancePrompt({
+                    originalPrompt: text,
+                    format,
+                    retryAttempt: true // Signal this is a retry
+                });
+
+                // Use retry result if it's better (longer and not a fallback pattern)
+                if (retryEnhancedText.length > enhancedText.length * 1.5 &&
+                    !retryEnhancedText.includes('I need you to create')) {
+
+                    const retryDuration = Date.now() - retryStartTime;
+                    console.log(`Retry successful in ${retryDuration}ms. Got better response.`);
+
+                    // Create prompt object with retry result
+                    const promptObject = createPromptObject(req, text, retryEnhancedText, format, retryDuration);
+                    return res.status(200).json(promptObject);
+                }
+            }
+
+            // Create prompt object
+            const promptObject = createPromptObject(req, text, enhancedText, format, duration);
+
+            // Log successful enhancement
+            console.log('Prompt Enhancement Successful:', {
+                promptId: promptObject.id,
+                duration: duration,
+                inputLength: text.length,
+                outputLength: enhancedText.length,
+                isFallback: isFallbackResponse
             });
 
+            // Return the enhanced prompt
             return res.status(200).json(promptObject);
-        } catch (serviceError) {
-            console.error('Error in prompt service:', serviceError);
 
-            // If it's a timeout error, send a helpful client response
-            if (serviceError.message && serviceError.message.includes('timed out')) {
-                return res.status(503).json({
+        } catch (serviceError) {
+            // If this is a timeout error, handle gracefully
+            if (serviceError.message.includes('timeout') || serviceError.message.includes('aborted')) {
+                console.warn('Prompt enhancement timed out, providing descriptive error to client');
+                return res.status(504).json({
                     error: {
                         code: 'enhancement_timeout',
-                        message: 'The enhancement service is currently overloaded. Please try with a shorter prompt or try again later.',
-                        details: 'This usually happens when the AI service takes too long to respond.'
+                        message: 'The server took too long to enhance your prompt',
+                        details: 'Try with a shorter or less complex prompt'
                     }
                 });
             }
 
+            // For other service errors, return a structured error response
+            console.error('Prompt Enhancement Service Error:', serviceError);
             return res.status(500).json({
                 error: {
-                    code: 'service_error',
-                    message: 'Error generating enhanced prompt',
+                    code: 'enhancement_failed',
+                    message: 'Failed to enhance prompt',
                     details: serviceError.message
                 }
             });
         }
     } catch (error) {
-        console.error('Unexpected error in enhancePrompt controller:', error);
+        // Catch any unexpected errors
+        console.error('Unexpected Error in Prompt Enhancement:', error);
         next(error);
     }
 };
 
+function createPromptObject(req, originalText, enhancedText, format, duration) {
+    return {
+        id: `prompt_${uuidv4()}`,
+        originalText,
+        enhancedText,
+        format,
+        metadata: {
+            createdAt: new Date().toISOString(),
+            userId: req.user?.id,
+            enhancementDuration: duration,
+            inputLength: originalText.length,
+            outputLength: enhancedText.length
+        }
+    };
+}
 
 /**
- * Get a list of previously enhanced prompts
+ * List enhanced prompts
+ * @route GET /v1/prompts
+ * @access Private (requires authentication)
  */
 exports.listPrompts = (req, res, next) => {
     try {
-        const limit = parseInt(req.query.limit) || 10;
+        // Parse pagination parameters
+        const limit = Math.min(parseInt(req.query.limit) || 10, 100);
         const offset = parseInt(req.query.offset) || 0;
 
-        // Get a subset of prompts based on limit and offset
-        const prompts = promptsStorage.slice(offset, offset + limit);
-        const total = promptsStorage.length;
+        // Filter prompts for the authenticated user if applicable
+        const userPrompts = req.user
+            ? promptsStorage.filter(p => p.metadata?.userId === req.user.id)
+            : promptsStorage;
+
+        // Paginate prompts
+        const prompts = userPrompts.slice(offset, offset + limit);
+        const total = userPrompts.length;
+
+        // Log listing action
+        console.log('Prompt Listing:', {
+            timestamp: new Date().toISOString(),
+            user: req.user?.id || 'unauthenticated',
+            totalPrompts: total,
+            requestedLimit: limit,
+            requestedOffset: offset
+        });
 
         res.status(200).json({
             prompts,
-            total
+            total,
+            limit,
+            offset
         });
     } catch (error) {
+        console.error('Error listing prompts:', {
+            message: error.message,
+            stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+        });
         next(error);
     }
 };
 
 /**
- * Get a specific prompt by ID
+ * Get a specific prompt
+ * @route GET /v1/prompts/:id
+ * @access Private (requires authentication)
  */
 exports.getPrompt = (req, res, next) => {
     try {
         const { id } = req.params;
-        const prompt = promptsStorage.find(p => p.id === id);
+
+        // Find the prompt, ensuring user can only access their own prompts
+        const prompt = promptsStorage.find(p =>
+            p.id === id &&
+            (!req.user || p.metadata?.userId === req.user.id)
+        );
 
         if (!prompt) {
             return res.status(404).json({
@@ -131,19 +278,37 @@ exports.getPrompt = (req, res, next) => {
             });
         }
 
+        // Log prompt retrieval
+        console.log('Prompt Retrieved:', {
+            promptId: id,
+            userId: req.user?.id || 'unauthenticated'
+        });
+
         res.status(200).json(prompt);
     } catch (error) {
+        console.error('Error retrieving prompt:', {
+            message: error.message,
+            stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+        });
         next(error);
     }
 };
 
 /**
- * Update a specific prompt by ID
+ * Update a prompt
+ * @route PUT /v1/prompts/:id
+ * @access Private (requires authentication)
  */
 exports.updatePrompt = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const promptIndex = promptsStorage.findIndex(p => p.id === id);
+        const { text, format } = req.body;
+
+        // Find the prompt index, ensuring user can only update their own prompts
+        const promptIndex = promptsStorage.findIndex(p =>
+            p.id === id &&
+            (!req.user || p.metadata?.userId === req.user.id)
+        );
 
         if (promptIndex === -1) {
             return res.status(404).json({
@@ -154,53 +319,89 @@ exports.updatePrompt = async (req, res, next) => {
             });
         }
 
-        const { text, format } = req.body;
-        const existingPrompt = promptsStorage[promptIndex];
+        // Validate the update request
+        if (!text && !format) {
+            return res.status(400).json({
+                error: {
+                    code: 'no_update_data',
+                    message: 'No update data provided'
+                }
+            });
+        }
 
         // Validate max length if text is provided
         if (text) {
-            const MAX_TEXT_LENGTH = 8000; // Consistent with create endpoint
+            const MAX_TEXT_LENGTH = 8000;
             if (text.length > MAX_TEXT_LENGTH) {
                 return res.status(413).json({
                     error: {
                         code: 'payload_too_large',
-                        message: `The 'text' field must not exceed ${MAX_TEXT_LENGTH} characters`,
-                        param: 'text'
+                        message: `The 'text' field must not exceed ${MAX_TEXT_LENGTH} characters`
                     }
                 });
             }
         }
 
-        // Generate a new enhanced prompt based on the updated parameters
+        // Start timing the enhancement process
+        const startTime = Date.now();
+
+        // Enhance the updated prompt
         const enhancedText = await promptEnhancerService.enhancePrompt({
-            originalPrompt: text || existingPrompt.originalText,
-            format: format || existingPrompt.format
+            originalPrompt: text || promptsStorage[promptIndex].originalText,
+            format: format || promptsStorage[promptIndex].format
         });
+
+        // Calculate enhancement duration
+        const duration = Date.now() - startTime;
 
         // Update the prompt
         const updatedPrompt = {
-            ...existingPrompt,
-            originalText: text || existingPrompt.originalText,
+            ...promptsStorage[promptIndex],
+            originalText: text || promptsStorage[promptIndex].originalText,
             enhancedText,
-            format: format || existingPrompt.format
+            format: format || promptsStorage[promptIndex].format,
+            metadata: {
+                ...promptsStorage[promptIndex].metadata,
+                updatedAt: new Date().toISOString(),
+                enhancementDuration: duration,
+                inputLength: (text || promptsStorage[promptIndex].originalText).length,
+                outputLength: enhancedText.length
+            }
         };
 
-        // Save the updated prompt
         promptsStorage[promptIndex] = updatedPrompt;
+
+        // Log prompt update
+        console.log('Prompt Updated:', {
+            promptId: id,
+            userId: req.user?.id,
+            duration: duration
+        });
 
         res.status(200).json(updatedPrompt);
     } catch (error) {
+        console.error('Error updating prompt:', {
+            message: error.message,
+            stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+        });
         next(error);
     }
 };
 
 /**
- * Delete a specific prompt by ID
+ * Delete a prompt
+ * @route DELETE /v1/prompts/:id
+ * @access Private (requires authentication)
  */
 exports.deletePrompt = (req, res, next) => {
     try {
         const { id } = req.params;
-        const promptIndex = promptsStorage.findIndex(p => p.id === id);
+
+        // Find the prompt index, ensuring user can only delete their own prompts
+        const promptIndex = promptsStorage.findIndex(p =>
+            p.id === id &&
+            (!req.user || p.metadata?.userId === req.user.id)
+        );
 
         if (promptIndex === -1) {
             return res.status(404).json({
@@ -211,12 +412,22 @@ exports.deletePrompt = (req, res, next) => {
             });
         }
 
-        // Remove the prompt from storage
-        promptsStorage.splice(promptIndex, 1);
+        // Remove the prompt
+        const deletedPrompt = promptsStorage.splice(promptIndex, 1)[0];
 
-        // Return a successful deletion response (no content)
+        // Log prompt deletion
+        console.log('Prompt Deleted:', {
+            promptId: id,
+            userId: req.user?.id
+        });
+
+        // Return no content
         res.status(204).send();
     } catch (error) {
+        console.error('Error deleting prompt:', {
+            message: error.message,
+            stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+        });
         next(error);
     }
 };
