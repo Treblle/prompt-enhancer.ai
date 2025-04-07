@@ -1,13 +1,15 @@
-/**
- * Prompt Enhancer Service
- * Transforms basic prompts into optimized, high-quality instructions
- */
 const { OpenAI } = require('openai');
 const path = require('path');
 const crypto = require('crypto');
 const DOMPurify = require('dompurify');
 const { JSDOM } = require('jsdom');
 
+// More Robust Timeout Handling
+const TIMEOUT_DURATIONS = {
+    BLOG_OUTLINE: 40000,    // 40 seconds for blog outline
+    OPEN_AI_REQUEST: 70000, // 70 seconds for OpenAI request
+    FALLBACK_TIMEOUT: 80000 // 80 seconds total timeout
+};
 // Initialize DOMPurify
 const window = new JSDOM('').window;
 const purify = DOMPurify(window);
@@ -22,7 +24,6 @@ try {
     console.error('Failed to initialize Mistral service:', error.message);
 }
 
-// Initialize OpenAI client if needed
 let openai = null;
 if (process.env.NODE_ENV !== 'test' && (process.env.AI_PROVIDER === 'openai' || !process.env.AI_PROVIDER)) {
     try {
@@ -33,11 +34,35 @@ if (process.env.NODE_ENV !== 'test' && (process.env.AI_PROVIDER === 'openai' || 
 
         openai = new OpenAI({
             apiKey: process.env.OPENAI_API_KEY,
-            timeout: 25000, // 25 second timeout
-            maxRetries: 2
+            maxRetries: 3   // Increased from 2 to 3 retries
+            // REMOVED: timeout parameter from client initialization
         });
+
+        console.log('OpenAI client initialized with enhanced configuration');
     } catch (error) {
         console.error('Failed to initialize OpenAI client:', error.message);
+    }
+}
+
+
+const OPTIMAL_OPENAI_PARAMS = {
+    model: "gpt-3.5-turbo-16k", // Model with larger context window
+    temperature: 0.7,
+    max_tokens: 2000,
+    presence_penalty: 0.1, // Slight penalty to avoid repetition
+    frequency_penalty: 0.1, // Slight penalty to encourage more diverse language
+    timeout: 60000 // At individual request level
+};
+
+async function createOptimalPromptCompletion(messages) {
+    try {
+        return await openai.chat.completions.create({
+            ...OPTIMAL_OPENAI_PARAMS,
+            messages
+        });
+    } catch (error) {
+        console.error('OpenAI completion failed:', error);
+        throw error;
     }
 }
 
@@ -979,10 +1004,10 @@ function analyzePromptContext(promptText) {
 
     // Extract word count if specified
     const wordCountRegexes = [
-        /\b(\d+)\s*(?:words?)\b/i,  // "500 words"
-        /keep\s*(?:it\s*)?(?:under|max(?:imum)?)\s*(\d+)\s*(?:words?)/i,  // "keep it under 500 words"
-        /\b(\d+)\s*(?:chars?|characters?)\b/i,  // "280 characters"
-        /limit\s*(?:of|to)?\s*(\d+)\s*(?:words?|chars?|characters?)/i  // "limit of 500 words"
+        /\b(\d+)\s{0,3}(?:words?)\b/i,  // "500 words" - limited whitespace
+        /keep\s{0,3}(?:it\s{0,3})?(?:under|max(?:imum)?)\s{0,3}(\d+)\s{0,3}(?:words?)/i,  // "keep it under 500 words" - limited whitespace
+        /\b(\d+)\s{0,3}(?:chars?|characters?)\b/i,  // "280 characters" - limited whitespace
+        /limit(?:\s{0,3}(?:of|to))?\s{0,3}(\d+)\s{0,3}(?:words?|chars?|characters?)/i  // "limit of 500 words" - limited whitespace
     ];
 
     let userSpecifiedWordCount = null;
@@ -1514,129 +1539,148 @@ The enhanced prompt must instruct the AI to:
 }
 
 /**
- * Generate a comprehensive, tailored blog post outline
- * @param {Object} context - Context information from the original prompt
- * @returns {Promise<string>} - Detailed blog post outline
+ * Enhanced timeout handling for API calls with better error propagation
+ * @param {Function} asyncFn - Async function to execute
+ * @param {number} timeout - Timeout duration in milliseconds
+ * @param {number} maxRetries - Maximum number of retries
  */
-async function generateBlogOutline(context) {
-    // In test mode, return a predictable outline
-    if (process.env.NODE_ENV === 'test') {
-        return `Detailed Blog Post Outline: ${context.topic}
+async function timeoutWithRetry(asyncFn, timeout, maxRetries = 2) {
+    let lastError = null;
 
-I. Introduction
-   A. Hook or compelling opening statement
-   B. Brief context of the topic
-   C. Thesis statement
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            // Create a promise that will reject after the timeout
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => {
+                    reject(new Error(`Operation timed out after ${timeout}ms on attempt ${attempt + 1}`));
+                }, timeout);
+            });
 
-II. Main Content Sections
-    A. First key insight or argument
-    B. Second key insight or argument
-    C. Third key insight or argument
+            // Race between the function execution and the timeout
+            const result = await Promise.race([
+                asyncFn(),
+                timeoutPromise
+            ]);
 
-III. Conclusion
-     A. Summary of key points
-     B. Forward-looking statement or call to action
+            return result; // Success case
+        } catch (error) {
+            lastError = error;
+            console.warn(`Attempt ${attempt + 1} failed: ${error.message}`);
 
-Note: This is a placeholder outline. A real outline would be highly customized to the specific prompt.`;
+            const isTimeoutError =
+                error.message.includes('timeout') ||
+                error.type === 'invalid_request_error' ||
+                error.name === 'AbortError';
+
+            // If it's not a timeout error or we're out of retries, don't retry
+            if (!isTimeoutError && !error.message.includes('rate limit') && attempt >= maxRetries) {
+                break;
+            }
+
+            // Exponential backoff with jitter
+            const delay = Math.min(
+                Math.pow(2, attempt) * 1000 + Math.random() * 1000,
+                10000 // Max 10 seconds
+            );
+            console.log(`Retrying in ${Math.round(delay)}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
     }
 
-    // Prepare context for AI prompt generation
-    // Clean up the topic to remove phrases like "a blog post on" or similar
-    const cleanTopic = context.topic
-        .replace(/^(?:a\s+blog\s+post\s+(?:about|on)\s+|write\s+(?:a\s+)?blog\s+(?:about|on)\s+)/i, '')
-        .replace(/^["'](.+)["']$/i, '$1') // Remove quotes around the topic
-        .trim();
+    throw lastError || new Error('Operation failed after retries');
+}
 
-    const outlinePrompt = `You are an expert content strategist specializing in creating highly detailed, research-backed blog post outlines. 
+/**
+ * Enhanced prompt generation with manual timeout handling
+ * @param {Object} params - Prompt generation parameters
+ * @returns {Promise<string>} Generated prompt
+ */
+async function enhancePromptWithTimeout(params) {
+    const { originalPrompt, systemPrompt, openai } = params;
 
-The topic is: "${cleanTopic}"
+    // Wrapper function for API call without signal
+    const enhancementGenerator = async (controller) => {
+        try {
+            const response = await openai.chat.completions.create({
+                model: "gpt-3.5-turbo",
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    {
+                        role: "user",
+                        content: `Please enhance this basic prompt into a comprehensive, sophisticated instruction: "${originalPrompt}"`
+                    }
+                ],
+                temperature: 0.7,
+                max_tokens: 1000
+            });
+
+            return response.choices[0]?.message?.content || generateFallbackPrompt(context);
+        } catch (error) {
+            // Log detailed error information
+            console.error('Prompt Enhancement API Error:', {
+                message: error.message,
+                type: error.type,
+                code: error.code,
+                status: error.status
+            });
+            throw error;
+        }
+    };
+
+    // Apply timeout with retry
+    return await timeoutWithRetry(
+        enhancementGenerator,
+        50000 // 50 seconds total timeout
+    );
+}
+
+/**
+ * Generate a blog outline with enhanced timeout and retry logic
+ * @param {Object} context - Context information from the original prompt
+ * @returns {Promise<string>} Detailed blog post outline
+ */
+async function generateBlogOutline(context) {
+    const outlineGenerator = async (signal) => {
+        // Existing blog outline generation logic
+        const outlinePrompt = `You are an expert content strategist creating highly detailed, research-backed blog post outlines. 
+
+The topic is: "${context.topic}"
 
 Key contextual details:
 - Primary subject: ${context.subject}
 - Intended platform: ${context.platform}
 - Main intent: ${context.intent}
 
-I need you to create an EXTREMELY DETAILED blog post outline that:
-1. Goes far beyond surface-level insights
-2. Incorporates deep research and nuanced perspectives
-3. Provides a comprehensive roadmap for exploring the topic
-4. Includes potential research references, data points, and specific examples
-5. Breaks down complex ideas into digestible, interconnected sections
-6. Demonstrates genuine expertise and unique insights
+Create a BRIEF but WELL-STRUCTURED blog post outline with 3-5 main sections, each with 2-3 key points.`;
 
-Requirements for the outline:
-- Minimum 5-7 main sections with 3-4 subsections each
-- Include potential research sources or case studies
-- Highlight unique angles or counterintuitive insights
-- Ensure a logical flow that builds complexity and understanding
-- Avoid generic or templated approaches
-- Make each section substantive and thought-provoking
-- Use clear, concise section headings without repetitive phrases
-
-The outline should be so detailed that a writer could use it to create an in-depth, authoritative piece without needing additional research.
-
-Please generate an outline that is:
-- Deeply analytical
-- Backed by potential research and real-world examples
-- Structured to challenge conventional wisdom
-- Specific to the nuances of "${cleanTopic}"`;
-
-    try {
-        // Create a timeout promise
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Blog outline generation timed out after 20 seconds')), 20000);
-        });
-
-        // Use OpenAI to generate the detailed outline with timeout
-        const openaiPromise = openai.chat.completions.create({
-            model: "gpt-3.5-turbo", // Use a faster model for production
+        const response = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
             messages: [
                 {
                     role: "system",
-                    content: "You are an expert content strategist creating highly detailed, research-backed blog post outlines. Create natural-sounding section headings without repeating the topic in each heading."
+                    content: "You are an expert content strategist creating concise, well-structured blog post outlines."
                 },
                 {
                     role: "user",
                     content: outlinePrompt
                 }
             ],
-            temperature: 0.7, // Allow some creativity while maintaining focus
-            max_tokens: 1200, // Slightly reduced token limit for faster response
+            temperature: 0.7,
+            max_tokens: 800,
+            signal // Add AbortSignal to the request
         });
 
-        // Race the promises
-        const response = await Promise.race([openaiPromise, timeoutPromise]);
+        return response.choices[0]?.message?.content || generateFallbackOutline(context);
+    };
 
-        // Return the generated outline
-        return response.choices[0]?.message?.content ||
-            `Detailed Blog Post Outline: ${cleanTopic}
-
-I. Unable to generate a specific outline
-   A. The AI encountered an unexpected issue
-   B. Please try regenerating the outline
-
-Note: This is a fallback outline due to generation failure.`;
-
+    try {
+        return await timeoutWithRetry(
+            outlineGenerator,
+            TIMEOUT_DURATIONS.BLOG_OUTLINE
+        );
     } catch (error) {
         console.error('Blog Outline Generation Error:', error);
-
-        // Fallback outline with basic structure - simplified for faster response
-        return `Detailed Blog Post Outline: ${cleanTopic}
-
-I. Introduction
-   A. Context and significance of "${cleanTopic}"
-   B. Key challenges or opportunities
-
-II. Core Insights
-    A. First fundamental perspective
-    B. Second critical analysis
-    C. Third unique approach
-
-III. Conclusion
-     A. Synthesizing key learnings
-     B. Implications and future outlook
-
-Note: This is a basic outline.`;
+        return generateFallbackOutline(context);
     }
 }
 
@@ -1836,9 +1880,9 @@ Please write a comprehensive piece that would be valuable for the target audienc
         // Create timeout promise with a longer timeout and clear error message
         const timeoutPromise = new Promise((_, reject) => {
             setTimeout(() => {
-                console.error('OpenAI request timed out after 30 seconds. Please check your network connection and API key.');
-                reject(new Error('OpenAI request timed out after 30 seconds. Please check your network connection and API key.'));
-            }, 30000); // Increased timeout to 30 seconds
+                console.warn('OpenAI request approaching timeout threshold (45 seconds). Proceeding with fallback...');
+                reject(new Error('OpenAI request timed out after 45 seconds'));
+            }, 45000); // Increased timeout to 45 seconds
         });
 
         // Create the OpenAI completion promise
@@ -1855,19 +1899,23 @@ Please write a comprehensive piece that would be valuable for the target audienc
                 }
             ],
             temperature: 0.7,
-            max_tokens: 800, // Reduced for faster responses
+            max_tokens: 700, // Reduced for even faster responses
         });
 
         // Race between the API call and the timeout
         const response = await Promise.race([openaiPromise, timeoutPromise]);
+        console.log('OpenAI API request completed successfully');
         return response.choices[0]?.message?.content || generateFallbackPrompt(context);
     } catch (error) {
         // Enhanced error logging
         console.error(`OpenAI API Error: ${error.message}`);
-        console.error('Error details:', error);
 
         if (error.message.includes('timed out')) {
-            console.error('Connection to OpenAI timed out. Please check your network and API key.');
+            console.error('Connection to OpenAI timed out. Falling back to template-based response.');
+            // Return preferred style for better fallback quality
+            return context.usePreferredStyle
+                ? generatePreferredStylePrompt(context)
+                : generateFallbackPrompt(context);
         } else if (error.message.includes('401')) {
             console.error('Authentication error with OpenAI. Your API key may be invalid or expired.');
         } else if (error.message.includes('429')) {
@@ -1907,12 +1955,23 @@ WRITING GUIDANCE:
     // Generate the tailored system prompt
     const systemPrompt = generateTailoredSystemPrompt(context);
 
-    // Create timeout promise
-    const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Mistral request timed out after 20 seconds')), 20000);
-    });
+    // Check if Mistral service is properly initialized
+    if (!mistralService) {
+        console.error('Mistral service is not initialized. Check your API key and configuration.');
+        return generateFallbackPrompt(context);
+    }
 
     try {
+        console.log('Sending request to Mistral API...');
+
+        // Create timeout promise with clear warning
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => {
+                console.warn('Mistral request approaching timeout threshold (30 seconds). Proceeding with fallback...');
+                reject(new Error('Mistral request timed out after 30 seconds'));
+            }, 30000); // 30 second timeout
+        });
+
         // Create the Mistral completion promise
         const mistralPromise = mistralService.createChatCompletion({
             model: "mistral-small", // Use the smaller, faster model in production
@@ -1923,218 +1982,247 @@ WRITING GUIDANCE:
                 },
                 {
                     role: "user",
-                    content: `Please enhance this basic prompt into a comprehensive, sophisticated instruction for a ${CONTENT_TYPES[context.contentType].name}: "${originalPrompt}"`
+                    content: `Please enhance this basic prompt into a comprehensive, sophisticated instruction for a ${CONTENT_TYPES[context.contentType]?.name || 'content piece'}: "${originalPrompt}"`
                 }
             ],
             temperature: 0.7,
-            maxTokens: 800 // Reduced for faster responses
+            maxTokens: 700 // Reduced for faster responses
         });
 
         // Race between the API call and the timeout
         const response = await Promise.race([mistralPromise, timeoutPromise]);
+        console.log('Mistral API request completed successfully');
         return response.choices[0]?.message?.content || generateFallbackPrompt(context);
     } catch (error) {
+        // Enhanced error logging
         console.error(`Mistral API Error: ${error.message}`);
+
+        if (error.message.includes('timed out')) {
+            console.error('Connection to Mistral timed out. Falling back to template-based response.');
+            // Return preferred style for better fallback quality
+            return context.usePreferredStyle
+                ? generatePreferredStylePrompt(context)
+                : generateFallbackPrompt(context);
+        } else if (error.message.includes('401') || error.message.includes('unauthorized')) {
+            console.error('Authentication error with Mistral. Your API key may be invalid or expired.');
+        } else if (error.message.includes('429') || error.message.includes('rate limit')) {
+            console.error('Mistral API rate limit exceeded. Please try again later.');
+        } else if (error.message.includes('connect') || error.message.includes('network')) {
+            console.error('Network connection issue. Please check your internet connection.');
+        }
+
         // Return fallback if there's an error
         return generateFallbackPrompt(context);
     }
 }
 
 /**
-* Handle enhancement with the configured provider
-* @param {string} sanitizedPrompt - Sanitized input prompt
-* @returns {Promise<string>} - Enhanced prompt
-*/
+ * Process and sanitize the enhanced prompt
+ * @param {string} prompt - Enhanced prompt text
+ * @returns {string} Cleaned and processed prompt
+ */
+function processEnhancedPrompt(prompt) {
+    if (!prompt) return '';
+
+    // Decode HTML entities
+    const decodedPrompt = decodeHtmlEntities(prompt);
+
+    // Sanitize input
+    const sanitizedPrompt = sanitizeInput(decodedPrompt);
+
+    // Clean Markdown formatting
+    const cleanedPrompt = cleanMarkdownFormatting(sanitizedPrompt);
+
+    return cleanedPrompt.trim();
+}
+
+/**
+ * Enhanced prompt generation with improved timeout handling
+ * @param {string} originalPrompt - The user's original prompt
+ * @returns {Promise<string>} Generated enhanced prompt
+ */
+async function enhancePromptWithOpenAI(originalPrompt, systemPrompt) {
+    // Wrapper function for API call
+    const enhancementGenerator = async () => {
+        try {
+            console.log('Sending request to OpenAI API...');
+
+            const response = await openai.chat.completions.create({
+                model: "gpt-3.5-turbo-16k", // Use model with higher context window
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    {
+                        role: "user",
+                        content: `Please enhance this basic prompt into a comprehensive, sophisticated instruction: "${originalPrompt}"`
+                    }
+                ],
+                temperature: 0.7,
+                max_tokens: 2000 // Increased to allow more detailed responses
+                // REMOVED: timeout parameter - this was causing the API error
+            });
+
+            console.log('OpenAI API request completed successfully');
+            return response.choices[0]?.message?.content;
+        } catch (error) {
+            console.error(`OpenAI API Error: ${error.message}`, error);
+
+            // Let the error propagate to be handled by timeoutWithRetry
+            throw error;
+        }
+    };
+
+    // Use timeoutWithRetry but handle the actual timeout logic in JavaScript
+    // instead of passing it to the OpenAI API
+    return await timeoutWithRetry(
+        enhancementGenerator,
+        TIMEOUT_DURATIONS.OPEN_AI_REQUEST,
+        2 // Two retries (3 total attempts)
+    );
+}
+
+
+/**
+ * Enhanced prompt enhancement with more robust timeout handling
+ * @param {Object} params - Prompt enhancement parameters
+ * @returns {Promise<string>} Enhanced prompt
+ */
 async function enhancePromptWithProvider(sanitizedPrompt) {
     const context = analyzePromptContext(sanitizedPrompt);
 
-    // For tests, just return a simple enhancement
-    if (process.env.NODE_ENV === 'test') {
-        return await _enhanceWithOpenAI({ originalPrompt: sanitizedPrompt });
-    }
+    const enhancementGenerator = async () => {
+        const systemPrompt = generateTailoredSystemPrompt(context);
 
-    // For regular operation, use the configured AI provider
-    const aiProvider = process.env.AI_PROVIDER || 'openai';
+        const response = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [
+                { role: "system", content: systemPrompt },
+                {
+                    role: "user",
+                    content: `Please enhance this basic prompt into a comprehensive, sophisticated instruction: "${sanitizedPrompt}"`
+                }
+            ],
+            temperature: 0.7,
+            max_tokens: 1000
+            // REMOVED: signal parameter
+        });
+
+        return response.choices[0]?.message?.content || generateFallbackPrompt(context);
+    };
 
     try {
-        console.log(`Using ${aiProvider} for prompt enhancement`);
+        // Use total timeout for the entire enhancement process
+        const enhancedPrompt = await timeoutWithRetry(
+            enhancementGenerator,
+            TIMEOUT_DURATIONS.OPEN_AI_REQUEST
+        );
 
-        if (aiProvider === 'mistral' && mistralService) {
-            console.log('Using Mistral AI for prompt enhancement');
-            return await _enhanceWithMistral({ originalPrompt: sanitizedPrompt });
-        } else if (openai) {
-            console.log('Using OpenAI for prompt enhancement');
-            return await _enhanceWithOpenAI({ originalPrompt: sanitizedPrompt });
-        } else {
-            // Log the issue if neither service is available
-            console.error('No AI provider available. OpenAI and Mistral services are not initialized.');
-            console.log('Falling back to template-based enhancement');
-
-            // Fallback if no provider is available
-            return context.usePreferredStyle
-                ? generatePreferredStylePrompt(context)
-                : generateFallbackPrompt(context);
-        }
+        // Post-processing steps
+        return processEnhancedPrompt(enhancedPrompt);
     } catch (error) {
-        console.error(`Error with AI provider (${aiProvider}):`, error.message);
-        return generateFallbackPrompt(context);
+        console.error('Prompt Enhancement Error:', error);
+
+        // If all retries fail, use preferred style or fallback
+        return context.usePreferredStyle
+            ? generatePreferredStylePrompt(context)
+            : generateFallbackPrompt(context);
     }
 }
 
 /**
-* Enhances a prompt using the configured AI provider
-* @param {Object} params - The parameters for enhancement
-* @param {string} params.originalPrompt - The original prompt text
-* @param {string} [params.format='structured'] - The desired format
-* @returns {Promise<string>} The enhanced prompt
-*/
+ * Enhanced prompt enhancement with multiple retry strategies
+ * @param {Object} params - Prompt enhancement parameters
+ * @returns {Promise<string>} Enhanced prompt
+ */
 async function enhancePrompt(params) {
     const startTime = Date.now();
     const { originalPrompt, format = 'structured' } = params;
 
-    // Validate input
     if (!originalPrompt || typeof originalPrompt !== 'string') {
         throw new Error('Invalid or missing original prompt');
     }
 
-    // Check for excessive length based on environment
+    // Check for excessive length
     const MAX_LENGTH = process.env.NODE_ENV === 'production' ? 5000 : 10000;
     if (originalPrompt.length > MAX_LENGTH) {
-        console.warn(`Prompt exceeds recommended length: ${originalPrompt.length} chars`);
         throw new Error(`Prompt is too long (maximum ${MAX_LENGTH} characters)`);
     }
 
-    // Sanitize the input - but don't encode quotes
+    // Sanitize the input
     const sanitizedPrompt = sanitizeInput(originalPrompt);
 
     try {
         console.log(`Processing prompt: "${sanitizedPrompt.substring(0, 50)}${sanitizedPrompt.length > 50 ? '...' : ''}"`);
 
-        // Create a timeout promise for the entire process with longer timeout
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => {
-                console.warn(`Prompt enhancement timed out after 35 seconds for prompt: ${sanitizedPrompt.substring(0, 50)}...`);
-                reject(new Error('Request timed out after 35 seconds'));
-            }, 35000); // Increased to 35 seconds
-        });
+        // Analyze the prompt for context
+        const context = analyzePromptContext(sanitizedPrompt);
 
-        // Create the enhancement promise
-        const enhancementPromise = async () => {
-            let enhancedPrompt = '';
-            const context = analyzePromptContext(sanitizedPrompt);
+        // Generate system prompt
+        const systemPrompt = generateTailoredSystemPrompt(context);
 
-            // If it's a blog post and time allows, generate a detailed outline
-            if (context.platform === 'blog' && sanitizedPrompt.length < 1000) {
-                try {
-                    // Use a shorter timeout for the outline part
-                    const outlineTimeout = new Promise((_, reject) => {
-                        setTimeout(() => reject(new Error('Blog outline generation timed out')), 15000);
-                    });
+        // Try OpenAI enhancement with increased timeout
+        console.log('Starting OpenAI enhancement process...');
+        const enhancedPrompt = await enhancePromptWithOpenAI(
+            sanitizedPrompt,
+            systemPrompt
+        );
 
-                    console.log('Generating blog outline...');
-                    const outlinePromise = generateBlogOutline(context);
-
-                    // Race between outline generation and timeout
-                    const blogOutline = await Promise.race([outlinePromise, outlineTimeout]);
-                    console.log('Blog outline generated successfully');
-
-                    // Get the basic enhancement
-                    console.log('Generating base enhancement...');
-                    const baseEnhancement = await enhancePromptWithProvider(sanitizedPrompt);
-                    console.log('Base enhancement completed');
-
-                    // Return combined enhancement with outline
-                    return `${baseEnhancement}
-
-COMPREHENSIVE BLOG POST OUTLINE:
-${blogOutline}`;
-                } catch (outlineError) {
-                    console.error('Blog Outline Generation Failed:', outlineError);
-                    // Continue with regular enhancement if outline fails
-                    console.log('Falling back to regular enhancement');
-                    return await enhancePromptWithProvider(sanitizedPrompt);
-                }
-            } else {
-                // Just do regular enhancement for non-blog content
-                return await enhancePromptWithProvider(sanitizedPrompt);
-            }
-        };
-
-        // Race between the enhancement process and timeout
-        let enhancedPrompt = await Promise.race([enhancementPromise(), timeoutPromise]);
+        if (!enhancedPrompt) {
+            throw new Error('OpenAI returned empty response');
+        }
 
         // Process the enhanced prompt
-        enhancedPrompt = decodeHtmlEntities(enhancedPrompt);
-        enhancedPrompt = sanitizeInput(enhancedPrompt);
-        enhancedPrompt = cleanMarkdownFormatting(enhancedPrompt);
-
-        // Final pass to replace any remaining encoded quotes
-        enhancedPrompt = enhancedPrompt
-            .replace(/&quot;/g, '"')
-            .replace(/&#039;/g, "'")
-            .replace(/&apos;/g, "'");
+        const processedPrompt = processEnhancedPrompt(enhancedPrompt);
 
         // Log performance data
         const duration = Date.now() - startTime;
-        console.log(`Prompt enhanced in ${duration}ms. Input length: ${originalPrompt.length}, Output length: ${enhancedPrompt.length}`);
+        console.log(`✅ Prompt enhanced in ${duration}ms. Input length: ${originalPrompt.length}, Output length: ${processedPrompt.length}`);
 
-        return enhancedPrompt;
-
+        return processedPrompt;
     } catch (error) {
-        // Log the error
-        console.error('Prompt Enhancement Error:', error.message, error.stack);
+        console.error('❌ Prompt Enhancement Error:', error);
 
-        // Check for timeout error
-        if (error.message && error.message.includes('timed out')) {
-            console.log('Enhancement timed out, returning fallback response');
+        // Only use fallback if it's a timeout or API error
+        if (error.message.includes('timeout') ||
+            error.message.includes('rate limit') ||
+            error.type === 'invalid_request_error') {
+
+            console.warn('Using fallback prompt due to API error');
             const context = analyzePromptContext(sanitizedPrompt);
-            return generateFallbackPrompt(context);
+            return context.usePreferredStyle
+                ? generatePreferredStylePrompt(context)
+                : generateFallbackPrompt(context);
         }
 
-        // If there's a different error, fall back to a simple enhancement
-        try {
-            console.log('Using fallback enhancement due to error');
-            const context = analyzePromptContext(sanitizedPrompt);
-
-            if (context.usePreferredStyle) {
-                return generatePreferredStylePrompt(context);
-            } else {
-                return generateFallbackPrompt(context);
-            }
-        } catch (fallbackError) {
-            // If all else fails, provide a minimal fallback
-            console.error('Even fallback generation failed:', fallbackError);
-            return `You are an expert-level content strategist and professional writer.
-
-I need you to create a comprehensive, engaging content piece on this topic: "${sanitizedPrompt}"
-
-Focus on providing in-depth analysis and industry insights rather than basic information. Include specific examples, data points, or case studies that support your key points. Your content should demonstrate genuine expertise and offer unique perspectives not commonly found in basic articles on this topic.
-
-• I want to write a humanized blog. I also want you to use the storytelling approach and always use a real-world example to explain it. 
-• Please do not use any generic or utilized examples. 
-• We need uniqueness, which is not available on the internet now. 
-• Please write it in a good format and structure. 
-• Cover all the important things that should be in this blog. 
-• Please continue the blog if the text limit is reached, but please write it in very detail and explain exactly the same. 
-• Please do not use "—" between words to add fillers.
-• Please do not use AI, marketing, flashy, sales pitch type tone, keywords, sentences, or anything that sounds AI-generated. Please also keep it technical-focused for developers.  Please do not use vague or unused sentences that make it an off-moment for the developers. Please write the whole blog in ACTIVE VOICE. 
-
-Structure your content with clear headings, logical progression, and smooth transitions. Use a professional but conversational tone and employ concrete, specific language rather than vague generalizations.
-
-Be original, specific, and demonstrate genuine expertise on this topic.`;
-        }
+        // For other errors, re-throw to let the controller handle
+        throw error;
     }
 }
 
-// Export the module
 module.exports = {
+    enhancePrompt: async (params) => {
+        const startTime = Date.now();
+        const { originalPrompt, format = 'structured' } = params;
+
+        try {
+            // Use total fallback timeout
+            const enhancedPrompt = await timeoutWithRetry(
+                async () => await enhancePromptWithProvider(originalPrompt),
+                TIMEOUT_DURATIONS.FALLBACK_TIMEOUT
+            );
+
+            const duration = Date.now() - startTime;
+            console.log(`Total Prompt Enhancement Duration: ${duration}ms`);
+
+            return enhancedPrompt;
+        } catch (error) {
+            console.error('Fatal Prompt Enhancement Error:', error);
+            throw error; // Rethrow to allow controller to handle
+        }
+    },
     enhancePrompt,
-    // Export these for testing
     analyzePromptContext,
     generateFallbackPrompt,
-    selectContentFramework,
-    generateSEOGuidance,
-    // Export constants for reuse
+    generatePreferredStylePrompt,
     CONTENT_TYPES,
     CONTENT_FRAMEWORKS,
     INDUSTRY_EXPERTISE

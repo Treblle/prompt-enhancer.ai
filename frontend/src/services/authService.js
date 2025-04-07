@@ -1,5 +1,3 @@
-// Authentication Service for managing JWT tokens
-
 // Get API URL from environment variables
 const API_URL = process.env.REACT_APP_API_URL ||
     (process.env.NODE_ENV === 'development'
@@ -8,6 +6,13 @@ const API_URL = process.env.REACT_APP_API_URL ||
 
 // Storage keys for tokens
 const TOKEN_KEY = 'auth_token';
+const API_KEY_KEY = 'api_key';
+const TOKEN_EXPIRY_KEY = 'auth_token_expiry';
+
+// Utility function to get the API key
+function getApiKey() {
+    return process.env.REACT_APP_API_KEY || localStorage.getItem(API_KEY_KEY);
+}
 
 /**
  * Get the stored authentication token
@@ -23,6 +28,10 @@ export const getToken = () => {
  */
 export const setToken = (token) => {
     localStorage.setItem(TOKEN_KEY, token);
+
+    // Set expiry for 24 hours in the future
+    const expiry = Date.now() + (24 * 60 * 60 * 1000);
+    localStorage.setItem(TOKEN_EXPIRY_KEY, expiry.toString());
 };
 
 /**
@@ -30,6 +39,7 @@ export const setToken = (token) => {
  */
 export const removeToken = () => {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_EXPIRY_KEY);
 };
 
 /**
@@ -40,13 +50,15 @@ export const isAuthenticated = () => {
     const token = getToken();
     if (!token) return false;
 
-    // For a more thorough check, you could validate the token expiration
-    try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.exp > Date.now() / 1000;
-    } catch (error) {
-        return false;
+    // Check token expiration from our stored expiry time
+    const expiry = localStorage.getItem(TOKEN_EXPIRY_KEY);
+    if (expiry && parseInt(expiry) > Date.now()) {
+        return true;
     }
+
+    // If expiry isn't set or is in the past, token is invalid
+    removeToken();
+    return false;
 };
 
 /**
@@ -54,17 +66,20 @@ export const isAuthenticated = () => {
  * @returns {Promise<string>} A promise that resolves to the token
  */
 export const fetchToken = async () => {
-    const apiKey = process.env.REACT_APP_API_KEY;
+    const apiKey = getApiKey();
 
     if (!apiKey) {
+        console.error('API key is not configured');
         throw new Error('API key is not configured');
     }
 
     try {
+        console.log('Fetching new auth token...');
         const response = await fetch(`${API_URL}/auth/token`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-API-Key': apiKey
             },
             body: JSON.stringify({
                 clientId: 'frontend-client',
@@ -73,7 +88,9 @@ export const fetchToken = async () => {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to authenticate');
+            const errorText = await response.text();
+            console.error('Token fetch error:', errorText);
+            throw new Error(`Failed to authenticate: ${response.status} ${errorText}`);
         }
 
         const data = await response.json();
@@ -82,6 +99,8 @@ export const fetchToken = async () => {
         if (!token) {
             throw new Error('No token received from server');
         }
+
+        console.log('Token fetched successfully');
 
         // Store the token
         setToken(token);
@@ -99,21 +118,33 @@ export const fetchToken = async () => {
 export const initializeAuth = async () => {
     // Check if we already have a valid token
     if (isAuthenticated()) {
+        console.log('Using existing valid token');
         return getToken();
     }
 
-    // Fetch a new token
-    return await fetchToken();
+    console.log('No valid token found, fetching new one');
+
+    try {
+        // Fetch a new token
+        return await fetchToken();
+    } catch (error) {
+        console.error('Failed to initialize auth:', error);
+
+        // Try one more time after a short delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return await fetchToken();
+    }
 };
 
-// Create a named object for export to fix the ESLint error
+// Create a named object for export
 const authService = {
     getToken,
     setToken,
     removeToken,
     isAuthenticated,
     fetchToken,
-    initializeAuth
+    initializeAuth,
+    getApiKey
 };
 
 export default authService;

@@ -37,6 +37,7 @@
   "license": "ISC",
   "dependencies": {
     "@treblle/express": "0.0.8",
+    "abort-controller": "^3.0.0",
     "compression": "1.8.0",
     "cors": "2.8.5",
     "dompurify": "^3.2.4",
