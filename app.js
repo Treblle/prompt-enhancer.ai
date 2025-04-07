@@ -82,7 +82,10 @@ const corsOptions = {
             'http://localhost:3000',   // Frontend development server
             'http://127.0.0.1:3000',   // Alternative localhost
             'http://localhost:5000',   // Backend server
-            'http://127.0.0.1:5000'    // Alternative backend localhost
+            'http://127.0.0.1:5000',   // Alternative backend localhost
+            "https://www.prompt-enhancer.ai",  // Production domain
+            "https://prompt-enhancer.ai", // Production domain without www
+            "prompt-enhancer.ai", // Production domain without protocol
         ];
 
         if (!origin || allowedOrigins.includes(origin)) {
