@@ -335,7 +335,7 @@ const CONTENT_TYPES = {
     linkedin: {
         name: "LinkedIn Post",
         role: "LinkedIn engagement specialist and professional storyteller",
-        wordCount: "150-300 words",
+        wordCount: "100-200 words",
         formatGuidance: `
 • Start with a powerful hook that challenges conventional thinking
 • Use strategic line breaks after 1-2 sentences for better mobile readability
@@ -755,7 +755,7 @@ Include **2-3 relevant hashtags** naturally at the bottom of the post—only the
 🚫 Avoid overstuffed hashtags or vague ones like #Technology or #Engineering.
 
 ✅ FINAL OUTPUT REQUIREMENTS:
-* Length: Around 200–300 words max (for LinkedIn readability)
+* Length: Around 100-200 words max (for LinkedIn readability)
 * Format: 4–5 short paragraphs, each focused on one key aspect
 * Include real examples, not theoretical or generic advice
 * Avoid using "Thoughts?" or "Agree?"—make the ending question specific and engaging
@@ -819,7 +819,7 @@ Include **2-3 relevant hashtags** at the bottom of the post—only the most spec
 🚫 Avoid generic hashtags or vague ones like #Business or #Leadership.
 
 ✅ FINAL OUTPUT REQUIREMENTS:
-* Length: Around 200–300 words max (for LinkedIn readability)
+* Length: Around 100-200 words max (for LinkedIn readability)
 * Format: 4–5 short paragraphs, each focused on one strategic element
 * Include real business examples, not theoretical or generic advice
 * Avoid using "Thoughts?" or "Do you agree?"—make the closing question specific and thought-provoking
@@ -883,7 +883,7 @@ Include **2-3 relevant hashtags** at the bottom of the post—only the most spec
 🚫 Avoid generic hashtags or vague ones like #Marketing or #Digital.
 
 ✅ FINAL OUTPUT REQUIREMENTS:
-* Length: Around 200–300 words max (for LinkedIn readability)
+* Length: Around 100-200 words max (for LinkedIn readability)
 * Format: 4–5 short paragraphs, each focused on one marketing element
 * Include real campaign examples with actual metrics, not theoretical advice
 * Avoid using "Thoughts?" or "Do you agree?"—make the closing question specific and results-oriented
@@ -1379,7 +1379,7 @@ function analyzePromptContext(promptText) {
             linkedin: {
                 name: 'LinkedIn',
                 contentType: 'linkedin',
-                maxLength: 3000,
+                maxLength: 350,
                 isCharacterLimited: true,
                 features: ['professional', 'business', 'career'],
                 bestFormats: ['text', 'short-form', 'professional']
@@ -2203,7 +2203,7 @@ function generatePreferredStylePrompt(context) {
             ? `approximately ${context.userSpecifiedWordCount} characters`
             : `approximately ${context.userSpecifiedWordCount} words`;
     } else if (context.platform === 'linkedin' || context.platform === 'social') {
-        wordCount = "200-400";
+        wordCount = "100-200";
     } else if (context.platform === 'email') {
         wordCount = "300-450";
     } else if (context.platform === 'twitter') {
