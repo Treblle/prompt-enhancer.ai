@@ -2,6 +2,164 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Existing CSS content remains the same, adding mobile-specific styles */
+
+/* Mobile-specific responsive adjustments */
+@media (max-width: 768px) {
+
+    /* Override existing body styles for mobile */
+    body {
+        overflow-y: auto !important;
+        overscroll-behavior-y: none;
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+    }
+
+    #root {
+        height: 100vh;
+        overflow-y: auto;
+        overscroll-behavior-y: none;
+    }
+
+    /* Responsive text sizing */
+    html {
+        font-size: 14px;
+        /* Slightly smaller base font size */
+    }
+
+    /* Adjust prompt enhancer card for mobile */
+    .prompt-enhancer-card {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+        height: 100%;
+    }
+
+    /* Textarea and result area adjustments */
+    .prompt-textarea,
+    .result-area {
+        font-size: 0.875rem;
+        /* Slightly smaller text */
+        line-height: 1.4;
+    }
+
+    /* Button and input sizes */
+    button,
+    input,
+    textarea {
+        font-size: 0.875rem;
+        padding: 0.5rem;
+    }
+
+    /* Prevent text selection overflow */
+    * {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    textarea,
+    input[type="text"] {
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+        user-select: text;
+    }
+
+    /* Safe area insets for iOS */
+    @supports(padding-top: env(safe-area-inset-top)) {
+        body {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
+    }
+
+    /* Smooth scrolling and touch optimization */
+    * {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+    }
+
+    /* Prevent zooming on input focus */
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+    }
+}
+
+/* High-resolution displays */
+@media (-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
+
+    /* Optional: Add crisp text rendering for high-res screens */
+    body {
+        -webkit-font-smoothing: subpixel-antialiased;
+        text-rendering: optimizeLegibility;
+    }
+}
+
+/* Large mobile and tablet devices */
+@media (min-width: 375px) and (max-width: 768px) {
+    .prompt-textarea {
+        height: 100px;
+        max-height: 150px;
+    }
+
+    .result-area {
+        height: 250px;
+        max-height: 300px;
+    }
+}
+
+/* Ultra-small devices */
+@media (max-width: 374px) {
+    .prompt-textarea {
+        height: 80px;
+        max-height: 120px;
+    }
+
+    .result-area {
+        height: 200px;
+        max-height: 250px;
+    }
+
+    html {
+        font-size: 12px;
+    }
+}
+
+/* Landscape orientation adjustments */
+@media (max-width: 768px) and (orientation: landscape) {
+
+    .prompt-textarea,
+    .result-area {
+        height: 100px;
+        max-height: 120px;
+    }
+
+    body {
+        overflow-y: scroll !important;
+        position: relative;
+    }
+}
+
+/* Print styles */
+@media print {
+    body {
+        overflow: visible !important;
+        position: static !important;
+    }
+}
+
 /* Theme Toggle Styles */
 .hidden-checkbox {
     display: none;
