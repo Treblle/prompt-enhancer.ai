@@ -1338,6 +1338,22 @@ function sanitizeInput(text) {
 function analyzePromptContext(promptText) {
     const lowerPrompt = promptText.toLowerCase();
 
+    const isGeneralCreative = detectGeneralCreativeRequest(promptText, lowerPrompt);
+
+    if (isGeneralCreative) {
+        // For general creative requests, return minimal context
+        // that won't trigger platform-specific templates
+        return {
+            platform: 'general',
+            contentType: 'creative',
+            isGeneralRequest: true,
+            topic: extractTopic(promptText),
+            original: promptText,
+            // Important: Signal that this shouldn't use structured templates
+            skipTemplates: true
+        };
+    }
+
     // Extract word count if specified
     const wordCountRegexes = [
         /\b(\d+)\s{0,3}(?:words?)\b/i,  // "500 words" - limited whitespace
@@ -2447,7 +2463,10 @@ function detectGeneralCreativeRequest(promptText, lowerPrompt) {
 
         // References to examples
         /\bfor (?:example|reference|instance)\b/i,
-        /\bhere['']s an example\b/i
+        /\bhere['']s an example\b/i,
+
+        // Content types that should not use rigid templates
+        /\b(?:caption|logo|design|script|video|presentation|outline|quiz|question|qap|q&a|qa pair|qa|interview)\b/i
     ];
 
     // Check if any narrative patterns match
@@ -2467,8 +2486,6 @@ function detectGeneralCreativeRequest(promptText, lowerPrompt) {
     // Determine if this is a general creative request
     return (isNarrative || containsExample) && !hasSpecificPlatform;
 }
-
-
 
 /**
 * Enhance a prompt using Mistral AI
@@ -2670,7 +2687,7 @@ async function enhancePromptWithProvider(sanitizedPrompt) {
 }
 
 /**
- * Enhanced prompt generation with improved platform detection
+ * Enhanced prompt generation with improved structure for all request types
  * @param {Object} params - Prompt enhancement parameters
  * @returns {Promise<string>} Enhanced prompt
  */
@@ -2691,53 +2708,63 @@ async function enhancePrompt(params) {
     // Sanitize the input
     const sanitizedPrompt = sanitizeInput(originalPrompt);
 
-    // Analyze context with improved general detection
-    const context = analyzePromptContext(sanitizedPrompt);
-
-    // If this is a general/creative request, use a simplified approach
-    if (context.skipTemplates) {
-        console.log('Detected general creative request, using simplified enhancement');
-        return enhanceGeneralPrompt(context);
-    }
     try {
         console.log(`Processing prompt: "${sanitizedPrompt.substring(0, 50)}${sanitizedPrompt.length > 50 ? '...' : ''}"`);
 
-        // Analyze the prompt with improved platform detection
+        // Analyze context with improved detection
         const context = analyzePromptContext(sanitizedPrompt);
 
         // Log the detected context for debugging
         console.log('Detected context:', {
             platform: context.platform,
             contentType: context.contentType,
-            isTwitter: context.isTwitter,
-            isLinkedIn: context.isLinkedIn,
-            isBlog: context.isBlog,
+            isGeneralRequest: context.skipTemplates,
             subject: context.subject,
             intent: context.intent
         });
 
-        // Generate system prompt with improved content routing
-        const systemPrompt = generateTailoredSystemPrompt(context);
+        // Check if we have a specific template for detected content type
+        const contentType = detectContentType(sanitizedPrompt);
 
-        // Try OpenAI enhancement with increased timeout
-        console.log('Starting OpenAI enhancement process...');
-        const enhancedPrompt = await enhancePromptWithOpenAI(
-            sanitizedPrompt,
-            systemPrompt
-        );
+        // For platform-specific content (blog, LinkedIn, Twitter) - use existing templates
+        if (context.platform === 'blog' ||
+            context.platform === 'linkedin' ||
+            context.platform === 'twitter') {
 
-        if (!enhancedPrompt) {
-            throw new Error('OpenAI returned empty response');
+            console.log(`Using platform-specific template for ${context.platform}`);
+
+            // Generate platform-specific system prompt
+            const systemPrompt = generateTailoredSystemPrompt(context);
+
+            // Try OpenAI enhancement with platform templates
+            const enhancedPrompt = await enhancePromptWithOpenAI(
+                sanitizedPrompt,
+                systemPrompt
+            );
+
+            if (!enhancedPrompt) {
+                throw new Error('OpenAI returned empty response');
+            }
+
+            // Process the enhanced prompt
+            const processedPrompt = processEnhancedPrompt(enhancedPrompt);
+
+            // Log performance data
+            const duration = Date.now() - startTime;
+            console.log(`✅ Prompt enhanced with platform template in ${duration}ms. Output length: ${processedPrompt.length}`);
+
+            return processedPrompt;
         }
 
-        // Process the enhanced prompt
-        const processedPrompt = processEnhancedPrompt(enhancedPrompt);
+        // For general/creative requests, use universal structured approach
+        console.log('Using universal structured approach for general request');
+        const universalPrompt = await enhanceGeneralPrompt(context);
 
         // Log performance data
         const duration = Date.now() - startTime;
-        console.log(`✅ Prompt enhanced in ${duration}ms. Input length: ${originalPrompt.length}, Output length: ${processedPrompt.length}`);
+        console.log(`✅ Prompt enhanced with universal structure in ${duration}ms. Output length: ${universalPrompt.length}`);
 
-        return processedPrompt;
+        return universalPrompt;
     } catch (error) {
         console.error('❌ Prompt Enhancement Error:', error);
 
@@ -2749,16 +2776,14 @@ async function enhancePrompt(params) {
             console.warn('Using fallback prompt due to API error');
             const context = analyzePromptContext(sanitizedPrompt);
 
-            // Different fallbacks based on detected platform
+            // Different fallbacks based on detected content
             if (context.isTwitter || context.platform === 'twitter') {
                 return generateTwitterFallbackPrompt(context);
             } else if (context.isLinkedIn || context.platform === 'linkedin') {
                 return generateLinkedInFallbackPrompt(context);
             } else {
-                // Blog or general fallback
-                return context.usePreferredStyle
-                    ? generatePreferredStylePrompt(context)
-                    : generateFallbackPrompt(context);
+                // Use structured fallback for general requests
+                return generateStructuredFallbackPrompt(context);
             }
         }
 
@@ -2768,57 +2793,351 @@ async function enhancePrompt(params) {
 }
 
 /**
- * Handle general or creative prompts without using templates
+ * Detect the content type from the prompt with improved pattern recognition
+ * @param {string} prompt - Original prompt
+ * @returns {string|null} Detected content type or null
+ */
+function detectContentType(prompt) {
+    const lowerPrompt = prompt.toLowerCase();
+
+    // Mapping of content types to their detection patterns
+    const contentTypePatterns = {
+        "QAP": [/\bqap\b/i, /\bquality assurance plan\b/i, /\bqa plan\b/i],
+        "logo design": [/\blogo design\b/i, /\blogo for\b/i, /\bdesign a logo\b/i, /\bcreate a logo\b/i],
+        "presentation outline": [/\bpresentation\b/i, /\bslide deck\b/i, /\bpowerpoint\b/i, /\bpresentation outline\b/i],
+        "video script": [/\bvideo script\b/i, /\bscript for video\b/i, /\bscript for a video\b/i],
+        "caption": [/\bcaption\b/i, /\bphoto caption\b/i, /\bimage caption\b/i, /\bcaptions for\b/i],
+        "social media post": [/\bsocial media post\b/i, /\bsocial post\b/i, /\bpost for instagram\b/i, /\bpost for facebook\b/i],
+        "email template": [/\bemail template\b/i, /\bemail draft\b/i, /\bemail sequence\b/i],
+        "product description": [/\bproduct description\b/i, /\bproduct listing\b/i, /\becommerce description\b/i],
+        "press release": [/\bpress release\b/i, /\bmedia release\b/i, /\bnews release\b/i],
+        "FAQ": [/\bfaq\b/i, /\bfrequently asked questions\b/i, /\bq&a\b/i, /\bquestions and answers\b/i],
+        "job description": [/\bjob description\b/i, /\bjob posting\b/i, /\brole description\b/i, /\bjob ad\b/i],
+        "creative brief": [/\bcreative brief\b/i, /\bdesign brief\b/i, /\bproject brief\b/i],
+        "app description": [/\bapp description\b/i, /\bapp store description\b/i, /\bmobile app description\b/i],
+        "brand guidelines": [/\bbrand guidelines\b/i, /\bbrand guide\b/i, /\bbrand standards\b/i],
+        "executive summary": [/\bexecutive summary\b/i, /\bexec summary\b/i, /\bbrief summary\b/i]
+    };
+
+    // Check against each content type pattern
+    for (const [type, patterns] of Object.entries(contentTypePatterns)) {
+        if (patterns.some(pattern => pattern.test(lowerPrompt))) {
+            return type;
+        }
+    }
+
+    // Check for company/organization names
+    if (/\bfor (a|an)? ([A-Z][a-z]+|[A-Z]+)\b/i.test(prompt) ||
+        /\b(at|by|about) ([A-Z][a-z]+|[A-Z]+)\b/i.test(prompt)) {
+        // Company name detected, check for content type indicators
+        if (/\bquality\b/i.test(lowerPrompt) || /\bassurance\b/i.test(lowerPrompt)) {
+            return "QAP";
+        }
+        if (/\bbrand\b/i.test(lowerPrompt) || /\bidentity\b/i.test(lowerPrompt) || /\blogo\b/i.test(lowerPrompt)) {
+            return "logo design";
+        }
+    }
+
+    // Return null if no specific type detected
+    return null;
+}
+
+/**
+ * Generate a general fallback prompt for creative requests
  * @param {Object} context - Context information
- * @returns {Promise<string>} Enhanced prompt
+ * @returns {string} - Fallback prompt for general requests
+ */
+function generateGeneralFallbackPrompt(context) {
+    // Get the topic but avoid removing important parts of creative requests
+    const topic = context.topic || context.original;
+
+    return `You are a creative expert responding to this request: "${topic}"
+
+Please provide a detailed, thoughtful response that:
+1. Maintains the specific intent of the original request
+2. Uses natural, conversational language
+3. Provides structure and guidance appropriate to this specific type of content
+4. Includes relevant examples and context
+5. Avoids generic templates and AI-sounding language
+
+IMPORTANT: Focus on delivering exactly what was requested - be it a caption, script, design brief, 
+presentation outline, or any other format. Your response should be tailored specifically to this 
+request type and not force it into a blog post, social media, or article format.
+
+Write in a natural, human voice with specific, actionable guidance. Avoid meta-commentary, generic advice, 
+or explaining what you're going to do before doing it.`;
+}
+
+/**
+ * Generate a universal structured prompt enhancement for any type of content
+ * @param {Object} context - Context from prompt analysis
+ * @returns {Promise<string>} Enhanced structured prompt
  */
 async function enhanceGeneralPrompt(context) {
-    // Create a simple system prompt that doesn't use templates
-    const systemPrompt = `You are a helpful AI assistant enhancing user prompts to be more effective.
+    // Create a structured system prompt based on universal prompt enhancement principles
+    const systemPrompt = `You are a professional prompt engineer specializing in creating highly structured, detailed prompts for AI systems.
 
-For this general or creative request: "${context.original}"
+Your task is to enhance this original request: "${context.original}"
 
-Create an enhanced prompt that:
-1. Maintains the original intent and creativity of the request
-2. Adds helpful context and details without changing the core request
-3. Provides guidance on tone, style, and approach
-4. Avoids using rigid templates or formulaic structures
-5. Preserves any examples or references the user provided
+Follow this Universal Prompt Enhancement Blueprint to create a structured, powerful prompt:
 
-Your enhancement should feel like a helpful elaboration of the original request, not a transformation into a different format. Keep the enhancement conversational and natural.
+1. ROLE ASSIGNMENT - Begin with a clear expert role assignment 
+   Example: "You are a [specific expert] with expertise in [relevant domain]"
 
-IMPORTANT: Do not try to convert this into a specific content format like a blog post, LinkedIn post, or tweet. The user is looking for a creative response that matches their specific request.`;
+2. CLEAR TASK DEFINITION - Define exactly what output is needed
+   Example: "Create a [specific output] that [specific purpose]"
+
+3. STRUCTURAL GUIDANCE - Provide clear format instructions
+   Example: "Structure this as [format type: table/list/etc.] with [specific sections]"
+
+4. CONTENT SPECIFICATIONS - Detail what information should be included
+   Example: "Include [specific elements], covering [specific aspects]"
+
+5. TONE & STYLE GUIDANCE - Specify the writing approach
+   Example: "Use a [specific tone: professional/conversational/etc.] tone, with [style characteristics]"
+
+6. QUALITY REQUIREMENTS - Set standards for the output
+   Example: "Ensure the output is [quality standards: comprehensive/concise/etc.]"
+
+7. ANTI-AI INSTRUCTIONS - Guide how to make output sound natural
+   Example: "Avoid [AI-typical patterns] and instead use [natural alternatives]"
+
+FORMAT THE ENHANCED PROMPT AS FOLLOWS:
+--
+# Expert Role Assignment
+[Clear role definition matched to request type]
+
+# Task & Purpose
+[Detailed explanation of what to create and why]
+
+# Content Structure
+[Specific structural guidance for the output]
+
+# Required Elements
+[Comprehensive list of what must be included]
+
+# Style & Approach
+[Tone, voice, and stylistic guidance]
+
+# Quality Standards
+[Criteria for excellence in this specific context]
+
+# Output Format
+[Final format instructions]
+--
+
+Remember to:
+1. Maintain the EXACT intent of the original request - don't change what they're asking for
+2. Add structure and guidance appropriate for THIS SPECIFIC content type
+3. Be comprehensive but practical - focus on what would actually improve the output
+4. Avoid generic advice that could apply to any prompt
+5. Don't use placeholder text - provide specific, actionable guidance throughout
+6. Make every line directly relevant to the specific request`;
 
     try {
-        // Use OpenAI to enhance the prompt with the simplified system prompt
+        // Use OpenAI to enhance the prompt with the structured system prompt
         const enhancedPrompt = await openai.chat.completions.create({
             model: "gpt-3.5-turbo",
             messages: [
                 { role: "system", content: systemPrompt },
                 {
                     role: "user",
-                    content: `Please enhance this creative request: "${context.original}"`
+                    content: `Please transform this request into a structured, enhanced prompt: "${context.original}"`
                 }
             ],
             temperature: 0.7,
-            max_tokens: 800
+            max_tokens: 1000
         });
 
         return processEnhancedPrompt(enhancedPrompt.choices[0]?.message?.content);
     } catch (error) {
         console.error('General enhancement error:', error);
 
-        // Simple fallback for general requests
-        return `You are a creative writer responding to this request: "${context.original}"
-
-Please provide a creative, engaging response that:
-1. Maintains the same tone and style indicated in the request
-2. Includes the same level of humor, creativity, or specificity as requested
-3. Follows any examples or references provided
-4. Feels natural and conversational, not like an AI template
-
-Your response should feel authentic and match the spirit of the request without sounding like an AI-generated template.`;
+        // Structured fallback for general requests
+        return generateStructuredFallbackPrompt(context);
     }
+}
+
+/**
+ * Generate a structured fallback prompt for general requests
+ * @param {Object} context - Context information
+ * @returns {string} - Structured fallback prompt
+ */
+function generateStructuredFallbackPrompt(context) {
+    // Get the topic but avoid removing important parts of creative requests
+    const topic = context.topic || context.original;
+    const contentType = detectContentType(context.original);
+
+    return `# Expert Role Assignment
+You are a specialized professional with expertise in creating ${contentType || "high-quality content"}.
+
+# Task & Purpose
+Create a detailed, comprehensive ${contentType || "response"} based on this request: "${topic}"
+
+# Content Structure
+Organize your response with clear sections, logical flow, and appropriate hierarchy.
+
+# Required Elements
+- Include specific, actionable information rather than general statements
+- Provide concrete examples or applications where appropriate
+- Address all key aspects of the request with appropriate depth
+- Incorporate relevant context and background information
+
+# Style & Approach
+- Use natural, professional language that avoids AI-sounding patterns
+- Maintain a balanced tone that matches the subject matter
+- Employ clear, precise terminology appropriate to the topic
+- Write in active voice with concise, well-structured sentences
+
+# Quality Standards
+- Ensure factual accuracy and logical consistency throughout
+- Provide sufficient detail to be genuinely useful
+- Maintain appropriate scope - neither too broad nor too narrow
+- Create content that demonstrates domain expertise
+
+# Output Format
+Present your response in a well-structured format with clear headings, concise paragraphs, and appropriate use of formatting to highlight key points.`;
+}
+
+/**
+ * Detect the content type from the prompt with improved pattern recognition
+ * @param {string} prompt - Original prompt
+ * @returns {string|null} Detected content type or null
+ */
+function detectContentType(prompt) {
+    const lowerPrompt = prompt.toLowerCase();
+
+    // Mapping of content types to their detection patterns
+    const contentTypePatterns = {
+        "QAP": [/\bqap\b/i, /\bquality assurance plan\b/i, /\bqa plan\b/i],
+        "logo design": [/\blogo design\b/i, /\blogo for\b/i, /\bdesign a logo\b/i, /\bcreate a logo\b/i],
+        "presentation outline": [/\bpresentation\b/i, /\bslide deck\b/i, /\bpowerpoint\b/i, /\bpresentation outline\b/i],
+        "video script": [/\bvideo script\b/i, /\bscript for video\b/i, /\bscript for a video\b/i],
+        "caption": [/\bcaption\b/i, /\bphoto caption\b/i, /\bimage caption\b/i, /\bcaptions for\b/i],
+        "social media post": [/\bsocial media post\b/i, /\bsocial post\b/i, /\bpost for instagram\b/i, /\bpost for facebook\b/i],
+        "email template": [/\bemail template\b/i, /\bemail draft\b/i, /\bemail sequence\b/i],
+        "product description": [/\bproduct description\b/i, /\bproduct listing\b/i, /\becommerce description\b/i],
+        "press release": [/\bpress release\b/i, /\bmedia release\b/i, /\bnews release\b/i],
+        "FAQ": [/\bfaq\b/i, /\bfrequently asked questions\b/i, /\bq&a\b/i, /\bquestions and answers\b/i],
+        "job description": [/\bjob description\b/i, /\bjob posting\b/i, /\brole description\b/i, /\bjob ad\b/i],
+        "creative brief": [/\bcreative brief\b/i, /\bdesign brief\b/i, /\bproject brief\b/i],
+        "app description": [/\bapp description\b/i, /\bapp store description\b/i, /\bmobile app description\b/i],
+        "brand guidelines": [/\bbrand guidelines\b/i, /\bbrand guide\b/i, /\bbrand standards\b/i],
+        "executive summary": [/\bexecutive summary\b/i, /\bexec summary\b/i, /\bbrief summary\b/i]
+    };
+
+    // Check against each content type pattern
+    for (const [type, patterns] of Object.entries(contentTypePatterns)) {
+        if (patterns.some(pattern => pattern.test(lowerPrompt))) {
+            return type;
+        }
+    }
+
+    // Check for company/organization names
+    if (/\bfor (a|an)? ([A-Z][a-z]+|[A-Z]+)\b/i.test(prompt) ||
+        /\b(at|by|about) ([A-Z][a-z]+|[A-Z]+)\b/i.test(prompt)) {
+        // Company name detected, check for content type indicators
+        if (/\bquality\b/i.test(lowerPrompt) || /\bassurance\b/i.test(lowerPrompt)) {
+            return "QAP";
+        }
+        if (/\bbrand\b/i.test(lowerPrompt) || /\bidentity\b/i.test(lowerPrompt) || /\blogo\b/i.test(lowerPrompt)) {
+            return "logo design";
+        }
+    }
+
+    // Return null if no specific type detected
+    return null;
+}
+
+/**
+ * Determine a default content type based on prompt analysis
+ * @param {string} lowerPrompt - Lowercase prompt text
+ * @returns {string} - Default content type
+ */
+function determineDefaultContentType(lowerPrompt) {
+    // Check for request indicators
+    if (lowerPrompt.includes('write') || lowerPrompt.includes('create')) {
+        // Writing-focused request
+        if (lowerPrompt.includes('about')) {
+            return "informative content";
+        } else {
+            return "creative content";
+        }
+    }
+
+    // Default
+    return "content";
+}
+
+/**
+ * Detect the requested tone from the prompt
+ * @param {string} prompt - The original prompt
+ * @returns {string} - Detected tone
+ */
+function detectRequestedTone(prompt) {
+    const lowerPrompt = prompt.toLowerCase();
+
+    // Common tone patterns
+    const tonePatterns = [
+        { tone: "professional", patterns: [/\bprofessional\b/i, /\bformal\b/i, /\bbusiness-like\b/i] },
+        { tone: "casual", patterns: [/\bcasual\b/i, /\binformal\b/i, /\bconversational\b/i, /\brelaxed\b/i] },
+        { tone: "humorous", patterns: [/\bfunny\b/i, /\bhumor\b/i, /\bwitty\b/i, /\blight-hearted\b/i, /\bcomedy\b/i] },
+        { tone: "serious", patterns: [/\bserious\b/i, /\bgrave\b/i, /\bsolemn\b/i, /\bearaest\b/i] },
+        { tone: "enthusiastic", patterns: [/\benthusiastic\b/i, /\benergetic\b/i, /\bexcited\b/i, /\bpositive\b/i] },
+        { tone: "technical", patterns: [/\btechnical\b/i, /\bdetailed\b/i, /\bspecific\b/i, /\bprecise\b/i] },
+        { tone: "persuasive", patterns: [/\bconvincin\b/i, /\bpersuasive\b/i, /\bcompelling\b/i, /\bsell\b/i] },
+        { tone: "educational", patterns: [/\beducational\b/i, /\binformative\b/i, /\bteaching\b/i, /\binstructive\b/i] }
+    ];
+
+    // Check for matches
+    for (const { tone, patterns } of tonePatterns) {
+        if (patterns.some(pattern => pattern.test(lowerPrompt))) {
+            return tone;
+        }
+    }
+
+    // Default is neutral professional
+    return "neutral professional";
+}
+
+/**
+ * Generate a system prompt for universal content without rigid templates
+ * @param {Object} context - Context from prompt analysis
+ * @returns {string} - System prompt for universal content enhancement
+ */
+function generateUniversalSystemPrompt(context) {
+    // Extract original request intent
+    const contentType = detectContentType(context.original);
+    const tone = detectRequestedTone(context.original);
+
+    return `You are an expert prompt enhancer specializing in creating effective, detailed prompts for AI systems.
+
+Your task is to enhance this original request: "${context.original}"
+
+I've analyzed this as a request for: ${contentType || "general content"}
+Tone appears to be: ${tone || "neutral/professional"}
+
+Create an enhanced prompt that:
+1. Maintains the original intent completely - don't change what they're asking for
+2. Adds structure, detail, and guidance appropriate to THIS SPECIFIC content type
+3. Includes relevant context to improve the AI's understanding
+4. Provides tone and style guidance that matches the request
+5. Focuses on the particular output format requested by the user
+
+DO NOT:
+- Force this into a blog post, social media post, or article format unless explicitly requested
+- Use generic templates that could apply to any content
+- Add unnecessary constraints or requirements not implied by the original request
+- Inject your own preferences about what the content should be
+
+IMPORTANT REQUIREMENTS:
+- Begin with a clear role assignment appropriate for this specific content type
+- Include clear content goals that directly match what was requested
+- Provide guidance on structure, tone, and style appropriate to THIS particular request
+- Add specific instructions to avoid common AI weaknesses relevant to this content type
+- Keep the enhanced prompt focused on exactly what was asked, just with more detail and structure
+
+The enhanced prompt should feel like a natural, helpful elaboration of the original request, not a transformation into a different format.`;
 }
 
 /**
